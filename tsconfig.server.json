@@ -1,9 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist/server",
-    "rootDir": "./src/server"
+    "outDir": "./dist",
+    "rootDir": "./"
   },
-  "include": ["src/server/**/*"],
-  "exclude": ["node_modules", "dist", "src/client", "src/legacy", "**/*.test.ts"]
+  "include": ["server.ts", "routes/**/*", "controllers/**/*", "middleware/**/*", "models/**/*", "config/**/*", "core/**/*", "utils/**/*"],
+  "exclude": ["node_modules", "dist", "client", "src", "**/*.test.ts"]
 }

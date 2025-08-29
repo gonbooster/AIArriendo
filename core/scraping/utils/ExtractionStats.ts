@@ -2,7 +2,7 @@
  * Extraction Statistics - Monitor scraping quality
  */
 
-import { Property } from '../../types/Property';
+import { Property } from '../../types';
 import { PropertyEnhancer } from './PropertyEnhancer';
 
 export interface ScrapingStats {

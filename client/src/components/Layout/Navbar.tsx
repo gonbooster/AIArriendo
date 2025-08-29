@@ -100,7 +100,7 @@ const Navbar: React.FC = () => {
               }}
               onClick={() => navigate('/')}
             >
-              PropiedadesPro
+              AIArriendo
             </Typography>
 
 
@@ -149,7 +149,7 @@ const Navbar: React.FC = () => {
                 <BusinessIcon sx={{ color: 'white', fontSize: 20 }} />
               </Box>
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                PropiedadesPro
+                AIArriendo
               </Typography>
             </Box>
             <IconButton 
