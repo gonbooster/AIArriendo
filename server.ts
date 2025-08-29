@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { connectDatabase } from './config/database';
 import { logger } from './utils/logger';
 import searchRoutes from './routes/search';
@@ -6,7 +7,63 @@ import searchRoutes from './routes/search';
 const app = express();
 const DEFAULT_PORT = Number(process.env.PORT) || 3001;
 
+// Dynamic CORS configuration
+const getDynamicCorsOptions = () => {
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001'
+  ];
+
+  // Add environment-specific origins
+  if (process.env.CLIENT_URL) {
+    allowedOrigins.push(process.env.CLIENT_URL);
+  }
+
+  if (process.env.VERCEL_URL) {
+    allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+  }
+
+  if (process.env.NETLIFY_URL) {
+    allowedOrigins.push(process.env.NETLIFY_URL);
+  }
+
+  // Add any custom domains from environment
+  if (process.env.ALLOWED_ORIGINS) {
+    const customOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
+    allowedOrigins.push(...customOrigins);
+  }
+
+  return {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // In development, be more permissive
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn(`🔓 CORS: Allowing origin in development: ${origin}`);
+        return callback(null, true);
+      }
+
+      // In production, log and reject
+      logger.error(`🚫 CORS: Blocked origin: ${origin}`);
+      callback(new Error(`CORS policy violation: Origin ${origin} not allowed`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    optionsSuccessStatus: 200 // For legacy browser support
+  };
+};
+
 // Middleware
+app.use(cors(getDynamicCorsOptions()));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
