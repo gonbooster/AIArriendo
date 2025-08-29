@@ -107,50 +107,50 @@ const SearchPage: React.FC = () => {
   // Función para convertir criterios de búsqueda a formato de formulario
   const convertCriteriaToFormValues = (criteria: any): SearchForm => {
     if (!criteria || !shouldRememberInputs) {
-      // Valores por defecto (pedidos)
+      // Valores SIN FILTROS RESTRICTIVOS - MOSTRAR TODAS LAS PROPIEDADES
       return {
         operation: 'arriendo',
-        propertyTypes: ['Apartamento'],
-        location: { id: 'bog_usaquen', name: 'Usaquén', type: 'neighborhood', city: 'Bogotá', department: 'Bogotá D.C.' },
-        minStratum: 3,
-        maxStratum: 5,
-        minRooms: 3,
-        maxRooms: 4,
-        minBathrooms: 2,
-        maxBathrooms: 3,
+        propertyTypes: ['Apartamento', 'Casa', 'Apartaestudio', 'Loft', 'Penthouse'],
+        location: null, // SIN FILTRO DE UBICACIÓN
+        minStratum: 1,
+        maxStratum: 6,
+        minRooms: 1,
+        maxRooms: 10,
+        minBathrooms: 1,
+        maxBathrooms: 10,
         minParking: 0,
-        maxParking: 2,
-        minArea: 70,
-        maxArea: 110,
-        minPrice: 500000,
-        maxPrice: 3500000,
-        allowAdminOverage: false,
+        maxParking: 10,
+        minArea: 1,
+        maxArea: 1000,
+        minPrice: 1,
+        maxPrice: 50000000,
+        allowAdminOverage: true,
         wetAreas: {},
         sports: {},
         amenities: {}
       };
     }
 
-    // Convertir criterios previos al formato del formulario
+    // Convertir criterios previos al formato del formulario - SIN FILTROS RESTRICTIVOS
     return {
       operation: criteria.operation ?? 'arriendo',
-      propertyTypes: criteria.propertyTypes ?? ['Apartamento'],
+      propertyTypes: criteria.propertyTypes ?? ['Apartamento', 'Casa', 'Apartaestudio', 'Loft', 'Penthouse'],
       location: criteria.location?.neighborhoods?.[0] ?
         { id: 'custom', name: criteria.location.neighborhoods[0], type: 'neighborhood' as const } :
-        { id: 'bog_usaquen', name: 'Usaquén', type: 'neighborhood' as const, city: 'Bogotá', department: 'Bogotá D.C.' },
-      minStratum: criteria.minStratum ?? 3,
-      maxStratum: criteria.maxStratum ?? 5,
-      minRooms: criteria.minRooms ?? 3,
-      maxRooms: criteria.maxRooms ?? 4,
-      minBathrooms: criteria.minBathrooms ?? 2,
-      maxBathrooms: criteria.maxBathrooms ?? 3,
+        null, // SIN FILTRO DE UBICACIÓN POR DEFECTO
+      minStratum: criteria.minStratum ?? 1,
+      maxStratum: criteria.maxStratum ?? 6,
+      minRooms: criteria.minRooms ?? 1,
+      maxRooms: criteria.maxRooms ?? 10,
+      minBathrooms: criteria.minBathrooms ?? 1,
+      maxBathrooms: criteria.maxBathrooms ?? 10,
       minParking: criteria.minParking ?? 0,
-      maxParking: criteria.maxParking ?? 2,
-      minArea: criteria.minArea ?? 70,
-      maxArea: criteria.maxArea ?? 110,
-      minPrice: criteria.minPrice ?? 500000,
-      maxPrice: criteria.maxPrice ?? 3500000,
-      allowAdminOverage: criteria.allowAdminOverage ?? false,
+      maxParking: criteria.maxParking ?? 10,
+      minArea: criteria.minArea ?? 1,
+      maxArea: criteria.maxArea ?? 1000,
+      minPrice: criteria.minPrice ?? 1,
+      maxPrice: criteria.maxPrice ?? 50000000,
+      allowAdminOverage: criteria.allowAdminOverage ?? true,
       wetAreas: {},
       sports: {},
       amenities: {}
@@ -214,7 +214,7 @@ const SearchPage: React.FC = () => {
         minStratum: data.minStratum,
         maxStratum: data.maxStratum,
         location: {
-          neighborhoods: data.location ? [data.location.name] : ['Chapinero']
+          neighborhoods: data.location ? [data.location.name] : [] // SIN FILTRO DE UBICACIÓN
         },
         preferences: {
           wetAreas: Object.entries(data.wetAreas).filter(([_, value]) => value !== 'no').map(([key, value]) => ({ name: key, priority: value as 'nice' | 'essential' })),
