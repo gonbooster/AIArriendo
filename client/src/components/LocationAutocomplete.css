@@ -1,0 +1,275 @@
+/**
+ * Estilos para el componente LocationAutocomplete
+ * Diseño moderno y responsive
+ */
+
+.location-autocomplete {
+  position: relative;
+  width: 100%;
+}
+
+/* Input Container */
+.location-autocomplete__input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Input Field */
+.location-autocomplete__input {
+  width: 100%;
+  padding: 12px 16px;
+  padding-right: 40px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.location-autocomplete__input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.location-autocomplete__input:disabled {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.location-autocomplete__input.loading {
+  padding-right: 50px;
+}
+
+/* Spinner */
+.location-autocomplete__spinner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e1e5e9;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Suggestions List */
+.location-autocomplete__suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #ffffff;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 4px;
+  padding: 0;
+  list-style: none;
+}
+
+/* Individual Suggestion */
+.location-autocomplete__suggestion {
+  padding: 0;
+  margin: 0;
+  border-bottom: 1px solid #f1f3f4;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.location-autocomplete__suggestion:last-child {
+  border-bottom: none;
+}
+
+.location-autocomplete__suggestion:hover,
+.location-autocomplete__suggestion.selected {
+  background-color: #f8f9fa;
+}
+
+.location-autocomplete__suggestion.selected {
+  background-color: #e3f2fd;
+}
+
+/* Suggestion Content */
+.location-autocomplete__suggestion-content {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+/* Location Icon */
+.location-autocomplete__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+/* Text Content */
+.location-autocomplete__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.location-autocomplete__name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #212529;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.location-autocomplete__description {
+  font-size: 13px;
+  color: #6c757d;
+  line-height: 1.2;
+}
+
+/* Location Type Badge */
+.location-autocomplete__type {
+  font-size: 11px;
+  font-weight: 500;
+  color: #495057;
+  background-color: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* No Results */
+.location-autocomplete__no-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #ffffff;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+  padding: 16px;
+}
+
+.location-autocomplete__no-results-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6c757d;
+  font-size: 14px;
+  justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .location-autocomplete__input {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 14px 16px;
+  }
+  
+  .location-autocomplete__suggestion-content {
+    padding: 14px 16px;
+  }
+  
+  .location-autocomplete__suggestions {
+    max-height: 250px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .location-autocomplete__input {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .location-autocomplete__input:focus {
+    border-color: #63b3ed;
+    box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+  }
+  
+  .location-autocomplete__suggestions,
+  .location-autocomplete__no-results {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .location-autocomplete__suggestion {
+    border-bottom-color: #4a5568;
+  }
+  
+  .location-autocomplete__suggestion:hover {
+    background-color: #4a5568;
+  }
+  
+  .location-autocomplete__suggestion.selected {
+    background-color: #2b6cb0;
+  }
+  
+  .location-autocomplete__name {
+    color: #e2e8f0;
+  }
+  
+  .location-autocomplete__description {
+    color: #a0aec0;
+  }
+  
+  .location-autocomplete__type {
+    background-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .location-autocomplete__no-results-content {
+    color: #a0aec0;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .location-autocomplete__input {
+    border-width: 3px;
+  }
+  
+  .location-autocomplete__suggestion.selected {
+    background-color: #0056b3;
+    color: white;
+  }
+  
+  .location-autocomplete__suggestion.selected .location-autocomplete__name,
+  .location-autocomplete__suggestion.selected .location-autocomplete__description {
+    color: white;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .location-autocomplete__input,
+  .location-autocomplete__suggestion {
+    transition: none;
+  }
+  
+  .spinner {
+    animation: none;
+  }
+}
