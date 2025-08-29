@@ -239,14 +239,95 @@ export class MetrocuadradoScraper extends BaseScraper {
       await page.waitForSelector('.listing-card, .result-item, [class*="resultado"], article, li, [class*="card"], [data-testid*="card"]', { timeout: 15000 }).catch(()=>{});
 
       const items = await page.evaluate(() => {
-        const out: Array<{title:string; priceText:string; url:string; img:string; loc:string;}> = [];
+        const out: Array<{
+          title: string;
+          priceText: string;
+          url: string;
+          img: string;
+          loc: string;
+          area: string;
+          rooms: string;
+          bathrooms: string;
+          fullText: string;
+        }> = [];
+
         const doc: any = (globalThis as any).document;
-        const cards = doc ? Array.from(doc.querySelectorAll('.listing-card, .result-item, [class*="resultado"], article, li, [class*="card"], [data-testid*="card"]')) : [];
+
+        // Selectores más específicos para Metrocuadrado
+        const selectors = [
+          '.listing-card',
+          '.result-item',
+          '[class*="resultado"]',
+          '[class*="property"]',
+          '[class*="inmueble"]',
+          'article',
+          'li[class*="item"]',
+          '[data-testid*="card"]'
+        ];
+
+        let cards: any[] = [];
+        for (const selector of selectors) {
+          const elements = doc.querySelectorAll(selector);
+          if (elements.length > 0) {
+            cards = Array.from(elements);
+            console.log(`Found ${cards.length} cards with selector: ${selector}`);
+            break;
+          }
+        }
+
         cards.forEach((el: any) => {
-          const title = el.querySelector('.listing-title, .title, h3, h4')?.textContent?.trim() || '';
-          const priceText = el.querySelector('.price, .valor, .listing-price, [class*="price"]')?.textContent?.trim() || '';
+          const fullText = el.textContent?.trim() || '';
+
+          // Título más específico
+          const titleSelectors = [
+            '.listing-title',
+            '.title',
+            '.property-title',
+            'h3',
+            'h4',
+            'h2',
+            '[class*="title"]'
+          ];
+          let title = '';
+          for (const sel of titleSelectors) {
+            const titleEl = el.querySelector(sel);
+            if (titleEl?.textContent?.trim()) {
+              title = titleEl.textContent.trim();
+              break;
+            }
+          }
+
+          // Precio más específico
+          const priceSelectors = [
+            '.price',
+            '.valor',
+            '.listing-price',
+            '[class*="price"]',
+            '[class*="valor"]',
+            '[class*="precio"]'
+          ];
+          let priceText = '';
+          for (const sel of priceSelectors) {
+            const priceEl = el.querySelector(sel);
+            if (priceEl?.textContent?.trim()) {
+              priceText = priceEl.textContent.trim();
+              break;
+            }
+          }
+
+          // Si no encontramos precio en elementos específicos, buscar en el texto completo
+          if (!priceText) {
+            const priceMatch = fullText.match(/\$\s*[\d,\.]+/);
+            if (priceMatch) {
+              priceText = priceMatch[0];
+            }
+          }
+
+          // URL
           const linkEl: any = el.querySelector('a[href]');
           const link = linkEl ? (linkEl.href || linkEl.getAttribute('href')) : '';
+
+          // Imagen
           const imgEl: any = el.querySelector('img');
           let img = '';
           if (imgEl) {
@@ -255,35 +336,168 @@ export class MetrocuadradoScraper extends BaseScraper {
               const srcset = imgEl.getAttribute?.('srcset') || '';
               if (srcset) img = srcset.split(',')[0]?.trim().split(' ')[0] || '';
             }
+            // Convertir URLs relativas a absolutas
+            if (img && img.startsWith('/')) {
+              img = `https://www.metrocuadrado.com${img}`;
+            }
           }
-          const loc = el.querySelector('.location, .barrio, .address')?.textContent?.trim() || '';
-          if ((title || priceText) && link) out.push({ title, priceText, url: link, img, loc });
+
+          // Ubicación más específica
+          const locationSelectors = [
+            '.location',
+            '.barrio',
+            '.address',
+            '[class*="location"]',
+            '[class*="barrio"]',
+            '[class*="zona"]',
+            '[class*="sector"]'
+          ];
+          let loc = '';
+          for (const sel of locationSelectors) {
+            const locEl = el.querySelector(sel);
+            if (locEl?.textContent?.trim()) {
+              loc = locEl.textContent.trim();
+              break;
+            }
+          }
+
+          // Extraer área del texto completo
+          let area = '';
+          const areaMatch = fullText.match(/(\d+)\s*m[²2]/i);
+          if (areaMatch) {
+            area = areaMatch[1];
+          }
+
+          // Extraer habitaciones del texto completo
+          let rooms = '';
+          const roomsMatches = [
+            fullText.match(/(\d+)\s*hab/i),
+            fullText.match(/(\d+)\s*habitacion/i),
+            fullText.match(/(\d+)\s*alcoba/i),
+            fullText.match(/(\d+)\s*dormitorio/i)
+          ];
+          for (const match of roomsMatches) {
+            if (match) {
+              rooms = match[1];
+              break;
+            }
+          }
+
+          // Extraer baños del texto completo
+          let bathrooms = '';
+          const bathroomMatches = [
+            fullText.match(/(\d+)\s*baño/i),
+            fullText.match(/(\d+)\s*bathroom/i)
+          ];
+          for (const match of bathroomMatches) {
+            if (match) {
+              bathrooms = match[1];
+              break;
+            }
+          }
+
+          // Extraer ubicación del texto si no se encontró en elementos específicos
+          if (!loc) {
+            const locationMatches = [
+              fullText.match(/en\s+([^,]+),?\s*bogotá/i),
+              fullText.match(/bogotá[,\s]+([^,\n]+)/i)
+            ];
+            for (const match of locationMatches) {
+              if (match) {
+                loc = match[1].trim();
+                break;
+              }
+            }
+          }
+
+          if ((title || priceText) && link) {
+            out.push({
+              title: title || 'Apartamento en arriendo',
+              priceText,
+              url: link,
+              img,
+              loc,
+              area,
+              rooms,
+              bathrooms,
+              fullText: fullText.substring(0, 200) // Para debugging
+            });
+          }
         });
-        return out;
+
+        // Eliminar duplicados basados en URL
+        const uniqueItems = out.filter((item, index, self) =>
+          index === self.findIndex(t => t.url === item.url)
+        );
+
+        return uniqueItems;
       });
 
       const props: Property[] = [];
       items.forEach((it, idx) => {
         const price = parseInt((it.priceText || '').replace(/[^\d]/g, '')) || 0;
         if (!price) return;
+
+        // Extraer datos mejorados de los nuevos campos
+        const area = parseInt((it as any).area || '0') || 0;
+        const rooms = parseInt((it as any).rooms || '0') || 0;
+        const bathrooms = parseInt((it as any).bathrooms || '0') || 0;
+
+        // Extraer ubicación más específica
+        let neighborhood = it.loc || '';
+        let address = it.loc || '';
+
+        // Si tenemos información en la URL, extraer barrio
+        if (it.url && !neighborhood) {
+          const urlMatch = it.url.match(/bogota-([^-]+)/);
+          if (urlMatch) {
+            neighborhood = urlMatch[1].replace(/-/g, ' ');
+          }
+        }
+
+        // Extraer información adicional del texto completo
+        const fullText = (it as any).fullText || '';
+
+        // Extraer parqueaderos del texto
+        let parking = 0;
+        const parkingMatch = fullText.match(/(\d+)\s*garaje/i);
+        if (parkingMatch) {
+          parking = parseInt(parkingMatch[1]);
+        }
+
+        // Extraer estrato del texto
+        let stratum = 0;
+        const stratumMatch = fullText.match(/estrato\s*(\d+)/i);
+        if (stratumMatch) {
+          stratum = parseInt(stratumMatch[1]);
+        }
+
         const p: Property = {
           id: `m2_headless_${Date.now()}_${idx}`,
           title: it.title || 'Apartamento en arriendo',
           price,
           adminFee: 0,
           totalPrice: price,
-          area: 0,
-          rooms: 0,
-          bathrooms: 0,
-          location: { address: it.loc, neighborhood: '', city: 'Bogotá' },
+          area,
+          rooms,
+          bathrooms,
+          parking,
+          stratum,
+          location: {
+            address: address || neighborhood || 'Bogotá',
+            neighborhood: neighborhood || 'Sin especificar',
+            city: 'Bogotá',
+            coordinates: { lat: 0, lng: 0 }
+          },
           images: it.img ? [it.img] : [],
           url: it.url,
           source: 'Metrocuadrado',
-          description: '',
+          description: fullText.substring(0, 200) || '',
           amenities: [],
           scrapedDate: new Date().toISOString(),
-          pricePerM2: 0,
-          isActive: true
+          pricePerM2: area > 0 ? Math.round(price / area) : 0,
+          isActive: true,
+          score: 0
         };
         if (price <= criteria.hardRequirements.maxTotalPrice) props.push(p);
       });

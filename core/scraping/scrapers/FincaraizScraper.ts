@@ -273,15 +273,43 @@ export class FincaraizScraper extends BaseScraper {
         // Buscar información cerca del enlace
         const $container = $link.closest('div, article, section, li');
 
-        // Extraer precio
+        // Extraer precio - MEJORADO para capturar precios complejos
         let price = '';
-        $container.find('*').each((i, el) => {
-          const text = $(el).text();
-          const priceMatch = text.match(/\$[\d.,]+/);
-          if (priceMatch && !price) {
-            price = priceMatch[0];
+        const fullContainerText = $container.text();
+
+        // Buscar patrones de precios más específicos
+        const pricePatterns = [
+          /\$\s*[\d]{1,3}(?:\.[\d]{3})*(?:\.[\d]{3})*/g,  // $ 15.500.000
+          /\$\s*[\d]{7,10}/g,                              // $15500000
+          /\$\s*[\d,]+/g                                   // $15,500,000
+        ];
+
+        for (const pattern of pricePatterns) {
+          const matches = fullContainerText.match(pattern);
+          if (matches && matches.length > 0) {
+            // Tomar el precio más alto (generalmente el precio principal)
+            const prices = matches.map(m => {
+              const cleanNumber = m.replace(/[^\d]/g, '');
+              return { original: m, value: parseInt(cleanNumber) };
+            }).filter(p => p.value >= 500000 && p.value <= 50000000);
+
+            if (prices.length > 0) {
+              const bestPrice = prices.reduce((max, current) =>
+                current.value > max.value ? current : max
+              );
+              price = bestPrice.original;
+              break;
+            }
           }
-        });
+        }
+
+        // Si no encontramos precio, buscar en el texto del enlace
+        if (!price) {
+          const linkTextMatch = linkText.match(/\$\s*[\d.,]+/);
+          if (linkTextMatch) {
+            price = linkTextMatch[0];
+          }
+        }
 
         // Extraer imagen (mejorado para Fincaraiz)
         let image = '';
@@ -372,21 +400,29 @@ export class FincaraizScraper extends BaseScraper {
 
         const parsedPrice = this.parsePrice(data.price);
 
+        // Extraer datos reales del título y texto
+        const titleText = data.title || '';
+        const extractedData = this.extractDataFromText(titleText);
+
+        // Extraer ubicación del título
+        const locationMatch = titleText.match(/en\s+([^,]+),?\s*bogotá/i);
+        const neighborhood = locationMatch ? locationMatch[1].trim() : 'Sin especificar';
+
         const property: Property = {
           id: `fincaraiz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           title: data.title,
           price: parsedPrice,
           totalPrice: parsedPrice,
-          adminFee: 0,
-          area: data.area || 80,
-          rooms: data.rooms || 3,
-          bathrooms: data.bathrooms || 2,
-          parking: 1,
-          stratum: 4,
+          adminFee: this.extractAdminFee(titleText),
+          area: data.area || extractedData.area || 0,
+          rooms: data.rooms || extractedData.rooms || 0,
+          bathrooms: data.bathrooms || extractedData.bathrooms || 0,
+          parking: extractedData.parking || 0,
+          stratum: extractedData.stratum || 0,
           isActive: true,
           location: {
-            address: 'Usaquén, Bogotá',
-            neighborhood: 'Usaquén',
+            address: neighborhood + ', Bogotá',
+            neighborhood: neighborhood,
             city: 'Bogotá',
             coordinates: { lat: 0, lng: 0 }
           },
@@ -395,8 +431,8 @@ export class FincaraizScraper extends BaseScraper {
           url: propertyUrl,
           source: this.source.name,
           scrapedDate: new Date().toISOString(),
-          pricePerM2: Math.round(parsedPrice / (data.area || 80)),
-          description: '',
+          pricePerM2: (data.area || extractedData.area) ? Math.round(parsedPrice / (data.area || extractedData.area || 1)) : 0,
+          description: titleText.length > 100 ? titleText.substring(100) : '',
           score: 0
         };
 
@@ -648,16 +684,160 @@ export class FincaraizScraper extends BaseScraper {
   }
 
   /**
-   * Parse price from text
+   * Parse price from text - MEJORADO para manejar precios colombianos complejos
    */
   private parsePrice(priceText: string): number {
     if (!priceText) return 1500000; // Default price
 
-    // Remove currency symbols and clean the text
-    const cleanPrice = priceText.replace(/[$.,\s]/g, '');
-    const price = parseInt(cleanPrice, 10);
+    logger.debug(`🔍 Parsing price: "${priceText.substring(0, 100)}..."`);
 
-    return isNaN(price) ? 1500000 : price;
+    // Buscar patrones específicos de precios
+    const pricePatterns = [
+      // Patrón principal: $ 15.500.000
+      /\$\s*([\d]{1,3}(?:\.[\d]{3})*(?:\.[\d]{3})*)/g,
+      // Patrón alternativo: $15500000
+      /\$\s*([\d]{7,10})/g,
+      // Patrón con comas: $15,500,000
+      /\$\s*([\d]{1,3}(?:,[\d]{3})*)/g,
+      // Números grandes sin símbolo
+      /([\d]{7,10})/g
+    ];
+
+    let bestPrice = 0;
+
+    for (const pattern of pricePatterns) {
+      const matches = priceText.match(pattern);
+      if (matches) {
+        for (const match of matches) {
+          // Extraer solo los números
+          const cleanNumber = match.replace(/[^\d]/g, '');
+
+          if (cleanNumber.length >= 6 && cleanNumber.length <= 10) {
+            const price = parseInt(cleanNumber, 10);
+
+            // Validar que sea un precio razonable para Colombia (500K - 50M)
+            if (price >= 500000 && price <= 50000000) {
+              if (price > bestPrice) {
+                bestPrice = price;
+                logger.debug(`🎯 Found better price: $${price.toLocaleString()} from "${match}"`);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (bestPrice > 0) {
+      logger.debug(`✅ Final parsed price: $${bestPrice.toLocaleString()}`);
+      return bestPrice;
+    }
+
+    // Último intento: buscar cualquier secuencia de 7+ dígitos
+    const digitSequences = priceText.match(/\d{7,}/g);
+    if (digitSequences) {
+      for (const sequence of digitSequences) {
+        const price = parseInt(sequence, 10);
+        if (price >= 500000 && price <= 50000000) {
+          logger.debug(`⚠️  Using digit sequence: $${price.toLocaleString()}`);
+          return price;
+        }
+      }
+    }
+
+    logger.debug(`❌ Could not parse price, using default`);
+    return 1500000;
+  }
+
+  /**
+   * Extraer datos estructurados del texto completo
+   */
+  private extractDataFromText(text: string): {
+    area?: number;
+    rooms?: number;
+    bathrooms?: number;
+    parking?: number;
+    stratum?: number;
+  } {
+    const result: any = {};
+
+    // Área (m²)
+    const areaMatch = text.match(/(\d+)\s*m[²2]/i);
+    if (areaMatch) {
+      result.area = parseInt(areaMatch[1]);
+    }
+
+    // Habitaciones
+    const roomsMatches = [
+      text.match(/(\d+)\s*hab/i),
+      text.match(/(\d+)\s*habitacion/i),
+      text.match(/(\d+)\s*alcoba/i),
+      text.match(/(\d+)\s*cuarto/i)
+    ];
+
+    for (const match of roomsMatches) {
+      if (match) {
+        result.rooms = parseInt(match[1]);
+        break;
+      }
+    }
+
+    // Baños
+    const bathroomMatches = [
+      text.match(/(\d+)\s*baño/i),
+      text.match(/(\d+)\s*bathroom/i)
+    ];
+
+    for (const match of bathroomMatches) {
+      if (match) {
+        result.bathrooms = parseInt(match[1]);
+        break;
+      }
+    }
+
+    // Parqueaderos
+    const parkingMatches = [
+      text.match(/(\d+)\s*parqueadero/i),
+      text.match(/(\d+)\s*garaje/i),
+      text.match(/(\d+)\s*parking/i)
+    ];
+
+    for (const match of parkingMatches) {
+      if (match) {
+        result.parking = parseInt(match[1]);
+        break;
+      }
+    }
+
+    // Estrato
+    const stratumMatch = text.match(/estrato\s*(\d+)/i);
+    if (stratumMatch) {
+      result.stratum = parseInt(stratumMatch[1]);
+    }
+
+    return result;
+  }
+
+  /**
+   * Extraer valor de administración del texto
+   */
+  private extractAdminFee(text: string): number {
+    const adminMatches = [
+      text.match(/\+\s*\$\s*([\d.,]+)\s*admin/i),
+      text.match(/administraci[oó]n[:\s]*\$\s*([\d.,]+)/i),
+      text.match(/admin[:\s]*\$\s*([\d.,]+)/i)
+    ];
+
+    for (const match of adminMatches) {
+      if (match) {
+        const cleanAdmin = match[1].replace(/[^\d]/g, '');
+        const adminFee = parseInt(cleanAdmin);
+        if (!isNaN(adminFee) && adminFee > 0 && adminFee < 10000000) {
+          return adminFee;
+        }
+      }
+    }
+
+    return 0;
   }
 
   /**

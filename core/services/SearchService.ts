@@ -222,12 +222,134 @@ export class SearchService {
   }
 
   /**
-   * Filter properties by hard criteria - TODOS LOS FILTROS DESACTIVADOS
+   * Filter properties by hard criteria - FILTROS REACTIVADOS
    */
   private filterPropertiesByCriteria(properties: Property[], criteria: SearchCriteria): Property[] {
-    // 🚫 TODOS LOS FILTROS ELIMINADOS - DEVOLVER TODAS LAS PROPIEDADES
-    logger.info(`🚫 ALL FILTERS DISABLED - Returning all ${properties.length} properties without any filtering`);
-    return properties;
+    let filtered = [...properties];
+    const hardReq = criteria.hardRequirements;
+
+    logger.info(`🔍 Applying hard filters to ${filtered.length} properties`);
+
+    // Rooms filter
+    if (hardReq.minRooms !== undefined) {
+      filtered = filtered.filter(p => p.rooms >= hardReq.minRooms!);
+      logger.info(`🛏️  After minRooms filter (>=${hardReq.minRooms}): ${filtered.length} properties`);
+    }
+    if (hardReq.maxRooms !== undefined) {
+      filtered = filtered.filter(p => p.rooms <= hardReq.maxRooms!);
+      logger.info(`🛏️  After maxRooms filter (<=${hardReq.maxRooms}): ${filtered.length} properties`);
+    }
+
+    // Bathrooms filter
+    if (hardReq.minBathrooms !== undefined) {
+      filtered = filtered.filter(p => (p.bathrooms || 0) >= hardReq.minBathrooms!);
+      logger.info(`🚿 After minBathrooms filter (>=${hardReq.minBathrooms}): ${filtered.length} properties`);
+    }
+    if (hardReq.maxBathrooms !== undefined) {
+      filtered = filtered.filter(p => (p.bathrooms || 0) <= hardReq.maxBathrooms!);
+      logger.info(`🚿 After maxBathrooms filter (<=${hardReq.maxBathrooms}): ${filtered.length} properties`);
+    }
+
+    // Area filter
+    if (hardReq.minArea !== undefined) {
+      filtered = filtered.filter(p => p.area >= hardReq.minArea!);
+      logger.info(`📐 After minArea filter (>=${hardReq.minArea}m²): ${filtered.length} properties`);
+    }
+    if (hardReq.maxArea !== undefined) {
+      filtered = filtered.filter(p => p.area <= hardReq.maxArea!);
+      logger.info(`📐 After maxArea filter (<=${hardReq.maxArea}m²): ${filtered.length} properties`);
+    }
+
+    // Price filter
+    if (hardReq.minTotalPrice !== undefined) {
+      filtered = filtered.filter(p => p.totalPrice >= hardReq.minTotalPrice!);
+      logger.info(`💰 After minPrice filter (>=$${hardReq.minTotalPrice.toLocaleString()}): ${filtered.length} properties`);
+    }
+    if (hardReq.maxTotalPrice !== undefined) {
+      filtered = filtered.filter(p => p.totalPrice <= hardReq.maxTotalPrice!);
+      logger.info(`💰 After maxPrice filter (<=$${hardReq.maxTotalPrice.toLocaleString()}): ${filtered.length} properties`);
+    }
+
+    // Parking filter
+    if (hardReq.minParking !== undefined) {
+      filtered = filtered.filter(p => (p.parking || 0) >= hardReq.minParking!);
+      logger.info(`🚗 After minParking filter (>=${hardReq.minParking}): ${filtered.length} properties`);
+    }
+    if (hardReq.maxParking !== undefined) {
+      filtered = filtered.filter(p => (p.parking || 0) <= hardReq.maxParking!);
+      logger.info(`🚗 After maxParking filter (<=${hardReq.maxParking}): ${filtered.length} properties`);
+    }
+
+    // Stratum filter - MEJORADO: Permitir estrato 0 (no detectado)
+    if (hardReq.minStratum !== undefined) {
+      filtered = filtered.filter(p => {
+        const stratum = p.stratum || 0;
+        // Si el estrato es 0 (no detectado), lo consideramos válido
+        return stratum === 0 || stratum >= hardReq.minStratum!;
+      });
+      logger.info(`🏢 After minStratum filter (>=${hardReq.minStratum} or undetected): ${filtered.length} properties`);
+    }
+    if (hardReq.maxStratum !== undefined) {
+      filtered = filtered.filter(p => {
+        const stratum = p.stratum || 0;
+        // Si el estrato es 0 (no detectado), lo consideramos válido
+        return stratum === 0 || stratum <= hardReq.maxStratum!;
+      });
+      logger.info(`🏢 After maxStratum filter (<=${hardReq.maxStratum} or undetected): ${filtered.length} properties`);
+    }
+
+    // Property type filter
+    if (hardReq.propertyTypes && hardReq.propertyTypes.length > 0) {
+      filtered = filtered.filter(p => {
+        // Check title and description for property type since propertyType field doesn't exist
+        const title = (p.title || '').toLowerCase();
+        const description = (p.description || '').toLowerCase();
+        return hardReq.propertyTypes!.some(type =>
+          title.includes(type.toLowerCase()) ||
+          description.includes(type.toLowerCase()) ||
+          type.toLowerCase().includes('apartamento') && (title.includes('apartamento') || title.includes('apto'))
+        );
+      });
+      logger.info(`🏠 After propertyTypes filter (${hardReq.propertyTypes.join(', ')}): ${filtered.length} properties`);
+    }
+
+    // Location filter (neighborhoods) - MEJORADO: Más flexible
+    if (hardReq.location?.neighborhoods && hardReq.location.neighborhoods.length > 0) {
+      filtered = filtered.filter(p => {
+        const propertyNeighborhood = (p.location.neighborhood || '').toLowerCase();
+        const propertyAddress = (p.location.address || '').toLowerCase();
+        const propertyCity = (p.location.city || '').toLowerCase();
+
+        return hardReq.location!.neighborhoods!.some(neighborhood => {
+          const searchNeighborhood = neighborhood.toLowerCase();
+
+          // Mapeo de variaciones comunes
+          const neighborhoodVariations: { [key: string]: string[] } = {
+            'suba': ['suba', 'ciudad jardin norte', 'bosque calderon', 'mazuren'],
+            'usaquen': ['usaquen', 'usaquén', 'el verbenal', 'santa barbara', 'santa bárbara'],
+            'chapinero': ['chapinero', 'chico', 'nogal', 'zona rosa']
+          };
+
+          // Buscar coincidencias directas
+          const directMatch = propertyNeighborhood.includes(searchNeighborhood) ||
+                             propertyAddress.includes(searchNeighborhood) ||
+                             searchNeighborhood.includes(propertyNeighborhood);
+
+          if (directMatch) return true;
+
+          // Buscar coincidencias con variaciones
+          const variations = neighborhoodVariations[searchNeighborhood] || [];
+          return variations.some(variation =>
+            propertyNeighborhood.includes(variation) ||
+            propertyAddress.includes(variation)
+          );
+        });
+      });
+      logger.info(`📍 After neighborhoods filter (${hardReq.location.neighborhoods.join(', ')} + variations): ${filtered.length} properties`);
+    }
+
+    logger.info(`✅ Hard filters applied: ${properties.length} -> ${filtered.length} properties`);
+    return filtered;
 
     /* FILTROS DESACTIVADOS:
     return properties.filter(property => {
@@ -336,12 +458,84 @@ export class SearchService {
   }
 
   /**
-   * Apply optional filters - TODOS LOS FILTROS DESACTIVADOS
+   * Apply optional filters - FILTROS REACTIVADOS
    */
   private applyOptionalFilters(properties: Property[], criteria: SearchCriteria): Property[] {
-    // 🚫 TODOS LOS FILTROS OPCIONALES ELIMINADOS - DEVOLVER TODAS LAS PROPIEDADES
-    logger.info(`🚫 ALL OPTIONAL FILTERS DISABLED - Returning all ${properties.length} properties without any optional filtering`);
-    return properties;
+    let filtered = [...properties];
+    const optionalFilters = criteria.optionalFilters;
+
+    if (!optionalFilters) {
+      logger.info(`📋 No optional filters specified, returning ${filtered.length} properties`);
+      return filtered;
+    }
+
+    logger.info(`🔍 Applying optional filters to ${filtered.length} properties`);
+
+    // Source filter
+    if (optionalFilters.sources && optionalFilters.sources.length > 0) {
+      filtered = filtered.filter(p => optionalFilters.sources!.includes(p.source));
+      logger.info(`🌐 After sources filter (${optionalFilters.sources.join(', ')}): ${filtered.length} properties`);
+    }
+
+    // Neighborhoods filter (additional to hard requirements)
+    if (optionalFilters.neighborhoods && optionalFilters.neighborhoods.length > 0) {
+      filtered = filtered.filter(p => {
+        const propertyNeighborhood = (p.location.neighborhood || '').toLowerCase();
+        const propertyAddress = (p.location.address || '').toLowerCase();
+
+        return optionalFilters.neighborhoods!.some(neighborhood => {
+          const searchNeighborhood = neighborhood.toLowerCase();
+          return propertyNeighborhood.includes(searchNeighborhood) ||
+                 propertyAddress.includes(searchNeighborhood);
+        });
+      });
+      logger.info(`📍 After optional neighborhoods filter (${optionalFilters.neighborhoods.join(', ')}): ${filtered.length} properties`);
+    }
+
+    // Price range filter (additional to hard requirements)
+    if (optionalFilters.priceRange) {
+      if (optionalFilters.priceRange.min !== undefined) {
+        filtered = filtered.filter(p => p.totalPrice >= optionalFilters.priceRange!.min!);
+        logger.info(`💰 After optional minPrice filter (>=$${optionalFilters.priceRange.min.toLocaleString()}): ${filtered.length} properties`);
+      }
+      if (optionalFilters.priceRange.max !== undefined) {
+        filtered = filtered.filter(p => p.totalPrice <= optionalFilters.priceRange!.max!);
+        logger.info(`💰 After optional maxPrice filter (<=$${optionalFilters.priceRange.max.toLocaleString()}): ${filtered.length} properties`);
+      }
+    }
+
+    // Furnished filter
+    if (optionalFilters.furnished !== undefined) {
+      filtered = filtered.filter(p => {
+        const description = (p.description || '').toLowerCase();
+        const title = (p.title || '').toLowerCase();
+        const isFurnished = description.includes('amoblado') || description.includes('amueblado') ||
+                           title.includes('amoblado') || title.includes('amueblado');
+        return optionalFilters.furnished ? isFurnished : !isFurnished;
+      });
+      logger.info(`🪑 After furnished filter (${optionalFilters.furnished}): ${filtered.length} properties`);
+    }
+
+    // Parking filter
+    if (optionalFilters.parking !== undefined) {
+      filtered = filtered.filter(p => optionalFilters.parking ? (p.parking || 0) > 0 : (p.parking || 0) === 0);
+      logger.info(`🚗 After optional parking filter (${optionalFilters.parking}): ${filtered.length} properties`);
+    }
+
+    // Pets filter
+    if (optionalFilters.pets !== undefined) {
+      filtered = filtered.filter(p => {
+        const description = (p.description || '').toLowerCase();
+        const title = (p.title || '').toLowerCase();
+        const allowsPets = description.includes('mascota') || description.includes('perro') ||
+                          description.includes('gato') || title.includes('mascota');
+        return optionalFilters.pets ? allowsPets : !allowsPets;
+      });
+      logger.info(`🐕 After pets filter (${optionalFilters.pets}): ${filtered.length} properties`);
+    }
+
+    logger.info(`✅ Optional filters applied: ${properties.length} -> ${filtered.length} properties`);
+    return filtered;
 
     /* FILTROS OPCIONALES DESACTIVADOS:
     let filtered = [...properties];

@@ -359,17 +359,82 @@ export class TrovitScraper extends BaseScraper {
             if (featureText) features.push(featureText);
           });
 
+          // MEJORADO: Extraer baños del texto completo
+          const fullText = card.textContent?.trim() || '';
+          let bathroomsText = '';
+
+          const bathroomPatterns = [
+            /(\d+)\s*ba[ñn]o[s]*/i,           // "2 baños", "1 baño"
+            /(\d+)\s*bathroom[s]*/i,          // "2 bathrooms"
+            /ba[ñn]o[s]*\s*(\d+)/i,           // "baños 2"
+            /bathroom[s]*\s*(\d+)/i           // "bathrooms 2"
+          ];
+
+          for (const pattern of bathroomPatterns) {
+            const match = fullText.match(pattern);
+            if (match) {
+              bathroomsText = match[1];
+              break;
+            }
+          }
+
+          // MEJORADO: Extraer ubicación del texto completo y título
+          let enhancedLocation = location || '';
+
+          if (!enhancedLocation) {
+            // Extraer ubicación del título
+            const titleLocationPatterns = [
+              /en\s+([^,\n]+),?\s*bogotá/i,           // "en el nogal, bogotá"
+              /arriendo\s+([^,\n]+),?\s*bogotá/i,     // "arriendo chico alto"
+              /apartamento\s+([^,\n]+)/i,             // "apartamento rosales"
+              /([a-záéíóúñ\s]+)\s+bogotá/i            // "santa barbara bogotá"
+            ];
+
+            for (const pattern of titleLocationPatterns) {
+              const match = (title || '').match(pattern);
+              if (match && match[1]) {
+                const neighborhood = match[1].trim();
+                if (neighborhood.length > 2 && !neighborhood.match(/\d/)) {
+                  enhancedLocation = neighborhood;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (!enhancedLocation) {
+            // Extraer ubicación del texto completo
+            const textLocationPatterns = [
+              /localidad de\s+([^)]+)/i,              // "localidad de suba"
+              /en\s+([^,\n]+),?\s*bogotá/i,           // "en cerros de suba"
+              /bogotá[,\s]+([^,\n]+)/i                // "bogotá, chapinero"
+            ];
+
+            for (const pattern of textLocationPatterns) {
+              const match = fullText.match(pattern);
+              if (match && match[1]) {
+                const neighborhood = match[1].trim();
+                if (neighborhood.length > 2 && !neighborhood.match(/\d/)) {
+                  enhancedLocation = neighborhood;
+                  break;
+                }
+              }
+            }
+          }
+
           if (priceText && url) {
             properties.push({
               title: title || 'Apartamento en arriendo',
               priceText,
               areaText,
               roomsText,
-              location,
+              bathroomsText,
+              location: enhancedLocation,
               url,
               imageUrl,
               description,
               features,
+              fullText: fullText.substring(0, 200), // Para debugging
               source: 'Trovit'
             });
           }
@@ -426,8 +491,23 @@ export class TrovitScraper extends BaseScraper {
     const baseProperty = parser.parseProperty(normalizedRaw);
     if (!baseProperty) return null;
 
-    // Enhance with Trovit-specific data
+    // MEJORADO: Enhance with Trovit-specific data
     baseProperty.description = rawProperty.description || baseProperty.description || '';
+
+    // MEJORADO: Asegurar que la ubicación se extraiga correctamente
+    if (rawProperty.location && rawProperty.location.trim()) {
+      const cleanLocation = rawProperty.location.trim();
+      baseProperty.location.neighborhood = cleanLocation;
+      baseProperty.location.address = `${cleanLocation}, Bogotá`;
+    }
+
+    // MEJORADO: Asegurar que los baños se extraigan correctamente
+    if (rawProperty.bathroomsText) {
+      const bathrooms = parseInt(rawProperty.bathroomsText);
+      if (bathrooms > 0 && bathrooms <= 10) {
+        baseProperty.bathrooms = bathrooms;
+      }
+    }
 
     // Parse Trovit-specific amenities
     if (rawProperty.features && Array.isArray(rawProperty.features)) {
