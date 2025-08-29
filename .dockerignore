@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+client/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist
+client/build
+
+# Development files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# Logs
+logs/
+*.log
+
+# Test files
+coverage/
+.nyc_output
+
+# Debug files
+debug/
+search-results/
+
+# Scripts (not needed in production)
+scripts/
+
+# Temporary files
+tmp/
+temp/

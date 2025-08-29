@@ -260,12 +260,14 @@ const SearchPage: React.FC = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
       <Box textAlign="center" mb={4}>
-        <Typography variant="h3" component="h1" gutterBottom color="primary" fontWeight="bold">
-          🏠 AI Arriendo Pro
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          Encuentra tu hogar ideal en minutos gracias al comparador inteligente de propiedades
-        </Typography>
+        <Box textAlign="center" mb={4}>
+          <Typography variant="h3" component="h1" gutterBottom color="primary" fontWeight="bold">
+            🏡 Descubre Tu Hogar Ideal
+          </Typography>
+          <Typography variant="h6" color="text.secondary">
+            Compara propiedades de manera rápida y sencilla para encontrar el lugar perfecto para ti
+          </Typography>
+        </Box>
 
         {/* Mensaje cuando se recuerdan los inputs */}
         {shouldRememberInputs && (
