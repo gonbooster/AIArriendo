@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { SearchCriteria, SearchResult, Property } from '../types';
+import { SearchCriteria, SearchResult } from '../types';
 
 // Create axios instance for backend API
 const apiBaseURL = (process.env.REACT_APP_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
