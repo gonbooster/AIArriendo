@@ -94,7 +94,6 @@ async function startServer() {
         logger.info(`🔗 Health check: http://localhost:${port}/api/health`);
         logger.info(`📊 Dashboard: http://localhost:${port}/api/dashboard/stats`);
         logger.info(`🔍 Search API: http://localhost:${port}/api/search`);
-        logger.info(`🎯 Demo mode: Database connection optional`);
       });
       server.on('error', (err: any) => {
         if (err.code === 'EADDRINUSE' && attempts < 5) {

@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { Property } from '../models/Property';
 import { ApiResponse } from '../core/types';
@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 const router = express.Router();
 
 // Get property by ID
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const property = await Property.findOne({
@@ -34,7 +34,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
 }));
 
 // Get similar properties
-router.get('/:id/similar', asyncHandler(async (req, res) => {
+router.get('/:id/similar', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const limit = parseInt(req.query.limit as string) || 5;
 
@@ -111,7 +111,7 @@ router.get('/:id/similar', asyncHandler(async (req, res) => {
 }));
 
 // Get properties by source
-router.get('/source/:source', asyncHandler(async (req, res) => {
+router.get('/source/:source', asyncHandler(async (req: Request, res: Response) => {
   const { source } = req.params;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
@@ -148,7 +148,7 @@ router.get('/source/:source', asyncHandler(async (req, res) => {
 }));
 
 // Get property statistics
-router.get('/stats/overview', asyncHandler(async (req, res) => {
+router.get('/stats/overview', asyncHandler(async (req: Request, res: Response) => {
   const stats = await Property.aggregate([
     { $match: { isActive: true } },
     {
@@ -205,7 +205,7 @@ router.get('/stats/overview', asyncHandler(async (req, res) => {
 }));
 
 // Get neighborhoods
-router.get('/meta/neighborhoods', asyncHandler(async (req, res) => {
+router.get('/meta/neighborhoods', asyncHandler(async (req: Request, res: Response) => {
   const neighborhoods = await Property.distinct('location.neighborhood', {
     'location.neighborhood': { $exists: true, $ne: null },
     isActive: true
@@ -220,7 +220,7 @@ router.get('/meta/neighborhoods', asyncHandler(async (req, res) => {
 }));
 
 // Get amenities
-router.get('/meta/amenities', asyncHandler(async (req, res) => {
+router.get('/meta/amenities', asyncHandler(async (req: Request, res: Response) => {
   const amenities = await Property.distinct('amenities', {
     amenities: { $exists: true, $not: { $size: 0 } },
     isActive: true

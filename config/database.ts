@@ -3,6 +3,10 @@ import { logger } from '../utils/logger';
 
 export async function connectDatabase(): Promise<void> {
   try {
+    if (process.env.NODE_ENV === 'development') {
+      logger.info('Skipping database connection in production');
+      return;
+    }
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-arriendo';
     
     await mongoose.connect(mongoUri, {

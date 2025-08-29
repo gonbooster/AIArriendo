@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { scrapingRateLimiterMiddleware } from '../middleware/rateLimiter';
 import { ApiResponse, ScrapingJob } from '../core/types';
@@ -10,7 +10,7 @@ const router = express.Router();
 let scrapingJobs: ScrapingJob[] = [];
 
 // Get available sources
-router.get('/sources', asyncHandler(async (req, res) => {
+router.get('/sources', asyncHandler(async (req: Request, res: Response) => {
   const sources = [
     'fincaraiz.com',
     'metrocuadrado.com',
@@ -30,7 +30,7 @@ router.get('/sources', asyncHandler(async (req, res) => {
 }));
 
 // Get scraping status
-router.get('/status', asyncHandler(async (req, res) => {
+router.get('/status', asyncHandler(async (req: Request, res: Response) => {
   const response: ApiResponse<ScrapingJob[]> = {
     success: true,
     data: scrapingJobs
@@ -40,7 +40,7 @@ router.get('/status', asyncHandler(async (req, res) => {
 }));
 
 // Start scraping
-router.post('/start', scrapingRateLimiterMiddleware, asyncHandler(async (req, res) => {
+router.post('/start', scrapingRateLimiterMiddleware, asyncHandler(async (req: Request, res: Response) => {
   const { sources } = req.body;
   const sourcesToScrape = sources || [
     'fincaraiz.com',
@@ -81,7 +81,7 @@ router.post('/start', scrapingRateLimiterMiddleware, asyncHandler(async (req, re
 }));
 
 // Stop scraping
-router.post('/stop/:jobId', asyncHandler(async (req, res) => {
+router.post('/stop/:jobId', asyncHandler(async (req: Request, res: Response) => {
   const { jobId } = req.params;
 
   const jobIndex = scrapingJobs.findIndex(job => job.id === jobId);
@@ -110,7 +110,7 @@ router.post('/stop/:jobId', asyncHandler(async (req, res) => {
 }));
 
 // Get scraping history
-router.get('/history', asyncHandler(async (req, res) => {
+router.get('/history', asyncHandler(async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
 

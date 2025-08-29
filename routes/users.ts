@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { ApiResponse } from '../core/types';
 
@@ -9,7 +9,7 @@ let savedSearches: any[] = [];
 let favorites: string[] = [];
 
 // Get saved searches
-router.get('/saved-searches', asyncHandler(async (req, res) => {
+router.get('/saved-searches', asyncHandler(async (req: Request, res: Response) => {
   const response: ApiResponse = {
     success: true,
     data: savedSearches
@@ -19,7 +19,7 @@ router.get('/saved-searches', asyncHandler(async (req, res) => {
 }));
 
 // Save search
-router.post('/saved-searches', asyncHandler(async (req, res) => {
+router.post('/saved-searches', asyncHandler(async (req: Request, res: Response) => {
   const { name, criteria } = req.body;
 
   if (!name || !criteria) {
@@ -48,7 +48,7 @@ router.post('/saved-searches', asyncHandler(async (req, res) => {
 }));
 
 // Delete saved search
-router.delete('/saved-searches/:id', asyncHandler(async (req, res) => {
+router.delete('/saved-searches/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const index = savedSearches.findIndex(search => search._id === id);
@@ -70,7 +70,7 @@ router.delete('/saved-searches/:id', asyncHandler(async (req, res) => {
 }));
 
 // Get favorites
-router.get('/favorites', asyncHandler(async (req, res) => {
+router.get('/favorites', asyncHandler(async (req: Request, res: Response) => {
   // In production, fetch actual properties from database
   const response: ApiResponse = {
     success: true,
@@ -81,7 +81,7 @@ router.get('/favorites', asyncHandler(async (req, res) => {
 }));
 
 // Add to favorites
-router.post('/favorites', asyncHandler(async (req, res) => {
+router.post('/favorites', asyncHandler(async (req: Request, res: Response) => {
   const { propertyId } = req.body;
 
   if (!propertyId) {
@@ -104,7 +104,7 @@ router.post('/favorites', asyncHandler(async (req, res) => {
 }));
 
 // Remove from favorites
-router.delete('/favorites/:propertyId', asyncHandler(async (req, res) => {
+router.delete('/favorites/:propertyId', asyncHandler(async (req: Request, res: Response) => {
   const { propertyId } = req.params;
 
   const index = favorites.indexOf(propertyId);
