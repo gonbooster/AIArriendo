@@ -260,13 +260,17 @@ export class PadsScraper extends BaseScraper {
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
       await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
       // scrolling para forzar carga diferida
-      await page.evaluate(async () => {
-        await new Promise<void>((resolve) => {
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
           let total = 0;
           const step = () => {
-            (globalThis as any).scrollBy(0, 1000);
+            window.scrollBy(0, 1000);
             total += 1000;
-            if (total < 6000) setTimeout(step, 400); else resolve();
+            if (total < 6000) {
+              setTimeout(step, 400);
+            } else {
+              resolve(true);
+            }
           };
           step();
         });

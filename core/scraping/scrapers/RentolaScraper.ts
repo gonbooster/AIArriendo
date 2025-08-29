@@ -1,7 +1,7 @@
-import { BaseScraper } from './BaseScraper';
-import { Property, SearchCriteria, ScrapingSource } from '../types';
-import { RateLimiter } from './RateLimiter';
-import { logger } from '../../utils/logger';
+import { BaseScraper } from '../BaseScraper';
+import { Property, SearchCriteria, ScrapingSource } from '../../types';
+import { RateLimiter } from '../RateLimiter';
+import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
@@ -211,6 +211,9 @@ export class RentolaScraper extends BaseScraper {
             title: title,
             price: price,
             totalPrice: price,
+            adminFee: 0,
+            description: '',
+            pricePerM2: area > 0 ? Math.round(price / area) : 0,
             area: area,
             rooms: rooms,
             bathrooms: 0, // Not usually available in listing
@@ -283,16 +286,16 @@ export class RentolaScraper extends BaseScraper {
 
     // Rooms check (if available)
     if (property.rooms > 0) {
-      if (property.rooms < criteria.hardRequirements.minRooms || 
-          property.rooms > criteria.hardRequirements.maxRooms) {
+      if (property.rooms < criteria.hardRequirements.minRooms ||
+          (criteria.hardRequirements.maxRooms && property.rooms > criteria.hardRequirements.maxRooms)) {
         return false;
       }
     }
 
     // Area check (if available)
     if (property.area > 0) {
-      if (property.area < criteria.hardRequirements.minArea || 
-          property.area > criteria.hardRequirements.maxArea) {
+      if (property.area < criteria.hardRequirements.minArea ||
+          (criteria.hardRequirements.maxArea && property.area > criteria.hardRequirements.maxArea)) {
         return false;
       }
     }

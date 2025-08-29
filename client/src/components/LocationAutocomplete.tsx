@@ -85,6 +85,20 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
     setInputValue(newValue);
     setIsOpen(true);
 
+    // Si el usuario está escribiendo, crear una ubicación temporal
+    if (newValue.trim()) {
+      const tempLocation: Location = {
+        id: `custom_${newValue.toLowerCase().replace(/\s+/g, '_')}`,
+        name: newValue.trim(),
+        type: 'neighborhood',
+        city: 'Bogotá',
+        department: 'Bogotá D.C.'
+      };
+      onChange(tempLocation);
+    } else {
+      onChange(null);
+    }
+
     // Limpiar debounce anterior
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -133,6 +147,16 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
         e.preventDefault();
         if (selectedIndex >= 0) {
           handleSelect(suggestions[selectedIndex]);
+        } else if (inputValue.trim()) {
+          // Si no hay selección pero hay texto, crear ubicación personalizada
+          const customLocation: Location = {
+            id: `custom_${inputValue.toLowerCase().replace(/\s+/g, '_')}`,
+            name: inputValue.trim(),
+            type: 'neighborhood',
+            city: 'Bogotá',
+            department: 'Bogotá D.C.'
+          };
+          handleSelect(customLocation);
         }
         break;
       

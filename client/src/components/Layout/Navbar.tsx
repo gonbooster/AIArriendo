@@ -3,7 +3,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   Box,
   IconButton,
 
@@ -11,24 +10,18 @@ import {
   useTheme,
   Drawer,
   List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemButton,
   Divider,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  Favorite as FavoriteIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation(); // No necesario sin navegación
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -41,12 +34,7 @@ const Navbar: React.FC = () => {
     setMobileDrawerOpen(false);
   };
 
-  const isActive = (path: string) => location.pathname === path;
-
-  const navigationItems = [
-    { label: 'Buscar', icon: <SearchIcon />, path: '/search' },
-    { label: 'Favoritos', icon: <FavoriteIcon />, path: '/favorites' },
-  ];
+  // Navegación simplificada - botones removidos
 
   return (
     <>
@@ -118,39 +106,7 @@ const Navbar: React.FC = () => {
 
           </Box>
 
-          {/* Desktop Navigation Buttons */}
-          {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
-              {navigationItems.map((item) => {
-                const isItemActive = isActive(item.path) || (item.path === '/search' && isActive('/'));
-                return (
-                  <Button
-                    key={item.path}
-                    startIcon={item.icon}
-                    onClick={() => navigate(item.path)}
-                    variant={isItemActive ? 'contained' : 'text'}
-                    sx={{
-                      color: isItemActive ? 'white' : 'primary.main',
-                      backgroundColor: isItemActive ? 'primary.main' : 'transparent',
-                      '&:hover': { 
-                        backgroundColor: isItemActive ? 'primary.dark' : 'rgba(26, 54, 93, 0.1)',
-                        transform: 'translateY(-1px)',
-                      },
-                      borderRadius: 3,
-                      px: 3,
-                      py: 1,
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      boxShadow: isItemActive ? '0 4px 12px rgba(26, 54, 93, 0.3)' : 'none',
-                      transition: 'all 0.2s ease-in-out',
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
-            </Box>
-          )}
+          {/* Desktop Navigation - Simplificado */}
 
 
         </Toolbar>
@@ -215,43 +171,9 @@ const Navbar: React.FC = () => {
 
           <Divider sx={{ mb: 2 }} />
 
-          {/* Navigation Items */}
+          {/* Navigation simplificada */}
           <List>
-            {navigationItems.map((item) => (
-              <ListItem key={item.path} disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    navigate(item.path);
-                    handleDrawerClose();
-                  }}
-                  selected={isActive(item.path) || (item.path === '/search' && isActive('/'))}
-                  sx={{
-                    borderRadius: 3,
-                    mb: 1,
-                    mx: 1,
-                    '&.Mui-selected': {
-                      background: 'linear-gradient(135deg, #1A365D 0%, #2D5A87 100%)',
-                      color: 'white',
-                      boxShadow: '0 4px 12px rgba(26, 54, 93, 0.3)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #0F2A44 0%, #1A365D 100%)',
-                      },
-                      '& .MuiListItemIcon-root': {
-                        color: 'white',
-                      },
-                    },
-                    '&:hover': {
-                      backgroundColor: 'rgba(26, 54, 93, 0.1)',
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-              </ListItem>
-            ))}
+            {/* Navegación removida para simplificar la interfaz */}
           </List>
         </Box>
       </Drawer>

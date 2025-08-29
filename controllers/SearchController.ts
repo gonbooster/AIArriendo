@@ -19,7 +19,7 @@ export class SearchController {
    * Execute property search
    */
   search = asyncHandler(async (req: Request, res: Response) => {
-    const { criteria, page = 1, limit = 20 } = req.body;
+    const { criteria, page = 1, limit = 200 } = req.body;
 
     logger.info('🔍 Search request received:', {
       body: req.body,

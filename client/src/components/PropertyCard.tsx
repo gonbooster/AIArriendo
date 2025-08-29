@@ -132,104 +132,79 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       }}
       onClick={handleViewClick}
     >
-      {/* Image Section */}
-      <Box sx={{ position: 'relative' }}>
-        <CardMedia
-          component="img"
-          height={imageHeight}
-          image={property.images[0] || '/placeholder-property.jpg'}
-          alt={property.title}
-          sx={{
-            objectFit: 'cover',
-            transition: 'transform 0.3s ease-in-out',
-            '&:hover': {
-              transform: 'scale(1.05)',
-            },
-          }}
-        />
-        
-        {/* Overlay Actions */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            display: 'flex',
-            gap: 1,
-          }}
-        >
-          <Tooltip title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}>
-            <IconButton
-              size="small"
-              onClick={handleFavoriteClick}
-              sx={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 1)',
-                },
-              }}
-            >
-              {isFavorite ? (
-                <FavoriteIcon color="error" />
-              ) : (
-                <FavoriteBorderIcon />
-              )}
-            </IconButton>
-          </Tooltip>
-          
-          <Tooltip title="Share property">
-            <IconButton
-              size="small"
-              onClick={handleShareClick}
-              sx={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 1)',
-                },
-              }}
-            >
-              <ShareIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+      {/* Imagen de la propiedad */}
+      <CardMedia
+        component="img"
+        height={imageHeight}
+        image={property.images[0] || '/placeholder-property.jpg'}
+        alt={property.title}
+        sx={{
+          objectFit: 'cover',
+          transition: 'transform 0.3s ease-in-out',
+          '&:hover': {
+            transform: 'scale(1.05)',
+          },
+        }}
+      />
 
-        {/* Score Badge */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-          }}
-        >
-          <Chip
-            icon={<StarIcon />}
-            label={property.score.toFixed(1)}
-            color={getScoreColor(property.score)}
-            size="small"
-            sx={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              fontWeight: 'bold',
-            }}
-          />
-        </Box>
+      {/* Badges y botones superpuestos */}
+      <Box sx={{ position: 'relative', mt: -6, mx: 1, zIndex: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          {/* Badges izquierda */}
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Chip
+              icon={<StarIcon />}
+              label={property.score.toFixed(1)}
+              color={getScoreColor(property.score)}
+              size="small"
+              sx={{
+                fontWeight: 'bold',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              }}
+            />
+            <Chip
+              label={property.source}
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                fontSize: '0.75rem',
+              }}
+            />
+          </Box>
 
-        {/* Source Badge */}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 8,
-            left: 8,
-          }}
-        >
-          <Chip
-            label={property.source}
-            size="small"
-            sx={{
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              color: 'white',
-              fontSize: '0.75rem',
-            }}
-          />
+          {/* Action Buttons derecha */}
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}>
+              <IconButton
+                size="small"
+                onClick={handleFavoriteClick}
+                sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+                }}
+              >
+                {isFavorite ? (
+                  <FavoriteIcon color="error" />
+                ) : (
+                  <FavoriteBorderIcon />
+                )}
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Compartir">
+              <IconButton
+                size="small"
+                onClick={handleShareClick}
+                sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+                }}
+              >
+                <ShareIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       </Box>
 

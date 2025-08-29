@@ -4,9 +4,8 @@
   "description": "Buscador profesional de arriendos con scrapers escalables",
   "main": "dist/server/index.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "nodemon --exec ts-node server.ts",
-    "dev:client": "cd client && npm start",
+    "client": "cd client && npm start",
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.server.json",
     "build:client": "cd client && npm run build",
@@ -15,15 +14,7 @@
     "test:watch": "jest --watch",
     "clean": "rimraf dist",
     "setup": "npm install && cd client && npm install",
-    "scrape": "ts-node scrapers/index.ts",
-    "scrape:all": "ts-node scrapers/index.ts",
-    "scrape:ciencuadras": "ts-node scrapers/index.ts ciencuadras",
-    "scrape:mercadolibre": "ts-node scrapers/index.ts mercadolibre",
-    "scrape:fincaraiz": "ts-node scrapers/index.ts fincaraiz",
-    "copy-data": "ts-node scripts/copy-data-to-public.ts",
-    "migrate": "ts-node src/server/scripts/migrate.ts",
-    "legacy:start": "npm run build:legacy && node dist/legacy/index.js",
-    "build:legacy": "tsc -p tsconfig.legacy.json"
+    "copy-data": "ts-node scripts/copy-data-to-public.ts"
   },
   "keywords": [
     "scraping",

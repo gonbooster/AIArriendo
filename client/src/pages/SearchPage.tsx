@@ -372,29 +372,42 @@ const SearchPage: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <Typography gutterBottom>Estrato: {watch('minStratum')} - {watch('maxStratum')}</Typography>
-                  <Slider
-                    value={[watch('minStratum'), watch('maxStratum')]}
-                    min={1}
-                    max={6}
-                    step={1}
-                    marks={[
-                      { value: 1, label: '1' },
-                      { value: 2, label: '2' },
-                      { value: 3, label: '3' },
-                      { value: 4, label: '4' },
-                      { value: 5, label: '5' },
-                      { value: 6, label: '6' }
-                    ]}
-                    valueLabelDisplay="auto"
-                    onChange={(_, value) => {
-                      const [min, max] = value as number[];
-                      setValue('minStratum', min);
-                      setValue('maxStratum', max);
-                    }}
-                  />
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom sx={{ mb: 2, fontWeight: 500 }}>
+                      💰 Precio: ${watch('minPrice').toLocaleString()} - ${watch('maxPrice').toLocaleString()}
+                    </Typography>
+                    <Box sx={{ px: 1 }}>
+                      <Slider
+                        value={[watch('minPrice'), watch('maxPrice')]}
+                        min={500000}
+                        max={10000000}
+                        step={100000}
+                        marks={[
+                          { value: 500000, label: '$500K' },
+                          { value: 2000000, label: '$2M' },
+                          { value: 5000000, label: '$5M' },
+                          { value: 10000000, label: '$10M' }
+                        ]}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `$${(value / 1000000).toFixed(1)}M`}
+                        onChange={(_, value) => {
+                          const [min, max] = value as number[];
+                          setValue('minPrice', min);
+                          setValue('maxPrice', max);
+                        }}
+                        sx={{
+                          '& .MuiSlider-markLabel': {
+                            fontSize: '0.75rem',
+                            marginTop: '8px'
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Box>
                 </Grid>
+
+
               </Grid>
             </Grid>
 
@@ -403,145 +416,199 @@ const SearchPage: React.FC = () => {
               <Typography variant="h6" gutterBottom color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <HomeIcon /> Características
               </Typography>
-              <Grid container spacing={3}>
+              <Grid container spacing={4}>
                 <Grid item xs={12} md={4}>
-                  <Typography gutterBottom>Habitaciones: {watch('minRooms')} - {watch('maxRooms')}</Typography>
-                  <Slider
-                    value={[watch('minRooms'), watch('maxRooms')]}
-                    min={1}
-                    max={6}
-                    step={1}
-                    marks={[
-                      { value: 1, label: '1' },
-                      { value: 2, label: '2' },
-                      { value: 3, label: '3' },
-                      { value: 4, label: '4' },
-                      { value: 5, label: '5' },
-                      { value: 6, label: '6' }
-                    ]}
-                    valueLabelDisplay="auto"
-                    onChange={(_, value) => {
-                      const [min, max] = value as number[];
-                      setValue('minRooms', min);
-                      setValue('maxRooms', max);
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Typography gutterBottom>Baños: {watch('minBathrooms')} - {watch('maxBathrooms')}</Typography>
-                  <Slider
-                    value={[watch('minBathrooms'), watch('maxBathrooms')]}
-                    min={1}
-                    max={4}
-                    step={1}
-                    marks={[
-                      { value: 1, label: '1' },
-                      { value: 2, label: '2' },
-                      { value: 3, label: '3' },
-                      { value: 4, label: '4' }
-                    ]}
-                    valueLabelDisplay="auto"
-                    onChange={(_, value) => {
-                      const [min, max] = value as number[];
-                      setValue('minBathrooms', min);
-                      setValue('maxBathrooms', max);
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Typography gutterBottom>Parqueaderos: {watch('minParking')} - {watch('maxParking')}</Typography>
-                  <Slider
-                    value={[watch('minParking'), watch('maxParking')]}
-                    min={0}
-                    max={3}
-                    step={1}
-                    marks={[
-                      { value: 0, label: '0' },
-                      { value: 1, label: '1' },
-                      { value: 2, label: '2' },
-                      { value: 3, label: '3+' }
-                    ]}
-                    valueLabelDisplay="auto"
-                    onChange={(_, value) => {
-                      const [min, max] = value as number[];
-                      setValue('minParking', min);
-                      setValue('maxParking', max);
-                    }}
-                  />
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* Sección: Área y Precio */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AreaIcon /> Área y Precio
-              </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>Área: {watch('minArea')} - {watch('maxArea')} m²</Typography>
-                  <Controller
-                    name="minArea"
-                    control={control}
-                    render={({ field }) => (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom sx={{ mb: 2, fontWeight: 500 }}>
+                      Habitaciones: {watch('minRooms')} - {watch('maxRooms')}
+                    </Typography>
+                    <Box sx={{ px: 1 }}>
                       <Slider
-                        value={[watch('minArea'), watch('maxArea')]}
-                        min={20}
-                        max={500}
-                        step={10}
+                        value={[watch('minRooms'), watch('maxRooms')]}
+                        min={1}
+                        max={6}
+                        step={1}
                         marks={[
-                          { value: 20, label: '20m²' },
-                          { value: 100, label: '100m²' },
-                          { value: 200, label: '200m²' },
-                          { value: 500, label: '500m²' }
+                          { value: 1, label: '1' },
+                          { value: 2, label: '2' },
+                          { value: 3, label: '3' },
+                          { value: 4, label: '4' },
+                          { value: 5, label: '5' },
+                          { value: 6, label: '6' }
                         ]}
                         valueLabelDisplay="auto"
                         onChange={(_, value) => {
                           const [min, max] = value as number[];
-                          setValue('minArea', min);
-                          setValue('maxArea', max);
+                          setValue('minRooms', min);
+                          setValue('maxRooms', max);
+                        }}
+                        sx={{
+                          '& .MuiSlider-markLabel': {
+                            fontSize: '0.75rem',
+                            marginTop: '8px'
+                          }
                         }}
                       />
-                    )}
-                  />
+                    </Box>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom sx={{ mb: 2, fontWeight: 500 }}>
+                      Baños: {watch('minBathrooms')} - {watch('maxBathrooms')}
+                    </Typography>
+                    <Box sx={{ px: 1 }}>
+                      <Slider
+                        value={[watch('minBathrooms'), watch('maxBathrooms')]}
+                        min={1}
+                        max={4}
+                        step={1}
+                        marks={[
+                          { value: 1, label: '1' },
+                          { value: 2, label: '2' },
+                          { value: 3, label: '3' },
+                          { value: 4, label: '4' }
+                        ]}
+                        valueLabelDisplay="auto"
+                        onChange={(_, value) => {
+                          const [min, max] = value as number[];
+                          setValue('minBathrooms', min);
+                          setValue('maxBathrooms', max);
+                        }}
+                        sx={{
+                          '& .MuiSlider-markLabel': {
+                            fontSize: '0.75rem',
+                            marginTop: '8px'
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom sx={{ mb: 2, fontWeight: 500 }}>
+                      Parqueaderos: {watch('minParking')} - {watch('maxParking')}
+                    </Typography>
+                    <Box sx={{ px: 1 }}>
+                      <Slider
+                        value={[watch('minParking'), watch('maxParking')]}
+                        min={0}
+                        max={3}
+                        step={1}
+                        marks={[
+                          { value: 0, label: '0' },
+                          { value: 1, label: '1' },
+                          { value: 2, label: '2' },
+                          { value: 3, label: '3+' }
+                        ]}
+                        valueLabelDisplay="auto"
+                        onChange={(_, value) => {
+                          const [min, max] = value as number[];
+                          setValue('minParking', min);
+                          setValue('maxParking', max);
+                        }}
+                        sx={{
+                          '& .MuiSlider-markLabel': {
+                            fontSize: '0.75rem',
+                            marginTop: '8px'
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+
+                {/* Segunda fila: Estrato y Área */}
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom sx={{ mb: 2, fontWeight: 500 }}>
+                      ⭐ Estrato: {watch('minStratum')} - {watch('maxStratum')}
+                    </Typography>
+                    <Box sx={{ px: 1 }}>
+                      <Slider
+                        value={[watch('minStratum'), watch('maxStratum')]}
+                        min={1}
+                        max={6}
+                        step={1}
+                        marks={[
+                          { value: 1, label: '1' },
+                          { value: 2, label: '2' },
+                          { value: 3, label: '3' },
+                          { value: 4, label: '4' },
+                          { value: 5, label: '5' },
+                          { value: 6, label: '6' }
+                        ]}
+                        valueLabelDisplay="auto"
+                        onChange={(_, value) => {
+                          const [min, max] = value as number[];
+                          setValue('minStratum', min);
+                          setValue('maxStratum', max);
+                        }}
+                        sx={{
+                          '& .MuiSlider-markLabel': {
+                            fontSize: '0.75rem',
+                            marginTop: '8px'
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>
-                    Precio: ${watch('minPrice').toLocaleString()} - ${watch('maxPrice').toLocaleString()}
-                  </Typography>
-                  <Slider
-                    value={[watch('minPrice'), watch('maxPrice')]}
-                    min={500000}
-                    max={10000000}
-                    step={100000}
-                    marks={[
-                      { value: 500000, label: '$500K' },
-                      { value: 2000000, label: '$2M' },
-                      { value: 5000000, label: '$5M' },
-                      { value: 10000000, label: '$10M' }
-                    ]}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={(value) => `$${(value / 1000000).toFixed(1)}M`}
-                    onChange={(_, value) => {
-                      const [min, max] = value as number[];
-                      setValue('minPrice', min);
-                      setValue('maxPrice', max);
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Controller
-                    name="allowAdminOverage"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControlLabel
-                        control={<Checkbox {...field} />}
-                        label="Permitir sobrecosto de administración"
-                      />
-                    )}
-                  />
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom sx={{ mb: 2, fontWeight: 500 }}>
+                      📐 Área: {watch('minArea')} - {watch('maxArea')} m²
+                    </Typography>
+                    <Controller
+                      name="minArea"
+                      control={control}
+                      render={({ field }) => (
+                        <Box sx={{ px: 1 }}>
+                          <Slider
+                            value={[watch('minArea'), watch('maxArea')]}
+                            min={20}
+                            max={500}
+                            step={10}
+                            marks={[
+                              { value: 20, label: '20m²' },
+                              { value: 100, label: '100m²' },
+                              { value: 200, label: '200m²' },
+                              { value: 500, label: '500m²' }
+                            ]}
+                            valueLabelDisplay="auto"
+                            onChange={(_, value) => {
+                              const [min, max] = value as number[];
+                              setValue('minArea', min);
+                              setValue('maxArea', max);
+                            }}
+                            sx={{
+                              '& .MuiSlider-markLabel': {
+                                fontSize: '0.75rem',
+                                marginTop: '8px'
+                              }
+                            }}
+                          />
+                        </Box>
+                      )}
+                    />
+                  </Box>
                 </Grid>
               </Grid>
+            </Grid>
+
+            {/* Checkbox de administración */}
+            <Grid item xs={12}>
+              <Controller
+                name="allowAdminOverage"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox {...field} />}
+                    label="Permitir sobrecosto de administración"
+                  />
+                )}
+              />
             </Grid>
 
             {/* Sección: Preferencias */}

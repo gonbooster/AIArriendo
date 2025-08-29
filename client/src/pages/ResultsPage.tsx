@@ -12,7 +12,7 @@ import {
   Button,
   Paper,
   Divider,
-  Alert,
+
   CircularProgress,
   IconButton,
   Stack,
@@ -323,31 +323,125 @@ const ResultsPage: React.FC = () => {
         <Box
           sx={{
             display: "flex",
-            alignItems: "center", // centra verticalmente
-            justifyContent: "center", // centra horizontalmente
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "400px",
+            textAlign: "center",
+            py: 6,
           }}
         >
-          <Alert severity="info" sx={{ textAlign: "center", borderRadius: 2}}>
-            <Typography variant="h6" gutterBottom>
-              {properties.length === 0
-                ? "No se encontraron propiedades"
-                : "No hay propiedades que coincidan con los filtros"
-              }
+          {/* Icono grande */}
+          <Box
+            sx={{
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              backgroundColor: "primary.light",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mb: 3,
+              opacity: 0.8,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "4rem",
+                color: "primary.main",
+              }}
+            >
+              🏠
             </Typography>
-            <Typography variant="body2">
-              {properties.length === 0
-                ? "Intenta ajustar tus criterios de búsqueda para obtener más resultados."
-                : "Ajusta los filtros para ver más propiedades."
-              }
-            </Typography>
+          </Box>
+
+          {/* Título principal */}
+          <Typography
+            variant="h4"
+            gutterBottom
+            sx={{
+              fontWeight: 600,
+              color: "text.primary",
+              mb: 2,
+            }}
+          >
+            {properties.length === 0
+              ? "No encontramos propiedades"
+              : "Sin resultados con estos filtros"
+            }
+          </Typography>
+
+          {/* Descripción */}
+          <Typography
+            variant="body1"
+            sx={{
+              color: "text.secondary",
+              maxWidth: 500,
+              mb: 4,
+              lineHeight: 1.6,
+            }}
+          >
+            {properties.length === 0
+              ? "No hay propiedades disponibles que coincidan con tus criterios de búsqueda. Intenta ajustar los filtros o buscar en otra zona."
+              : "Los filtros aplicados son muy específicos. Prueba relajando algunos criterios para ver más opciones."
+            }
+          </Typography>
+
+          {/* Botones de acción */}
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
             <Button
               variant="contained"
+              size="large"
               onClick={handleBackToSearch}
-              sx={{ mt: 2 }}
+              sx={{
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                textTransform: "none",
+                fontWeight: 600,
+              }}
             >
-              Modificar Búsqueda
+              🔍 Nueva búsqueda
             </Button>
-          </Alert>
+
+            {properties.length > 0 && (
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => window.location.reload()}
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                🔄 Limpiar filtros
+              </Button>
+            )}
+          </Box>
+
+          {/* Sugerencias */}
+          <Box
+            sx={{
+              mt: 4,
+              p: 3,
+              backgroundColor: "grey.50",
+              borderRadius: 3,
+              maxWidth: 600,
+            }}
+          >
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: "primary.main" }}>
+              💡 Sugerencias:
+            </Typography>
+            <Box component="ul" sx={{ textAlign: "left", color: "text.secondary", m: 0, pl: 2 }}>
+              <li>Amplía el rango de precios</li>
+              <li>Considera más barrios o zonas</li>
+              <li>Reduce el número mínimo de habitaciones</li>
+              <li>Flexibiliza los requisitos de amenidades</li>
+            </Box>
+          </Box>
         </Box>
 
       ) : (
@@ -368,7 +462,7 @@ const ResultsPage: React.FC = () => {
                   position: 'relative'
                 }}
               >
-                {/* Imagen real de la propiedad */}
+                {/* Imagen de la propiedad */}
                 <CardMedia
                   component="img"
                   height={200}
@@ -378,21 +472,19 @@ const ResultsPage: React.FC = () => {
                     objectFit: 'cover'
                   }}
                 />
-                {/* Badge del source */}
+                {/* Badge del source superpuesto */}
                 {property.source && (
-                  <Chip
-                    label={property.source}
-                    size="small"
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      bgcolor: getSourceColor(property.source),
-                      color: 'white',
-                      fontWeight: 'bold',
-                      zIndex: 2
-                    }}
-                  />
+                  <Box sx={{ position: 'relative', mt: -4, mx: 1, zIndex: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Chip
+                      label={property.source}
+                      size="small"
+                      sx={{
+                        bgcolor: getSourceColor(property.source),
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}
+                    />
+                  </Box>
                 )}
 
                 <CardContent sx={{ flexGrow: 1, p: 2 }}>

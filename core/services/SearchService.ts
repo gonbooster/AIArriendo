@@ -27,7 +27,7 @@ export class SearchService {
   async search(
     criteria: SearchCriteria,
     page: number = 1,
-    limit: number = 20
+    limit: number = 200
   ): Promise<SearchResult> {
     const startTime = Date.now();
 
@@ -163,7 +163,7 @@ export class SearchService {
       const requestedSources = criteria.optionalFilters?.sources as string[] | undefined;
       const enabledScraperIds = (requestedSources && requestedSources.length > 0)
         ? requestedSources
-        : ['ciencuadras', 'metrocuadrado', 'fincaraiz', 'mercadolibre', 'properati', 'pads', 'trovit'];
+        : ['ciencuadras', 'metrocuadrado', 'fincaraiz', 'mercadolibre', 'properati', 'trovit'];
       const activeSources = SCRAPING_SOURCES.filter(source => source.isActive && enabledScraperIds.includes(source.id));
       logger.info(`🔥 STARTING REAL SCRAPING across ${activeSources.length} sources: ${activeSources.map(s=>s.id).join(', ')}`);
 
@@ -196,6 +196,8 @@ export class SearchService {
             return new (require('../scraping/scrapers/PadsScraper').PadsScraper)(source, limiter);
           case 'trovit':
             return new (require('../scraping/scrapers/TrovitScraper').TrovitScraper)(source, limiter);
+          case 'rentola':
+            return new (require('../scraping/scrapers/RentolaScraper').RentolaScraper)(source, limiter);
           default:
             return new BaseScraper(source, limiter);
         }
@@ -220,9 +222,14 @@ export class SearchService {
   }
 
   /**
-   * Filter properties by hard criteria
+   * Filter properties by hard criteria - TODOS LOS FILTROS DESACTIVADOS
    */
   private filterPropertiesByCriteria(properties: Property[], criteria: SearchCriteria): Property[] {
+    // 🚫 TODOS LOS FILTROS ELIMINADOS - DEVOLVER TODAS LAS PROPIEDADES
+    logger.info(`🚫 ALL FILTERS DISABLED - Returning all ${properties.length} properties without any filtering`);
+    return properties;
+
+    /* FILTROS DESACTIVADOS:
     return properties.filter(property => {
       const { hardRequirements } = criteria;
 
@@ -285,6 +292,7 @@ export class SearchService {
 
       return true; // Property passes all filters
     });
+    */
   }
 
   /**
@@ -328,9 +336,14 @@ export class SearchService {
   }
 
   /**
-   * Apply optional filters
+   * Apply optional filters - TODOS LOS FILTROS DESACTIVADOS
    */
   private applyOptionalFilters(properties: Property[], criteria: SearchCriteria): Property[] {
+    // 🚫 TODOS LOS FILTROS OPCIONALES ELIMINADOS - DEVOLVER TODAS LAS PROPIEDADES
+    logger.info(`🚫 ALL OPTIONAL FILTERS DISABLED - Returning all ${properties.length} properties without any optional filtering`);
+    return properties;
+
+    /* FILTROS OPCIONALES DESACTIVADOS:
     let filtered = [...properties];
 
     const optionalFilters = criteria.optionalFilters;
@@ -383,6 +396,7 @@ export class SearchService {
     }
 
     return filtered;
+    */
   }
 
   /**

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { SearchCriteria, SearchResult, Property } from '../types';
 
 // Create axios instance for backend API
-const apiBaseURL = (process.env.REACT_APP_API_URL || 'http://localhost:3002/api').replace(/\/$/, '');
+const apiBaseURL = (process.env.REACT_APP_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
 console.log('🌐 API base URL:', apiBaseURL);
 
 const apiClient = axios.create({
@@ -39,7 +39,7 @@ apiClient.interceptors.response.use(
 
 export const searchAPI = {
   // Search properties using backend server
-  search: async (criteria: SearchCriteria, page: number = 1, limit: number = 48): Promise<SearchResult> => {
+  search: async (criteria: SearchCriteria, page: number = 1, limit: number = 200): Promise<SearchResult> => {
     try {
       console.log('🚀🚀🚀 USANDO BACKEND REPARADO - VERSIÓN NUEVA 🚀🚀🚀');
       console.log('📋 CRITERIOS EXACTOS RECIBIDOS:', JSON.stringify(criteria, null, 2));
@@ -70,8 +70,13 @@ export const searchAPI = {
       }
     } catch (error) {
       console.error('❌ Backend search failed:', error);
-      
-      // Return empty result if backend fails
+
+      // Check if it's a CORS error or network error
+      if ((error as any).code === 'ERR_NETWORK' || (error as any).message === 'Network Error') {
+        console.warn('⚠️ CORS/Network error detected - Backend may be starting or CORS not configured');
+      }
+
+      // Return empty result if backend fails but allow UI to continue
       return {
         properties: [],
         total: 0,

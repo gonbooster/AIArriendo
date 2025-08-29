@@ -109,13 +109,17 @@ export class ProperatiScraper extends BaseScraper {
       // Try to wait for any recognizable container
       await page.waitForSelector('body', { timeout: 10000 }).catch(() => {});
       // Scroll para asegurarnos de cargar tarjetas
-      await page.evaluate(async () => {
-        await new Promise<void>((resolve) => {
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
           let total = 0;
           const step = () => {
             (globalThis as any).scrollBy(0, 1200);
             total += 1200;
-            if (total < 8000) setTimeout(step, 300); else resolve();
+            if (total < 8000) {
+              setTimeout(step, 300);
+            } else {
+              resolve(true);
+            }
           };
           step();
         });
