@@ -23,8 +23,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig*.json ./
 
-# Install server dependencies
-RUN npm ci --only=production
+# Install server dependencies (including dev dependencies for build)
+RUN npm ci
 
 # Copy client package files
 COPY client/package*.json ./client/
