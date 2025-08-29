@@ -264,7 +264,7 @@ const SearchPage: React.FC = () => {
           🏠 AI Arriendo Pro
         </Typography>
         <Typography variant="h6" color="text.secondary">
-          Encuentra tu hogar ideal con inteligencia artificial
+          Encuentra tu hogar ideal en minutos gracias al comparador inteligente de propiedades
         </Typography>
 
         {/* Mensaje cuando se recuerdan los inputs */}

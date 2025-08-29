@@ -252,13 +252,7 @@ export interface AppConfig {
 export interface ServerConfig {
   port: number;
   host: string;
-  cors: CorsConfig;
   rateLimit: RateLimitConfig;
-}
-
-export interface CorsConfig {
-  origin: string[];
-  credentials: boolean;
 }
 
 export interface RateLimitConfig {
