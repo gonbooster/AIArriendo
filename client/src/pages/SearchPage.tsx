@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import LocationAutocomplete from '../components/LocationAutocomplete';
-import SearchProgress from '../components/SearchProgress';
+import SearchProgress from '../components/SearchProgressNew';
 import { Location } from '../services/locationService';
 import {
   Container,
@@ -156,12 +156,7 @@ const SimpleSearchPage: React.FC = () => {
       </Paper>
 
       {/* Componente de Progreso - PRIMERA PRIORIDAD VISUAL */}
-      <SearchProgress
-        isSearching={loading}
-        onComplete={() => {
-          // El progreso se completa automáticamente cuando la búsqueda termina
-        }}
-      />
+      {loading && <SearchProgress />}
 
       {/* Formulario de búsqueda simplificado */}
       {!loading && (

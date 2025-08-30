@@ -28,7 +28,7 @@ import AdvancedFilters from '../components/AdvancedFilters';
 import ModernFiltersMUI from '../components/filters/ModernFiltersMUI';
 import PropertyStatsMUI from '../components/stats/PropertyStatsMUI';
 import PropertyCard from '../components/PropertyCard';
-import SearchProgress from '../components/SearchProgress';
+import SearchProgress from '../components/SearchProgressNew';
 import { Property } from '../types';
 import { searchAPI } from '../services/api';
 
