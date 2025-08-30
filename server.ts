@@ -72,11 +72,24 @@ app.use(express.urlencoded({ extended: true }));
 
 // Basic routes
 app.get('/api/health', (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: 'AI Arriendo Pro Server is running! (Railway Fixed)',
     timestamp: new Date().toISOString(),
-    version: '3.0.0'
+    version: '3.0.0',
+    port: process.env.PORT || 3001,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Root health check for Railway
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'AI Arriendo Pro - Railway Deployment',
+    timestamp: new Date().toISOString(),
+    health: '/api/health',
+    api: '/api/search'
   });
 });
 
