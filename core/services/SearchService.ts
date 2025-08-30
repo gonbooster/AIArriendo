@@ -198,6 +198,8 @@ export class SearchService {
             return new (require('../scraping/scrapers/TrovitScraper').TrovitScraper)(source, limiter);
           case 'rentola':
             return new (require('../scraping/scrapers/RentolaScraper').RentolaScraper)(source, limiter);
+          case 'arriendo':
+            return new (require('../scraping/scrapers/ArriendoScraper').ArriendoScraper)(source, limiter);
           default:
             return new BaseScraper(source, limiter);
         }

@@ -32,11 +32,18 @@ export class MetrocuadradoScraper extends BaseScraper {
 
           const response = await axios.get(pageUrl, {
             headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-              'Accept-Language': 'es-CO,es;q=0.9,en;q=0.8',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+              'Accept-Language': 'es-CO,es-419;q=0.9,es;q=0.8,en;q=0.7',
+              'Accept-Encoding': 'gzip, deflate, br',
               'Referer': 'https://www.metrocuadrado.com/',
-              'Connection': 'keep-alive'
+              'Connection': 'keep-alive',
+              'Upgrade-Insecure-Requests': '1',
+              'Sec-Fetch-Dest': 'document',
+              'Sec-Fetch-Mode': 'navigate',
+              'Sec-Fetch-Site': 'same-origin',
+              'Sec-Fetch-User': '?1',
+              'Cache-Control': 'max-age=0'
             },
             timeout: 30000
           });
@@ -153,14 +160,23 @@ export class MetrocuadradoScraper extends BaseScraper {
     const properties: Property[] = [];
 
     const selectors = [
-      '.resultado-busqueda .inmueble',
+      // Selectores actualizados 2024
+      '[data-testid="property-card"]',
+      '.property-card',
       '.listing-card',
+      '.search-result-item',
+      '.inmueble-card',
+      '.resultado-busqueda .inmueble',
       '.result-item',
-      '[class*="resultado"], [class*="listing"]',
-      'article',
-      'li',
-      '[class*="card"]',
-      '[data-testid*="card"]'
+      '[class*="resultado"]',
+      '[class*="listing"]',
+      '[class*="property"]',
+      '[class*="inmueble"]',
+      'article[class*="card"]',
+      'div[class*="card"]',
+      'li[class*="item"]',
+      '[data-testid*="card"]',
+      '[data-testid*="property"]'
     ];
 
     let cards: cheerio.Cheerio<any> = $();
