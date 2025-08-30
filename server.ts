@@ -149,7 +149,7 @@ async function startServer() {
 
     // Start server with port from env or default 3001, fallback if in use
     const tryListen = (port: number, attempts = 0) => {
-      const server = app.listen(port, () => {
+      const server = app.listen(port, '0.0.0.0', () => {
         logger.info(`🚀 AI Arriendo Pro Server running on port ${port}`);
         logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
         logger.info(`🔗 Health check: http://localhost:${port}/api/health`);
@@ -167,7 +167,20 @@ async function startServer() {
       });
     };
 
-    const initialPort = Number(process.env.PORT) || 3001;
+    // Railway provides PORT environment variable
+    const railwayPort = process.env.PORT;
+    const initialPort = railwayPort ? Number(railwayPort) : 3001;
+
+    logger.info(`🔧 Environment PORT: ${process.env.PORT}`);
+    logger.info(`🔧 Environment NODE_ENV: ${process.env.NODE_ENV}`);
+    logger.info(`🔧 Using port: ${initialPort}`);
+
+    // Ensure production environment for Railway
+    if (!process.env.NODE_ENV) {
+      process.env.NODE_ENV = 'production';
+      logger.info(`🔧 Set NODE_ENV to production`);
+    }
+
     tryListen(initialPort);
 
   } catch (error) {

@@ -10,7 +10,6 @@ restartPolicyMaxRetries = 3
 
 [env]
 NODE_ENV = "production"
-PORT = "${{ PORT }}"
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
 PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium-browser"
 NODE_OPTIONS = "--experimental-fetch"
