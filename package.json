@@ -9,7 +9,7 @@
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.server.json",
     "build:client": "cd client && npm run build",
-    "build:production": "npm run build:server && cd client && npm ci && npm run build",
+    "build:production": "npm run build:server && cd client && npm ci && CI=false npm run build",
     "start": "node start-server.js",
     "test": "jest",
     "test:watch": "jest --watch",
