@@ -18,6 +18,18 @@ const getDynamicCorsOptions = () => {
     'http://127.0.0.1:3001'
   ];
 
+  // Add Railway domains automatically
+  if (process.env.RAILWAY_ENVIRONMENT) {
+    // Railway domains
+    allowedOrigins.push('https://aiarriendo.up.railway.app');
+    allowedOrigins.push('https://aiarriendo-production.up.railway.app');
+    // Add any Railway-generated domains
+    const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
+    if (railwayDomain) {
+      allowedOrigins.push(`https://${railwayDomain}`);
+    }
+  }
+
   // Add environment-specific origins
   if (process.env.CLIENT_URL) {
     allowedOrigins.push(process.env.CLIENT_URL);
@@ -37,13 +49,19 @@ const getDynamicCorsOptions = () => {
     allowedOrigins.push(...customOrigins);
   }
 
+  logger.info('🔧 CORS allowed origins:', allowedOrigins);
+
   return {
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        logger.info('✅ CORS: Allowing request with no origin');
+        return callback(null, true);
+      }
 
       // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
+        logger.info(`✅ CORS: Allowing origin: ${origin}`);
         return callback(null, true);
       }
 
@@ -55,6 +73,7 @@ const getDynamicCorsOptions = () => {
 
       // In production, log and reject
       logger.error(`🚫 CORS: Blocked origin: ${origin}`);
+      logger.error(`🔧 CORS: Allowed origins are:`, allowedOrigins);
       callback(new Error(`CORS policy violation: Origin ${origin} not allowed`));
     },
     credentials: true,
