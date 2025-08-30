@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { connectDatabase } from './config/database';
 import { logger } from './utils/logger';
 import searchRoutes from './routes/search';
@@ -99,7 +100,20 @@ app.get('/api/dashboard/stats', (req, res) => {
 app.use('/api/search', searchRoutes);
 
 // Serve static files from React build
-app.use(express.static(path.join(__dirname, '../client/build')));
+const staticPath = path.join(__dirname, '../client/build');
+logger.info(`🔧 Static files path: ${staticPath}`);
+logger.info(`🔧 __dirname: ${__dirname}`);
+
+// Check if build directory exists
+if (fs.existsSync(staticPath)) {
+  logger.info(`✅ Static build directory exists`);
+  const files = fs.readdirSync(staticPath);
+  logger.info(`📁 Build directory contains: ${files.join(', ')}`);
+} else {
+  logger.error(`❌ Static build directory NOT found: ${staticPath}`);
+}
+
+app.use(express.static(staticPath));
 
 app.get('/api/search/sources', (req, res) => {
   res.json({
@@ -167,19 +181,25 @@ async function startServer() {
       });
     };
 
-    // Railway provides PORT environment variable
+    // Railway provides PORT environment variable, fallback to common Railway ports
     const railwayPort = process.env.PORT;
-    const initialPort = railwayPort ? Number(railwayPort) : 3001;
+    let initialPort = 3001;
 
-    logger.info(`🔧 Environment PORT: ${process.env.PORT}`);
-    logger.info(`🔧 Environment NODE_ENV: ${process.env.NODE_ENV}`);
+    if (railwayPort) {
+      initialPort = Number(railwayPort);
+    } else {
+      // Try common Railway ports if PORT is not set
+      const commonPorts = [8080, 3000, 5000, 8000];
+      initialPort = commonPorts[0]; // Default to 8080 for Railway
+    }
+
+    logger.info(`🔧 Environment PORT: ${process.env.PORT || 'NOT_SET'}`);
+    logger.info(`🔧 Environment NODE_ENV: ${process.env.NODE_ENV || 'NOT_SET'}`);
     logger.info(`🔧 Using port: ${initialPort}`);
 
-    // Ensure production environment for Railway
-    if (!process.env.NODE_ENV) {
-      process.env.NODE_ENV = 'production';
-      logger.info(`🔧 Set NODE_ENV to production`);
-    }
+    // Force production environment for Railway
+    process.env.NODE_ENV = 'production';
+    logger.info(`🔧 Forced NODE_ENV to production for Railway`);
 
     tryListen(initialPort);
 
