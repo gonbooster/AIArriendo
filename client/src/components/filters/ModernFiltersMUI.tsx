@@ -120,7 +120,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
     sources: [],
     amenities: [],
     pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
-    removeDuplicates: true, // ✅ Marcado por defecto
+    removeDuplicates: false, // ❌ Desactivado - ya se hace en el backend
     hasParking: null,
     hideCorrupt: true, // ✅ Marcado por defecto
     propertyTypes: [],
@@ -231,26 +231,25 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
       });
     }
 
-    // Filtro de calidad de datos (corruptos) - Menos restrictivo
+    // Filtro de calidad de datos (corruptos) - Muy flexible
     if (filters.hideCorrupt) {
       filtered = filtered.filter(p => {
-        // Una propiedad es "corrupta" si le falta información CRÍTICA
+        // Una propiedad es "corrupta" solo si le falta información ESENCIAL
         const hasPrice = p.price && p.price > 0;
-        const hasTitle = p.title && p.title.trim().length > 0;
-        const hasLocation = p.location && (p.location.address || p.location.neighborhood);
+        const hasTitle = p.title && p.title.trim().length > 5; // Al menos 5 caracteres
 
-        // Solo requerir precio, título y ubicación (más flexible)
-        return hasPrice && hasTitle && hasLocation;
+        // Solo requerir precio y título mínimo (muy flexible)
+        return hasPrice && hasTitle;
       });
     }
 
-    // Eliminar duplicados si está activado - Más específico
+    // Eliminar duplicados si está activado - Menos agresivo
     if (filters.removeDuplicates) {
       const seen = new Set();
       filtered = filtered.filter(p => {
-        // Crear una clave única más específica para evitar falsos positivos
-        const key = `${p.location.neighborhood || 'unknown'}-${p.totalPrice || p.price}-${p.area}-${p.rooms}-${p.title?.substring(0, 50) || ''}`;
-        if (seen.has(key)) {
+        // Crear una clave única solo con datos críticos para evitar eliminar propiedades válidas
+        const key = `${p.url || ''}-${p.source || ''}`;
+        if (seen.has(key) && key !== '-') { // Solo eliminar si hay URL y fuente
           return false;
         }
         seen.add(key);
@@ -280,7 +279,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
       sources: [],
       amenities: [],
       pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
-      removeDuplicates: true, // ✅ Mantener marcado por defecto
+      removeDuplicates: false, // ❌ Desactivado - ya se hace en el backend
       hasParking: null,
       hideCorrupt: true, // ✅ Mantener marcado por defecto
       propertyTypes: [],

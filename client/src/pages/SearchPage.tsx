@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
-import LocationAutocomplete from '../components/LocationAutocomplete';
 import SearchProgress from '../components/SearchProgressNew';
-import { Location } from '../services/locationService';
 import {
   Container,
   Paper,
@@ -15,15 +13,11 @@ import {
   Select,
   MenuItem,
   Box,
-  Backdrop,
-  CircularProgress,
+  TextField,
   Alert,
   useTheme,
   useMediaQuery,
-  Card,
-  CardContent,
-  Chip,
-  LinearProgress
+  Chip
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -37,7 +31,7 @@ import {
 // Tipos para el formulario simplificado - Solo operación y ubicación
 interface SimpleSearchForm {
   operation: string;
-  location: Location | null;
+  location: string;
 }
 
 // Datos estáticos simplificados
@@ -59,7 +53,7 @@ const SimpleSearchPage: React.FC = () => {
   const { control, handleSubmit, watch } = useForm<SimpleSearchForm>({
     defaultValues: {
       operation: 'arriendo',
-      location: null
+      location: ''
     }
   });
 
@@ -67,8 +61,8 @@ const SimpleSearchPage: React.FC = () => {
   const onSubmit = async (data: SimpleSearchForm) => {
     console.log('🔍 Iniciando búsqueda simplificada...', data);
 
-    if (!data.location) {
-      setError('Por favor selecciona una ubicación');
+    if (!data.location || data.location.trim() === '') {
+      setError('Por favor escribe una ubicación');
       return;
     }
 
@@ -77,10 +71,12 @@ const SimpleSearchPage: React.FC = () => {
 
     try {
       // Crear criterios de búsqueda MÍNIMOS - solo operación y ubicación
+      // Crear criterios de búsqueda flexibles
       const searchCriteria = {
         operation: data.operation,
         location: {
-          neighborhoods: [data.location.name]
+          // Usar el texto como búsqueda libre - puede ser ciudad, barrio, zona, etc.
+          neighborhoods: [data.location.trim()]
         }
       };
 
@@ -238,16 +234,18 @@ const SimpleSearchPage: React.FC = () => {
                 name="location"
                 control={control}
                 render={({ field: { onChange, value } }) => (
-                  <LocationAutocomplete
-                    value={value}
-                    onChange={onChange}
+                  <TextField
+                    fullWidth
+                    value={value || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
                     label={
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <LocationIcon sx={{ mr: 1 }} />
                         Ubicación
                       </Box>
                     }
-                    placeholder="Buscar barrio o ciudad..."
+                    placeholder="Ej: Usaquén, Chapinero, Medellín, Cali, cualquier ciudad o barrio..."
+                    variant="outlined"
                     required
                   />
                 )}
