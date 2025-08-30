@@ -350,10 +350,10 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
           </Grid>
         </Grid>
 
-        {/* Filtros categóricos */}
+        {/* Filtros categóricos - 4 columnas perfectamente alineadas */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
           {/* Habitaciones */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Typography variant="subtitle2" gutterBottom>Habitaciones</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {[0, 1, 2, 3, 4, 5].map(num => (
@@ -362,7 +362,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
                   label={num === 0 ? 'Sin especificar' : `${num}${num === 5 ? '+' : ''}`}
                   onClick={() => setFilters(prev => ({
                     ...prev,
-                    rooms: prev.rooms.includes(num) 
+                    rooms: prev.rooms.includes(num)
                       ? prev.rooms.filter(r => r !== num)
                       : [...prev.rooms, num]
                   }))}
@@ -375,7 +375,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
           </Grid>
 
           {/* Baños */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Typography variant="subtitle2" gutterBottom>Baños</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {[1, 2, 3, 4, 5].map(num => (
@@ -384,7 +384,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
                   label={`${num}${num === 5 ? '+' : ''}`}
                   onClick={() => setFilters(prev => ({
                     ...prev,
-                    bathrooms: prev.bathrooms.includes(num) 
+                    bathrooms: prev.bathrooms.includes(num)
                       ? prev.bathrooms.filter(b => b !== num)
                       : [...prev.bathrooms, num]
                   }))}
@@ -396,8 +396,8 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
             </Box>
           </Grid>
 
-          {/* Parqueaderos y Estrato en la misma línea */}
-          <Grid item xs={12} md={6}>
+          {/* Parqueaderos */}
+          <Grid item xs={12} sm={6} md={3}>
             <Typography variant="subtitle2" gutterBottom>Parqueaderos</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {[0, 1, 2, 3, 4].map(num => (
@@ -418,7 +418,8 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          {/* Estrato */}
+          <Grid item xs={12} sm={6} md={3}>
             <Typography variant="subtitle2" gutterBottom>Estrato</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {[1, 2, 3, 4, 5, 6].map(num => (

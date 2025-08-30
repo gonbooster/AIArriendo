@@ -143,7 +143,7 @@ const SearchProgress: React.FC = () => {
               totalSources={totalSources}
             />
 
-            {/* Mensaje motivacional */}
+            {/* Mensaje motivacional divertido */}
             <Box
               sx={{
                 textAlign: 'center',
@@ -155,8 +155,15 @@ const SearchProgress: React.FC = () => {
               }}
             >
               <Typography variant="body2" color="text.secondary">
-                💡 <strong>Tip:</strong> Estamos analizando miles de propiedades en tiempo real 
-                para encontrar las mejores opciones que coincidan con tus criterios.
+                {timeElapsed < 15 ? (
+                  <>🚀 <strong>¡Despegamos!</strong> Nuestros robots están corriendo por toda Bogotá buscando tu hogar perfecto.</>
+                ) : timeElapsed < 30 ? (
+                  <>🕵️ <strong>Misión en progreso:</strong> Infiltrándonos en las mejores páginas inmobiliarias... ¡Shh!</>
+                ) : timeElapsed < 45 ? (
+                  <>🏠 <strong>¡Eureka!</strong> Encontrando propiedades más rápido que un delivery de pizza.</>
+                ) : (
+                  <>🎯 <strong>¡Casi listo!</strong> Puliendo los resultados como diamantes... ¡Brillarán para ti!</>
+                )}
               </Typography>
             </Box>
           </Box>

@@ -112,28 +112,59 @@ const SimpleSearchPage: React.FC = () => {
       <Paper
         elevation={2}
         sx={{
-          p: 4,
+          p: { xs: 2, sm: 3, md: 4 },
           mb: 4,
           textAlign: 'center',
           background: `linear-gradient(135deg, ${theme.palette.primary.light}15, ${theme.palette.secondary.light}15)`,
-          border: `1px solid ${theme.palette.primary.light}30`
+          border: `1px solid ${theme.palette.primary.light}30`,
+          mx: { xs: 1, sm: 0 }
         }}
       >
-<Typography variant="h3" component="h1" gutterBottom color="primary" fontWeight="bold">
+<Typography
+  variant="h3"
+  component="h1"
+  gutterBottom
+  color="primary"
+  fontWeight="bold"
+  sx={{
+    fontSize: { xs: '1.8rem', sm: '2.5rem', md: '3rem' },
+    textAlign: 'center'
+  }}
+>
   🏠 Propiedades en minutos
 </Typography>
-<Typography variant="h6" color="text.secondary" mb={2}>
+<Typography
+  variant="h6"
+  color="text.secondary"
+  mb={2}
+  sx={{
+    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+    textAlign: 'center',
+    px: { xs: 1, sm: 2 }
+  }}
+>
   Encuentra viviendas, oficinas y locales con nuestro buscador inteligente
 </Typography>
 
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: { xs: 1, sm: 2 },
+          mb: 2,
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
           <Chip
             icon={<SpeedIcon />}
             label="Búsqueda Rápida"
             color="primary"
             variant="outlined"
             size="small"
+            sx={{
+              fontSize: { xs: '0.7rem', sm: '0.8rem' },
+              height: { xs: 28, sm: 32 }
+            }}
           />
           <Chip
             icon={<SecurityIcon />}
@@ -141,6 +172,10 @@ const SimpleSearchPage: React.FC = () => {
             color="secondary"
             variant="outlined"
             size="small"
+            sx={{
+              fontSize: { xs: '0.7rem', sm: '0.8rem' },
+              height: { xs: 28, sm: 32 }
+            }}
           />
           <Chip
             icon={<TrendingIcon />}
@@ -148,9 +183,20 @@ const SimpleSearchPage: React.FC = () => {
             color="success"
             variant="outlined"
             size="small"
+            sx={{
+              fontSize: { xs: '0.7rem', sm: '0.8rem' },
+              height: { xs: 28, sm: 32 }
+            }}
           />
         </Box>
-        <Typography variant="body1" color="text.secondary">
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{
+            fontSize: { xs: '0.9rem', sm: '1rem' },
+            px: { xs: 1, sm: 0 }
+          }}
+        >
           Busca por operación y ubicación. Aplica filtros avanzados en los resultados.
         </Typography>
       </Paper>
