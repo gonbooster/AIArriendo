@@ -181,16 +181,17 @@ async function startServer() {
       });
     };
 
-    // Railway provides PORT environment variable, fallback to common Railway ports
-    const railwayPort = process.env.PORT;
+    // Railway provides PORT environment variable
+    const railwayPort = process.env.PORT || process.env.RAILWAY_PORT;
     let initialPort = 3001;
 
     if (railwayPort) {
       initialPort = Number(railwayPort);
+      logger.info(`🚂 Using Railway assigned port: ${initialPort}`);
     } else {
-      // Try common Railway ports if PORT is not set
-      const commonPorts = [8080, 3000, 5000, 8000];
-      initialPort = commonPorts[0]; // Default to 8080 for Railway
+      // For Railway, try common ports
+      initialPort = 8080; // Railway default
+      logger.warn(`⚠️ No PORT env var, defaulting to ${initialPort}`);
     }
 
     logger.info(`🔧 Environment PORT: ${process.env.PORT || 'NOT_SET'}`);
