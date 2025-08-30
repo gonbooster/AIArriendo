@@ -48,26 +48,21 @@ export class RentolaScraper extends BaseScraper {
             timeout: 30000
           });
 
-          const $ = cheerio.load(response.data);
-          const pageProperties = this.extractRentolaProperties($, criteria);
-
-          if (pageProperties.length === 0 && currentPage === 1) {
-            logger.info(`No properties found on Rentola page ${currentPage}, trying headless...`);
-            const headlessProperties = await this.scrapeWithHeadless(pageUrl, criteria);
-            if (headlessProperties.length > 0) {
-              allProperties.push(...headlessProperties);
-              logger.info(`Rentola headless: ${headlessProperties.length} properties found`);
+          // Rentola SIEMPRE usa headless (contenido dinámico)
+          logger.info(`Rentola: Using headless browser for page ${currentPage}`);
+          try {
+            const pageProperties = await this.scrapeWithHeadless(pageUrl, criteria);
+            if (pageProperties.length > 0) {
+              allProperties.push(...pageProperties);
+              logger.info(`Rentola headless page ${currentPage}: ${pageProperties.length} properties found`);
             } else {
-              logger.info(`No properties found with headless either, stopping`);
+              logger.info(`No properties found with headless on page ${currentPage}, stopping`);
+              break;
             }
-            break;
-          } else if (pageProperties.length === 0) {
-            logger.info(`No properties found on Rentola page ${currentPage}, stopping`);
+          } catch (e) {
+            logger.error('Rentola headless failed:', e);
             break;
           }
-
-          allProperties.push(...pageProperties);
-          logger.info(`Rentola page ${currentPage}: ${pageProperties.length} properties found`);
 
           currentPage++;
 

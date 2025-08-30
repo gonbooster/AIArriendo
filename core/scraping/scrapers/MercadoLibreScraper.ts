@@ -52,28 +52,21 @@ export class MercadoLibreScraper extends BaseScraper {
             timeout: 30000
           });
 
-          const $ = cheerio.load(response.data);
-          let pageProperties = this.extractMercadoLibreProperties($, criteria);
-
-          if (pageProperties.length === 0 && currentPage === 1) {
-            logger.warn('No properties from static HTML. Trying headless mode for MercadoLibre...');
-            try {
-              const headlessProps = await this.scrapeMercadoLibreHeadless(pageUrl, criteria);
-              if (headlessProps.length > 0) {
-                pageProperties = headlessProps;
-              }
-            } catch (e) {
-              logger.warn('Headless fallback for MercadoLibre failed:', e);
+          // MercadoLibre SIEMPRE usa headless (contenido dinámico)
+          logger.info(`MercadoLibre: Using headless browser for page ${currentPage}`);
+          try {
+            const pageProperties = await this.scrapeMercadoLibreHeadless(pageUrl, criteria);
+            if (pageProperties.length > 0) {
+              allProperties.push(...pageProperties);
+              logger.info(`MercadoLibre headless page ${currentPage}: ${pageProperties.length} properties found`);
+            } else {
+              logger.info(`No properties found with headless on page ${currentPage}, stopping`);
+              break;
             }
-          }
-
-          if (pageProperties.length === 0) {
-            logger.info(`No properties found on MercadoLibre page ${currentPage}, stopping`);
+          } catch (e) {
+            logger.error('MercadoLibre headless failed:', e);
             break;
           }
-
-          allProperties.push(...pageProperties);
-          logger.info(`MercadoLibre page ${currentPage}: ${pageProperties.length} properties found`);
 
           currentPage++;
 

@@ -48,42 +48,25 @@ export class MetrocuadradoScraper extends BaseScraper {
             timeout: 30000
           });
 
-          const $ = cheerio.load(response.data);
-          let pageProperties = this.extractMetrocuadradoPropertiesFromCards($, criteria);
-
-          if (pageProperties.length === 0 && currentPage === 1) {
-            logger.warn('No cards found on Metrocuadrado static HTML. Trying headless...');
-            try {
-              const headlessProps = await this.scrapeMetrocuadradoHeadless(pageUrl, criteria);
-              if (headlessProps.length > 0) pageProperties = headlessProps;
-            } catch (e) {
-              logger.warn('Headless fallback for Metrocuadrado failed:', e);
+          // Metrocuadrado SIEMPRE usa headless (contenido dinámico con JavaScript)
+          logger.info(`Metrocuadrado: Using headless browser for page ${currentPage}`);
+          try {
+            const pageProperties = await this.scrapeMetrocuadradoHeadless(pageUrl, criteria);
+            if (pageProperties.length > 0) {
+              allProperties.push(...pageProperties);
+              logger.info(`Metrocuadrado headless page ${currentPage}: ${pageProperties.length} properties found`);
+            } else {
+              logger.info(`No properties found with headless on page ${currentPage}, stopping`);
+              break;
             }
-          }
-
-          if (pageProperties.length === 0) {
-            // As ultimate fallback, try simple price pattern extraction
-            const fallbackProps = this.extractMetrocuadradoProperties($, criteria);
-            if (fallbackProps.length > 0) pageProperties = fallbackProps;
-          }
-
-          if (pageProperties.length === 0) {
-            logger.info(`No properties found on Metrocuadrado page ${currentPage}, stopping`);
+          } catch (e) {
+            logger.error('Metrocuadrado headless failed:', e);
             break;
           }
 
-          allProperties.push(...pageProperties);
-          logger.info(`Metrocuadrado page ${currentPage}: ${pageProperties.length} properties found`);
 
-          // Check for next page
-          const hasNextPage = $('.pagination .next').length > 0 ||
-                             $('.pager .next').length > 0 ||
-                             $('[aria-label="Next"]').length > 0;
 
-          if (!hasNextPage) {
-            logger.info('No more pages available on Metrocuadrado');
-            break;
-          }
+          // Metrocuadrado pagination is handled by headless browser
 
           currentPage++;
 
