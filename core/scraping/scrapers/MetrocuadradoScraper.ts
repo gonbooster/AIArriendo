@@ -92,8 +92,10 @@ export class MetrocuadradoScraper extends BaseScraper {
    * Build Metrocuadrado search URL
    */
   private buildMetrocuadradoUrl(criteria: SearchCriteria): string {
-    // Metrocuadrado uses a different URL structure
-    let baseUrl = 'https://www.metrocuadrado.com/apartamentos/arriendo/bogota/';
+    // URL basada en el patrón real de Metrocuadrado: /inmuebles/operacion/tipo/
+    // Por defecto arriendo (la mayoría de búsquedas)
+    const operation = 'arriendo';
+    let baseUrl = `https://www.metrocuadrado.com/inmuebles/${operation}/apartamento/`;
 
     // Add neighborhood filter if specified
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
@@ -120,11 +122,13 @@ export class MetrocuadradoScraper extends BaseScraper {
     }
 
     const params = new URLSearchParams({
+      'search': 'form',
       'orden': 'relevancia'
-      // NO MORE FILTERS - GET EVERYTHING
     });
 
-    return `${baseUrl}?${params}`;
+    const finalUrl = `${baseUrl}?${params}`;
+    logger.info(`Metrocuadrado URL real: ${finalUrl}`);
+    return finalUrl;
   }
 
   /**
