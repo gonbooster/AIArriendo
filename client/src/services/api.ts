@@ -1,19 +1,20 @@
 import axios from 'axios';
 import { SearchCriteria, SearchResult } from '../types';
+import { SERVER, FRONTEND, SEARCH } from '../config/constants';
 
 // Create axios instance for backend API - Dynamic detection
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const isRailway = window.location.hostname.includes('railway.app') || window.location.hostname.includes('up.railway.app');
+const isLocalhost = SERVER.LOCALHOST_HOSTNAMES.includes(window.location.hostname as any);
+const isRailway = SERVER.RAILWAY_DOMAINS.some(domain => window.location.hostname.includes(domain));
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Dynamic API URL detection
 let apiBaseURL: string;
 if (isLocalhost && isDevelopment) {
-  // Local development
-  apiBaseURL = 'http://localhost:3001/api';
+  // Local development - Backend runs on configured port
+  apiBaseURL = FRONTEND.LOCAL_API_URL;
 } else {
   // Production (Railway or any other deployment) - use relative path
-  apiBaseURL = '/api';
+  apiBaseURL = FRONTEND.PRODUCTION_API_URL;
 }
 
 console.log('🌐 Environment:', process.env.NODE_ENV);
@@ -25,7 +26,7 @@ console.log('🌐 Final API base URL:', apiBaseURL);
 
 const apiClient = axios.create({
   baseURL: apiBaseURL,
-  timeout: 150000, // increase to 150s to allow scraping to finish
+  timeout: SERVER.TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -57,17 +58,27 @@ apiClient.interceptors.response.use(
 
 export const searchAPI = {
   // Search properties using backend server
-  search: async (criteria: SearchCriteria, page: number = 1, limit: number = 200): Promise<SearchResult> => {
+  search: async (criteria: SearchCriteria, page: number = SEARCH.DEFAULT_PAGE, limit: number = SEARCH.DEFAULT_LIMIT): Promise<SearchResult> => {
     try {
       console.log('🚀🚀🚀 USANDO BACKEND REPARADO - VERSIÓN NUEVA 🚀🚀🚀');
       console.log('📋 CRITERIOS EXACTOS RECIBIDOS:', JSON.stringify(criteria, null, 2));
 
-      // Call backend server
-      const response = await apiClient.post('/search', {
-        criteria: criteria,
-        page: page,
-        limit: limit
-      });
+      // Try main search endpoint first, fallback to static data
+      let response;
+      try {
+        response = await apiClient.post('/search', {
+          criteria: criteria,
+          page: page,
+          limit: limit
+        });
+      } catch (mainError) {
+        console.warn('⚠️ Main search failed, trying static data fallback...');
+        response = await apiClient.post('/search/static', {
+          criteria: criteria,
+          page: page,
+          limit: limit
+        });
+      }
       
       console.log(`📊 Backend response:`, response.data);
       
@@ -165,3 +176,6 @@ export const searchAPI = {
 
 // Export the search API
 export default searchAPI;
+
+// Also export as named export for compatibility
+export const api = searchAPI;

@@ -25,14 +25,20 @@ import {
   Visibility as ViewIcon,
   Share as ShareIcon,
 } from '@mui/icons-material';
+import { Property } from '../types';
 
-interface Property {
+interface PropertyCardProps {
+  property: Property;
+}
+
+// Local interface for backward compatibility
+interface LegacyProperty {
   id: string;
   title: string;
   price: number;
   area: number;
   rooms: number;
-  bathrooms: number;
+  bathrooms?: number;
   location: {
     address: string;
     neighborhood?: string;

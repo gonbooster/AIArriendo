@@ -3,6 +3,7 @@ import { RateLimiterRedis } from 'rate-limiter-flexible';
 import { getRedisClient } from '../config/redis';
 import { logger } from '../utils/logger';
 import { CustomError } from './errorHandler';
+import { RATE_LIMIT } from '../config/constants';
 
 let rateLimiter: RateLimiterRedis;
 
@@ -13,10 +14,10 @@ export function initRateLimiter(): void {
     
     rateLimiter = new RateLimiterRedis({
       storeClient: redisClient,
-      keyPrefix: 'rl_api',
-      points: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-      duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900'), // 15 minutes in seconds
-      blockDuration: 60, // Block for 1 minute
+      keyPrefix: RATE_LIMIT.KEY_PREFIX,
+      points: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || RATE_LIMIT.MAX_REQUESTS.toString()),
+      duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS || (RATE_LIMIT.WINDOW_MS / 1000).toString()), // Convert to seconds
+      blockDuration: RATE_LIMIT.BLOCK_DURATION_SECONDS,
     });
     
     logger.info('Rate limiter initialized');

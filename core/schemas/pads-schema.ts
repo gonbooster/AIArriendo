@@ -1,4 +1,5 @@
 import { ProviderSchema, WebSearchCriteria, StandardProperty } from './base-provider-schema';
+import { LOCATION, SEARCH, SOURCE_PERFORMANCE } from '../../config/constants';
 
 /**
  * PADS Provider Schema
@@ -187,24 +188,18 @@ export const PadsSchema: ProviderSchema = {
       }
     },
     defaults: {
-      propertyType: 'Apartamento',
+      propertyType: SEARCH.DEFAULT_PROPERTY_TYPE,
       source: 'PADS',
       location: {
-        city: 'Bogotá',
+        city: LOCATION.DEFAULT_CITY,
         address: '',
         neighborhood: '',
-        coordinates: { lat: 0, lng: 0 }
+        coordinates: LOCATION.DEFAULT_COORDINATES
       },
       amenities: [],
       isActive: true
     }
   },
   
-  performance: {
-    requestsPerMinute: 15,
-    delayBetweenRequests: 4000,
-    maxConcurrentRequests: 1,
-    timeoutMs: 60000,
-    maxPages: 2
-  }
+  performance: SOURCE_PERFORMANCE.pads
 };

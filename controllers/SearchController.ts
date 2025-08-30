@@ -5,6 +5,7 @@ import { SCRAPING_SOURCES } from '../config/scraping-sources';
 import { SearchCriteria, ApiResponse } from '../core/types';
 import { asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { SEARCH, PROPERTY_DEFAULTS, LOCATION, SCORING } from '../config/constants';
 
 export class SearchController {
   private searchService: SearchService;
@@ -19,7 +20,7 @@ export class SearchController {
    * Execute property search
    */
   search = asyncHandler(async (req: Request, res: Response) => {
-    const { criteria, page = 1, limit = 200 } = req.body;
+    const { criteria, page = SEARCH.DEFAULT_PAGE, limit = SEARCH.DEFAULT_LIMIT } = req.body;
 
     logger.info('🔍 Search request received:', {
       body: req.body,

@@ -4,7 +4,6 @@ import { RateLimiter } from '../RateLimiter';
 import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
-import puppeteer from 'puppeteer';
 
 export class PadsScraper extends BaseScraper {
   constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
@@ -12,82 +11,9 @@ export class PadsScraper extends BaseScraper {
   }
 
   /**
-   * Scrape PADS specifically
-   */
-  async scrape(criteria: SearchCriteria, maxPages: number = 1): Promise<Property[]> {
-    logger.info('Starting PADS scraping');
-
-    try {
-      const searchUrl = this.buildPadsUrl(criteria);
-      logger.info(`PADS URL: ${searchUrl}`);
-
-      const allProperties: Property[] = [];
-      let currentPage = 1;
-
-      while (currentPage <= maxPages) {
-        await this.rateLimiter.waitForSlot();
-
-        try {
-          const pageUrl = currentPage === 1 ? searchUrl : `${searchUrl}?page=${currentPage}`;
-          logger.info(`Scraping PADS page ${currentPage}: ${pageUrl}`);
-
-          const response = await axios.get(pageUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-              'Accept-Language': 'es-CO,es;q=0.9,en;q=0.8',
-              'Referer': 'https://www.pads.com/',
-              'Connection': 'keep-alive'
-            },
-            timeout: 30000
-          });
-
-          const $ = cheerio.load(response.data);
-          let pageProperties = this.extractPadsProperties($, criteria);
-
-          if (pageProperties.length === 0) {
-            logger.warn('No cards found on PADS static HTML. Trying headless...');
-            try {
-              const headless = await this.scrapePadsHeadless(pageUrl, criteria);
-              if (headless.length > 0) pageProperties = headless;
-            } catch (e) { logger.warn('Headless fallback for PADS failed:', e); }
-          }
-
-          if (pageProperties.length === 0) {
-            logger.info(`No properties found on PADS page ${currentPage}, stopping`);
-            break;
-          }
-
-          allProperties.push(...pageProperties);
-          logger.info(`PADS page ${currentPage}: ${pageProperties.length} properties found`);
-
-          currentPage++;
-
-        } catch (error) {
-          logger.error(`Error scraping PADS page ${currentPage}:`, error);
-          currentPage++;
-
-          if (currentPage > 3 && allProperties.length === 0) {
-            logger.warn('Too many consecutive errors, stopping PADS scraping');
-            break;
-          }
-        }
-      }
-
-      logger.info(`PADS scraping completed: ${allProperties.length} total properties`);
-      return allProperties;
-
-    } catch (error) {
-      logger.error('PADS scraping failed:', error);
-      return [];
-    }
-  }
-
-  /**
    * Build PADS search URL
    */
   private buildPadsUrl(criteria: SearchCriteria): string {
-    // Use the correct PADS URL structure: /inmuebles-en-arriendo/ciudad/localidad/barrio
     let baseUrl = 'https://pads.com.co/inmuebles-en-arriendo/bogota';
 
     // Add neighborhood if specified
@@ -122,24 +48,10 @@ export class PadsScraper extends BaseScraper {
   private extractPadsProperties($: cheerio.CheerioAPI, criteria: SearchCriteria): Property[] {
     const properties: Property[] = [];
 
-    // PADS specific selectors
-    const selectors = [
-      '.property-listing',
-      '.listing-card',
-      '.apartment-card',
-      '[data-testid="property-card"]',
-      '.search-result-item'
-    ];
-
-    let propertyCards: cheerio.Cheerio<any> = $();
-
-    for (const selector of selectors) {
-      propertyCards = $(selector);
-      if (propertyCards.length > 0) {
-        logger.info(`Found ${propertyCards.length} properties using selector: ${selector}`);
-        break;
-      }
-    }
+    // PADS specific selectors based on real HTML structure
+    const propertyCards = $('a[href*="/propiedades/"]');
+    
+    logger.info(`Found ${propertyCards.length} PADS property cards`);
 
     if (propertyCards.length === 0) {
       logger.warn('No property cards found on PADS');
@@ -150,390 +62,210 @@ export class PadsScraper extends BaseScraper {
       try {
         const $card = $(card);
 
-        // Extract title
-        let title = this.extractText($card, [
-          '.property-name',
-          '.listing-title',
-          'h3',
-          'h4',
-          '[data-testid="property-name"]'
-        ]);
-
-        // Extract price
-        let priceText = this.extractText($card, [
-          '.rent-price',
-          '.price',
-          '[data-testid="rent-price"]',
-          '.listing-price'
-        ]);
-
-        // Extract location
-        let location = this.extractText($card, [
-          '.property-address',
-          '.address',
-          '[data-testid="property-address"]',
-          '.location'
-        ]);
-
-        // Extract features
-        let bedroomsText = this.extractText($card, [
-          '.bedrooms',
-          '[data-testid="bedrooms"]',
-          '.bed-count'
-        ]);
-
-        let bathroomsText = this.extractText($card, [
-          '.bathrooms',
-          '[data-testid="bathrooms"]',
-          '.bath-count'
-        ]);
-
-        let areaText = this.extractText($card, [
-          '.square-feet',
-          '.sqft',
-          '[data-testid="square-feet"]',
-          '.area'
-        ]);
-
         // Extract URL
-        let propertyUrl = this.extractAttribute($card, [
-          'a',
-          '.property-link'
-        ], 'href');
+        const url = $card.attr('href') || '';
+        if (!url) return;
+        
+        // Extract price from .text-lg.font-semibold
+        const priceElement = $card.find('.text-lg.font-semibold');
+        const priceText = priceElement.text().trim();
+        
+        // Extract area and rooms info from .flex.text-xs div elements
+        const infoElements = $card.find('.flex.text-xs div');
+        let rooms = '';
+        let area = '';
+        let parking = '';
+        
+        infoElements.each((i, el) => {
+          const text = $(el).text().trim();
+          if (text.includes('Alc.')) {
+            rooms = text.replace('Alc.', '').trim();
+          } else if (text.includes('m2')) {
+            area = text.replace('m2', '').trim();
+          } else if (text.includes('Parq.')) {
+            parking = text.replace('Parq.', '').trim();
+          }
+        });
+        
+        // Extract location from .text-sm
+        const locationElement = $card.find('.text-sm');
+        const location = locationElement.text().trim();
+        
+        // Extract image from .bg-image style attribute
+        const imageElement = $card.find('.bg-image');
+        let imageUrl = '';
+        if (imageElement.length > 0) {
+          const style = imageElement.attr('style') || '';
+          const urlMatch = style.match(/background-image:url\(([^)]+)\)/);
+          if (urlMatch) {
+            imageUrl = urlMatch[1];
+          }
+        }
+        
+        // Create title
+        const title = `Propiedad en ${location}`;
+        
+        // Only add if we have essential data
+        if (url && (priceText || location)) {
+          const property = this.createPropertyFromData({
+            title,
+            priceText,
+            url: url.startsWith('http') ? url : `https://pads.com.co${url}`,
+            imageUrl,
+            location,
+            rooms: rooms || '1',
+            bathrooms: '1', // Default since not specified in PADS
+            area: area || '',
+            parking: parking || '0',
+            source: 'PADS'
+          });
 
-        // Extract image
-        let imageUrl = this.extractAttribute($card, [
-          '.property-image img',
-          'img',
-          '[data-testid="property-image"] img'
-        ], 'src');
-
-        // Parse data
-        const price = this.parsePrice(priceText);
-        const area = this.parseArea(areaText);
-        const rooms = this.parseRooms(bedroomsText || title);
-        const bathrooms = this.parseBathrooms(bathroomsText || title);
-
-        // Create property if it has minimum required data
-        if (title && price > 0) {
-          const property: Property = {
-            id: `pads_${Date.now()}_${index}`,
-            title: title,
-            price: price,
-            adminFee: 0,
-            totalPrice: price,
-            area: area,
-            rooms: rooms,
-            bathrooms: bathrooms,
-            location: {
-              address: location,
-              neighborhood: this.extractNeighborhood(location),
-              city: 'Bogotá',
-              coordinates: { lat: 0, lng: 0 }
-            },
-            amenities: this.extractAmenities($card),
-            images: imageUrl ? [this.normalizeUrl(imageUrl)] : [],
-            url: propertyUrl ? this.normalizeUrl(propertyUrl) : '',
-            source: this.source.name,
-            scrapedDate: new Date().toISOString(),
-            pricePerM2: area > 0 ? Math.round(price / area) : 0,
-            description: '',
-            isActive: true
-          };
-
-          // Apply basic filtering
-          if (this.meetsBasicCriteria(property, criteria)) {
+          if (property) {
             properties.push(property);
           }
         }
-
       } catch (error) {
-        logger.warn(`Error extracting PADS property ${index}:`, error);
+        logger.warn(`Error parsing PADS property ${index}:`, error);
       }
     });
 
     return properties;
   }
 
-  private async scrapePadsHeadless(pageUrl: string, criteria: SearchCriteria): Promise<Property[]> {
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'] });
-    const page = await browser.newPage();
+  /**
+   * Create property from extracted data
+   */
+  private createPropertyFromData(data: any): Property | null {
     try {
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-      await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-      // scrolling para forzar carga diferida
-      await page.evaluate(() => {
-        return new Promise((resolve) => {
-          let total = 0;
-          const step = () => {
-            window.scrollBy(0, 1000);
-            total += 1000;
-            if (total < 6000) {
-              setTimeout(step, 400);
-            } else {
-              resolve(true);
-            }
-          };
-          step();
-        });
-      });
-      await page.waitForSelector('.property-listing, .listing-card, .search-result-item, article, li', { timeout: 15000 }).catch(()=>{});
+      // Parse price
+      let totalPrice = 0;
+      if (data.priceText) {
+        const priceMatch = data.priceText.match(/[\d,]+/);
+        if (priceMatch) {
+          totalPrice = parseInt(priceMatch[0].replace(/,/g, ''));
+        }
+      }
+      
+      // Parse area
+      let area = 0;
+      if (data.area) {
+        const areaMatch = data.area.match(/\d+/);
+        if (areaMatch) {
+          area = parseInt(areaMatch[0]);
+        }
+      }
+      
+      // Parse rooms
+      let rooms = 1;
+      if (data.rooms) {
+        const roomsMatch = data.rooms.match(/\d+/);
+        if (roomsMatch) {
+          rooms = parseInt(roomsMatch[0]);
+        }
+      }
+      
+      // Parse parking
+      let parking = 0;
+      if (data.parking) {
+        const parkingMatch = data.parking.match(/\d+/);
+        if (parkingMatch) {
+          parking = parseInt(parkingMatch[0]);
+        }
+      }
 
-      const items = await page.evaluate(() => {
-        const out: Array<{title:string; priceText:string; url:string; imageUrl:string; location:string; rooms:string; bathrooms:string; area:string;}> = [];
-        const doc: any = (globalThis as any).document;
-        const cards = doc ? Array.from(doc.querySelectorAll('.property-listing, .listing-card, .search-result-item, article, li, .property-card, .inmueble-card')) : [];
-        cards.forEach((el:any) => {
-          const title = el.querySelector('.property-name, .listing-title, h3, h4, .title, .name')?.textContent?.trim() || '';
-          const priceText = el.querySelector('.rent-price, .price, .listing-price, [class*="price"], .valor, .precio')?.textContent?.trim() || '';
-          const linkEl: any = el.querySelector('a[href]');
-          const url = linkEl ? (linkEl.href || linkEl.getAttribute('href')) : '';
-          const imgEl: any = el.querySelector('img');
-          let imageUrl = imgEl?.getAttribute?.('data-src') || imgEl?.getAttribute?.('data-lazy') || imgEl?.getAttribute?.('src') || '';
-          if (!imageUrl) {
-            const srcset = imgEl?.getAttribute?.('srcset') || '';
-            if (srcset) imageUrl = srcset.split(',')[0]?.trim().split(' ')[0] || '';
-          }
-          const location = el.querySelector('.property-address, .address, .location, .ubicacion, .zona')?.textContent?.trim() || '';
+      return {
+        id: `pads-${Date.now()}-${Math.random()}`,
+        source: 'PADS',
+        title: data.title,
+        price: totalPrice,
+        adminFee: 0,
+        totalPrice: totalPrice,
+        area,
+        rooms,
+        bathrooms: 1,
+        parking,
+        stratum: 0,
+        location: {
+          address: data.location,
+          neighborhood: data.location.split(',')[0]?.trim() || '',
+          city: 'Bogotá',
+          coordinates: { lat: 0, lng: 0 }
+        },
+        amenities: [],
+        description: data.title,
+        images: data.imageUrl ? [data.imageUrl] : [],
+        url: data.url,
+        scrapedDate: new Date().toISOString(),
+        pricePerM2: area > 0 ? Math.round(totalPrice / area) : 0,
+        isActive: true
+      };
+    } catch (error) {
+      logger.warn('Error creating PADS property:', error);
+      return null;
+    }
+  }
 
-          // Extract rooms, bathrooms, and area from text content
-          const fullText = el.textContent?.toLowerCase() || '';
+  /**
+   * Scrape PADS properties
+   */
+  async scrape(criteria: SearchCriteria, maxPages: number = 1): Promise<Property[]> {
+    logger.info('Starting PADS scraping');
 
-          // Extract rooms
-          let rooms = '';
-          const roomsMatch = fullText.match(/(\d+)\s*(hab|habitacion|alcoba|dormitorio|cuarto|bedroom)/i);
-          if (roomsMatch) rooms = roomsMatch[1];
+    try {
+      const searchUrl = this.buildPadsUrl(criteria);
+      logger.info(`PADS URL: ${searchUrl}`);
 
-          // Extract bathrooms
-          let bathrooms = '';
-          const bathroomMatch = fullText.match(/(\d+)\s*(baño|bathroom|baños)/i);
-          if (bathroomMatch) bathrooms = bathroomMatch[1];
+      const allProperties: Property[] = [];
+      let currentPage = 1;
 
-          // Extract area
-          let area = '';
-          const areaMatch = fullText.match(/(\d+)\s*m[²2]/i);
-          if (areaMatch) area = areaMatch[1];
+      while (currentPage <= maxPages) {
+        await this.rateLimiter.waitForSlot();
 
-          if ((title || priceText) && url) out.push({ title, priceText, url, imageUrl, location, rooms, bathrooms, area });
-        });
+        try {
+          const pageUrl = currentPage === 1 ? searchUrl : `${searchUrl}?page=${currentPage}`;
+          logger.info(`Scraping PADS page ${currentPage}: ${pageUrl}`);
 
-        if (out.length === 0 && doc) {
-          // fallback: anchors y precios globales
-          const anchors = Array.from(doc.querySelectorAll('a[href*="/property"], a[href*="/inmueble"], a[href^="/"]')) as any[];
-          anchors.forEach(a => {
-            const url = a.href || a.getAttribute('href');
-            const container = a.closest('article, li, div');
-            const title = (a.getAttribute('title') || a.textContent || '').trim();
-            const priceText = (container?.querySelector?.('[class*="price"], .price, .rent-price')?.textContent || '').trim();
-            const imgEl: any = container?.querySelector?.('img');
-            const imageUrl = imgEl?.getAttribute?.('data-src') || imgEl?.getAttribute?.('src') || '';
-
-            // Extract data from container text
-            const fullText = container?.textContent?.toLowerCase() || '';
-            const roomsMatch = fullText.match(/(\d+)\s*(hab|habitacion|alcoba|dormitorio|cuarto|bedroom)/i);
-            const bathroomMatch = fullText.match(/(\d+)\s*(baño|bathroom|baños)/i);
-            const areaMatch = fullText.match(/(\d+)\s*m[²2]/i);
-
-            if ((title || priceText) && url) out.push({
-              title, priceText, url, imageUrl, location: '',
-              rooms: roomsMatch ? roomsMatch[1] : '',
-              bathrooms: bathroomMatch ? bathroomMatch[1] : '',
-              area: areaMatch ? areaMatch[1] : ''
-            });
+          const response = await axios.get(pageUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Accept-Language': 'es-CO,es;q=0.9,en;q=0.8',
+              'Referer': 'https://www.pads.com/',
+              'Connection': 'keep-alive'
+            },
+            timeout: 30000
           });
+
+          const $ = cheerio.load(response.data);
+          const pageProperties = this.extractPadsProperties($, criteria);
+
+          if (pageProperties.length === 0) {
+            logger.info(`No properties found on PADS page ${currentPage}, stopping`);
+            break;
+          }
+
+          allProperties.push(...pageProperties);
+          logger.info(`PADS page ${currentPage}: ${pageProperties.length} properties found`);
+
+          currentPage++;
+
+        } catch (error) {
+          logger.error(`Error scraping PADS page ${currentPage}:`, error);
+          currentPage++;
+
+          if (currentPage > 3 && allProperties.length === 0) {
+            logger.warn('Too many consecutive errors, stopping PADS scraping');
+            break;
+          }
         }
-
-        return out;
-      });
-
-      const remapped: Property[] = [];
-      (items as any).forEach((it: any, idx: number) => {
-        const raw = {
-          title: it.title || 'Apartamento en arriendo',
-          price: it.priceText,
-          area: it.area || '',
-          rooms: it.rooms || '',
-          bathrooms: it.bathrooms || '',
-          location: it.location || 'Bogotá',
-          images: it.imageUrl ? [it.imageUrl] : [],
-          url: it.url,
-          description: ''
-        };
-        const parsed = this.parser.parseProperty(raw);
-        if (parsed && parsed.price > 0 && parsed.price <= criteria.hardRequirements.maxTotalPrice) remapped.push(parsed);
-      });
-
-      return remapped;
-    } finally {
-      await page.close();
-      await browser.close();
-    }
-  }
-
-
-  /**
-   * Extract amenities from card
-   */
-  private extractAmenities($card: cheerio.Cheerio<any>): string[] {
-    const amenities: string[] = [];
-
-    // Look for amenities in various places
-    const amenitySelectors = [
-      '.amenities',
-      '.features',
-      '[data-testid="amenities"]',
-      '.property-features'
-    ];
-
-    amenitySelectors.forEach(selector => {
-      const amenityText = $card.find(selector).text().toLowerCase();
-
-      // Common amenities to look for
-      const amenityKeywords = [
-        'pool', 'piscina', 'gym', 'gimnasio', 'fitness',
-        'parking', 'parqueadero', 'garage', 'garaje',
-        'balcony', 'balcon', 'terrace', 'terraza',
-        'air conditioning', 'aire acondicionado',
-        'laundry', 'lavanderia', 'dishwasher',
-        'elevator', 'ascensor', 'security', 'seguridad'
-      ];
-
-      amenityKeywords.forEach(keyword => {
-        if (amenityText.includes(keyword)) {
-          amenities.push(keyword);
-        }
-      });
-    });
-
-    return [...new Set(amenities)]; // Remove duplicates
-  }
-
-  /**
-   * Extract neighborhood from location text
-   */
-  private extractNeighborhood(locationText: string): string {
-    if (!locationText) return '';
-
-    // Remove "Bogotá" and get neighborhood
-    const cleaned = locationText.replace(/,?\s*bogotá/i, '').trim();
-    const parts = cleaned.split(',');
-
-    return parts[0]?.trim() || '';
-  }
-
-  /**
-   * Normalize URLs
-   */
-  private normalizeUrl(url: string): string {
-    if (!url) return '';
-
-    if (url.startsWith('http')) {
-      return url;
-    }
-
-    if (url.startsWith('/')) {
-      return `https://www.pads.com${url}`;
-    }
-
-    return `https://www.pads.com/${url}`;
-  }
-
-  /**
-   * Check if property meets basic criteria
-   */
-  private meetsBasicCriteria(property: Property, criteria: SearchCriteria): boolean {
-    // Price check
-    if (property.price > criteria.hardRequirements.maxTotalPrice) {
-      return false;
-    }
-
-    // Rooms check (if available)
-    if (property.rooms > 0) {
-      const maxRooms = criteria.hardRequirements.maxRooms ?? (criteria.hardRequirements.minRooms + 2);
-      if (property.rooms < criteria.hardRequirements.minRooms ||
-          property.rooms > maxRooms) {
-        return false;
       }
+
+      logger.info(`PADS scraping completed: ${allProperties.length} total properties`);
+      return allProperties;
+
+    } catch (error) {
+      logger.error('PADS scraping failed:', error);
+      return [];
     }
-
-    // Area check (if available)
-    if (property.area > 0) {
-      const maxArea = criteria.hardRequirements.maxArea ?? (criteria.hardRequirements.minArea + 50);
-      if (property.area < criteria.hardRequirements.minArea ||
-          property.area > maxArea) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Extract text using multiple selectors
-   */
-  private extractText($card: cheerio.Cheerio<any>, selectors: string[]): string {
-    for (const selector of selectors) {
-      const text = $card.find(selector).first().text().trim();
-      if (text) return text;
-    }
-    return '';
-  }
-
-  /**
-   * Extract attribute using multiple selectors
-   */
-  private extractAttribute($card: cheerio.Cheerio<any>, selectors: string[], attribute: string): string {
-    for (const selector of selectors) {
-      const attr = $card.find(selector).first().attr(attribute);
-      if (attr) return attr.trim();
-    }
-    return '';
-  }
-
-  /**
-   * Parse price from text
-   */
-  private parsePrice(priceText: string): number {
-    if (!priceText) return 0;
-
-    const cleanPrice = priceText.replace(/[^\d]/g, '');
-    return parseInt(cleanPrice) || 0;
-  }
-
-  /**
-   * Parse area from text
-   */
-  private parseArea(text: string): number {
-    if (!text) return 0;
-
-    // Look for square feet or square meters
-    const sqftMatch = text.match(/(\d+(?:,\d+)?)\s*(?:sq\.?\s*ft|sqft)/i);
-    if (sqftMatch) {
-      const sqft = parseInt(sqftMatch[1].replace(/,/g, ''));
-      return Math.round(sqft * 0.092903); // Convert to square meters
-    }
-
-    const sqmMatch = text.match(/(\d+(?:\.\d+)?)\s*m[²2]/i);
-    return sqmMatch ? parseFloat(sqmMatch[1]) : 0;
-  }
-
-  /**
-   * Parse rooms from text
-   */
-  private parseRooms(text: string): number {
-    if (!text) return 0;
-
-    const roomsMatch = text.match(/(\d+)\s*(?:bed|bedroom|hab|habitacion)/i);
-    return roomsMatch ? parseInt(roomsMatch[1]) : 0;
-  }
-
-  /**
-   * Parse bathrooms from text
-   */
-  private parseBathrooms(text: string): number {
-    if (!text) return 0;
-
-    const bathroomsMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:bath|bathroom|baño)/i);
-    return bathroomsMatch ? parseFloat(bathroomsMatch[1]) : 0;
   }
 }

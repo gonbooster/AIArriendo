@@ -5,17 +5,21 @@ import fs from 'fs';
 import { connectDatabase } from './config/database';
 import { logger } from './utils/logger';
 import searchRoutes from './routes/search';
+import { SERVER, FRONTEND } from './config/constants';
 
 const app = express();
-const DEFAULT_PORT = Number(process.env.PORT) || 3001;
+const DEFAULT_PORT = Number(process.env.PORT) || SERVER.DEFAULT_PORT;
 
 // Dynamic CORS configuration
 const getDynamicCorsOptions = () => {
   const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001'
+    `http://${SERVER.LOCALHOST_HOSTNAMES[0]}:${FRONTEND.DEVELOPMENT_PORTS[0]}`,
+    `http://${SERVER.LOCALHOST_HOSTNAMES[0]}:${FRONTEND.DEVELOPMENT_PORTS[1]}`,
+    `http://${SERVER.LOCALHOST_HOSTNAMES[1]}:${FRONTEND.DEVELOPMENT_PORTS[0]}`,
+    `http://${SERVER.LOCALHOST_HOSTNAMES[1]}:${FRONTEND.DEVELOPMENT_PORTS[1]}`,
+    // Add server port for self-hosting
+    `http://${SERVER.LOCALHOST_HOSTNAMES[0]}:${SERVER.DEFAULT_PORT}`,
+    `http://${SERVER.LOCALHOST_HOSTNAMES[1]}:${SERVER.DEFAULT_PORT}`
   ];
 
   // Add Railway domains automatically
@@ -146,6 +150,62 @@ if (fs.existsSync(staticPath)) {
 }
 
 app.use(express.static(staticPath));
+
+// Quick fix: Serve static data for immediate functionality
+app.post('/api/search/static', (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+
+    // Read the latest raw data file
+    const dataPath = path.join(__dirname, '../search-results/RAW_DATA_latest.txt');
+
+    if (!fs.existsSync(dataPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'No static data available'
+      });
+    }
+
+    const rawData = fs.readFileSync(dataPath, 'utf8');
+    const lines = rawData.split('\n').filter((line: string) => line.trim());
+
+    const properties = lines.map((line: string, index: number) => {
+      try {
+        return JSON.parse(line);
+      } catch (e) {
+        return null;
+      }
+    }).filter(Boolean);
+
+    logger.info(`📊 Serving ${properties.length} static properties`);
+
+    res.json({
+      success: true,
+      data: {
+        properties: properties.slice(0, 1000), // Limit to 1000 for performance
+        total: properties.length
+      },
+      pagination: {
+        page: 1,
+        limit: 1000,
+        total: properties.length,
+        pages: 1
+      },
+      metadata: {
+        source: 'static',
+        version: '3.0.0'
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error serving static data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load static data'
+    });
+  }
+});
 
 app.get('/api/search/sources', (req, res) => {
   res.json({

@@ -10,6 +10,7 @@ export interface Property {
   rooms: number;
   bathrooms?: number;
   parking?: number;
+  stratum?: number;
   location: {
     address: string;
     neighborhood?: string;

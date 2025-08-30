@@ -15,7 +15,9 @@
     "test:watch": "jest --watch",
     "clean": "rimraf dist",
     "setup": "npm install && cd client && npm install",
-    "copy-data": "ts-node scripts/copy-data-to-public.ts"
+    "copy-data": "ts-node scripts/copy-data-to-public.ts",
+    "simple-search": "ts-node scripts/simple-rental-search.ts",
+    "metro-search": "ts-node scripts/metrocuadrado-simple-search.ts"
   },
   "keywords": [
     "scraping",

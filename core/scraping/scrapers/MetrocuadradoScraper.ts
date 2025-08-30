@@ -278,7 +278,9 @@ export class MetrocuadradoScraper extends BaseScraper {
           step();
         });
       });
-      await page.waitForSelector('.listing-card, .result-item, [class*="resultado"], article, li, [class*="card"], [data-testid*="card"]', { timeout: 15000 }).catch(()=>{});
+      // Esperar a que se cargue el contenido dinámico
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Dar tiempo para que JavaScript cargue
+      await page.waitForSelector('[class*="property"], .card-property, .property-card, .listing-card, [data-testid*="property"], [data-testid*="card"]', { timeout: 20000 }).catch(()=>{});
 
       const items = await page.evaluate(() => {
         const out: Array<{

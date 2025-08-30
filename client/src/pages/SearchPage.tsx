@@ -68,31 +68,11 @@ const SimpleSearchPage: React.FC = () => {
     setError(null);
 
     try {
-      // Crear criterios de búsqueda completos con valores por defecto
+      // Crear criterios de búsqueda MÍNIMOS - solo operación y ubicación
       const searchCriteria = {
         operation: data.operation,
-        propertyTypes: ['Apartamento', 'Casa', 'Apartaestudio', 'Loft', 'Penthouse'],
         location: {
           neighborhoods: [data.location.name]
-        },
-        // Valores por defecto amplios para obtener todos los resultados
-        minRooms: 1,
-        maxRooms: 10,
-        minBathrooms: 1,
-        maxBathrooms: 10,
-        minParking: 0,
-        maxParking: 10,
-        minArea: 1,
-        maxArea: 1000,
-        minPrice: 1,
-        maxPrice: 50000000,
-        allowAdminOverage: true,
-        minStratum: 1,
-        maxStratum: 6,
-        preferences: {
-          wetAreas: [],
-          sports: [],
-          amenities: []
         }
       };
 

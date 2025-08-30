@@ -225,7 +225,7 @@ export const SCRAPING_SOURCES: ScrapingSource[] = [
     id: 'pads',
     name: 'PADS',
     baseUrl: 'https://pads.com.co',
-    isActive: false, // DISABLED: No properties in Suba (confirmed)
+    isActive: true, // ENABLED: Fixed scraper with real HTML structure
     priority: 11,
     rateLimit: {
       requestsPerMinute: 20,

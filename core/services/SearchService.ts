@@ -8,6 +8,7 @@ import { searchResultsExporter } from './SearchResultsExporter';
 import { RateLimiter } from '../scraping/RateLimiter';
 import { BaseScraper } from '../scraping/BaseScraper';
 import { ProperatiScraper } from '../scraping/scrapers/ProperatiScraper';
+import { SEARCH, SCRAPING, LOCATION } from '../../config/constants';
 
 import { PropertyValidator } from '../scraping/PropertyValidator';
 export class SearchService {
@@ -26,8 +27,8 @@ export class SearchService {
    */
   async search(
     criteria: SearchCriteria,
-    page: number = 1,
-    limit: number = 200
+    page: number = SEARCH.DEFAULT_PAGE,
+    limit: number = SEARCH.DEFAULT_LIMIT
   ): Promise<SearchResult> {
     const startTime = Date.now();
 
@@ -44,28 +45,8 @@ export class SearchService {
 
       logger.info(`Properties loaded: ${scrapedProperties.length} properties found`);
 
-      // 1.1 De-duplicate by canonical URL or (title+price)
-      const seen = new Set<string>();
-      scrapedProperties = scrapedProperties.filter(p => {
-        const key = (p.url && p.url.includes('http')) ? p.url : `${(p.title||'').toLowerCase()}|${p.totalPrice}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      logger.info(`After de-duplication: ${scrapedProperties.length} properties`);
-
-      // 1.5. Apply quality filters
-      const qualityFiltered = scrapedProperties.filter(p => this.validator.isValid(p));
-      // APPLY HARD FILTERS - Filter by search criteria
-      const hardFiltered = this.filterPropertiesByCriteria(qualityFiltered, criteria);
-      logger.info(`After hard filters applied: ${hardFiltered.length} properties remaining`);
-
-      // 2. Apply optional filters
-      const optionalFilteredProperties = this.applyOptionalFilters(hardFiltered, criteria);
-      logger.info(`After optional filters applied: ${optionalFilteredProperties.length} properties remaining`);
-
       // 3. Score and rank properties
-      const scoredProperties = this.scorer.scoreProperties(optionalFilteredProperties, criteria);
+      const scoredProperties = this.scorer.scoreProperties(scrapedProperties, criteria);
       logger.info(`Properties scored and ranked`);
 
       // 4. Apply pagination
@@ -167,8 +148,8 @@ export class SearchService {
       const activeSources = SCRAPING_SOURCES.filter(source => source.isActive && enabledScraperIds.includes(source.id));
       logger.info(`🔥 STARTING REAL SCRAPING across ${activeSources.length} sources: ${activeSources.map(s=>s.id).join(', ')}`);
 
-      const perSourceMaxPages = Number(process.env.SCRAPER_MAX_PAGES) || 3; // bajar páginas por fuente
-      const perSourceTimeoutMs = Number(process.env.SCRAPER_TIMEOUT_MS) || 70000; // 70s por fuente
+      const perSourceMaxPages = Number(process.env.SCRAPER_MAX_PAGES) || SCRAPING.MAX_PAGES_PER_SOURCE;
+      const perSourceTimeoutMs = Number(process.env.SCRAPER_TIMEOUT_MS) || SCRAPING.TIMEOUT_PER_SOURCE_MS;
 
       // Helper para timeout por fuente
       const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T | null> => {
@@ -232,128 +213,97 @@ export class SearchService {
 
     logger.info(`🔍 Applying hard filters to ${filtered.length} properties`);
 
-    // Rooms filter
-    if (hardReq.minRooms !== undefined) {
-      filtered = filtered.filter(p => p.rooms >= hardReq.minRooms!);
-      logger.info(`🛏️  After minRooms filter (>=${hardReq.minRooms}): ${filtered.length} properties`);
-    }
-    if (hardReq.maxRooms !== undefined) {
-      filtered = filtered.filter(p => p.rooms <= hardReq.maxRooms!);
-      logger.info(`🛏️  After maxRooms filter (<=${hardReq.maxRooms}): ${filtered.length} properties`);
-    }
-
-    // Bathrooms filter
-    if (hardReq.minBathrooms !== undefined) {
-      filtered = filtered.filter(p => (p.bathrooms || 0) >= hardReq.minBathrooms!);
-      logger.info(`🚿 After minBathrooms filter (>=${hardReq.minBathrooms}): ${filtered.length} properties`);
-    }
-    if (hardReq.maxBathrooms !== undefined) {
-      filtered = filtered.filter(p => (p.bathrooms || 0) <= hardReq.maxBathrooms!);
-      logger.info(`🚿 After maxBathrooms filter (<=${hardReq.maxBathrooms}): ${filtered.length} properties`);
-    }
-
-    // Area filter
-    if (hardReq.minArea !== undefined) {
-      filtered = filtered.filter(p => p.area >= hardReq.minArea!);
-      logger.info(`📐 After minArea filter (>=${hardReq.minArea}m²): ${filtered.length} properties`);
-    }
-    if (hardReq.maxArea !== undefined) {
-      filtered = filtered.filter(p => p.area <= hardReq.maxArea!);
-      logger.info(`📐 After maxArea filter (<=${hardReq.maxArea}m²): ${filtered.length} properties`);
-    }
-
-    // Price filter
-    if (hardReq.minTotalPrice !== undefined) {
-      filtered = filtered.filter(p => p.totalPrice >= hardReq.minTotalPrice!);
-      logger.info(`💰 After minPrice filter (>=$${hardReq.minTotalPrice.toLocaleString()}): ${filtered.length} properties`);
-    }
-    if (hardReq.maxTotalPrice !== undefined) {
-      filtered = filtered.filter(p => p.totalPrice <= hardReq.maxTotalPrice!);
-      logger.info(`💰 After maxPrice filter (<=$${hardReq.maxTotalPrice.toLocaleString()}): ${filtered.length} properties`);
-    }
-
-    // Parking filter
-    if (hardReq.minParking !== undefined) {
-      filtered = filtered.filter(p => (p.parking || 0) >= hardReq.minParking!);
-      logger.info(`🚗 After minParking filter (>=${hardReq.minParking}): ${filtered.length} properties`);
-    }
-    if (hardReq.maxParking !== undefined) {
-      filtered = filtered.filter(p => (p.parking || 0) <= hardReq.maxParking!);
-      logger.info(`🚗 After maxParking filter (<=${hardReq.maxParking}): ${filtered.length} properties`);
-    }
-
-    // Stratum filter - MEJORADO: Permitir estrato 0 (no detectado)
-    if (hardReq.minStratum !== undefined) {
-      filtered = filtered.filter(p => {
-        const stratum = p.stratum || 0;
-        // Si el estrato es 0 (no detectado), lo consideramos válido
-        return stratum === 0 || stratum >= hardReq.minStratum!;
+    // 🚫 DETECTAR CARACTERES ESPECIALES PARA SALTARSE TODOS LOS FILTROS
+    if (hardReq.location?.neighborhoods && hardReq.location.neighborhoods.length > 0) {
+      const hasSpecialChars = hardReq.location.neighborhoods.some(n => {
+        const cleaned = n.trim();
+        return cleaned.length <= 1 ||
+               SEARCH.SPECIAL_CHARS.includes(cleaned as any) ||
+               /^[^\w\s]+$/.test(cleaned);
       });
-      logger.info(`🏢 After minStratum filter (>=${hardReq.minStratum} or undetected): ${filtered.length} properties`);
-    }
-    if (hardReq.maxStratum !== undefined) {
-      filtered = filtered.filter(p => {
-        const stratum = p.stratum || 0;
-        // Si el estrato es 0 (no detectado), lo consideramos válido
-        return stratum === 0 || stratum <= hardReq.maxStratum!;
-      });
-      logger.info(`🏢 After maxStratum filter (<=${hardReq.maxStratum} or undetected): ${filtered.length} properties`);
+
+      if (hasSpecialChars) {
+        logger.info(`🚫🚫🚫 SPECIAL CHARACTERS DETECTED - SKIPPING ALL FILTERS 🚫🚫🚫`);
+        logger.info(`📍 Returning ALL properties without any filters: ${filtered.length} properties`);
+        return filtered; // DEVOLVER TODAS LAS PROPIEDADES SIN FILTROS
+      }
     }
 
-    // Property type filter
-    if (hardReq.propertyTypes && hardReq.propertyTypes.length > 0) {
-      filtered = filtered.filter(p => {
-        // Check title and description for property type since propertyType field doesn't exist
-        const title = (p.title || '').toLowerCase();
-        const description = (p.description || '').toLowerCase();
-        return hardReq.propertyTypes!.some(type =>
-          title.includes(type.toLowerCase()) ||
-          description.includes(type.toLowerCase()) ||
-          type.toLowerCase().includes('apartamento') && (title.includes('apartamento') || title.includes('apto'))
-        );
-      });
-      logger.info(`🏠 After propertyTypes filter (${hardReq.propertyTypes.join(', ')}): ${filtered.length} properties`);
-    }
+    // 🚫 TODOS LOS FILTROS ELIMINADOS - SOLO OPERACIÓN Y UBICACIÓN
+    logger.info(`🚫 ALL FILTERS REMOVED - ONLY KEEPING OPERATION AND LOCATION`);
 
     // Location filter (neighborhoods) - MEJORADO: Más flexible
     if (hardReq.location?.neighborhoods && hardReq.location.neighborhoods.length > 0) {
-      filtered = filtered.filter(p => {
-        const propertyNeighborhood = (p.location.neighborhood || '').toLowerCase();
-        const propertyAddress = (p.location.address || '').toLowerCase();
-        const propertyCity = (p.location.city || '').toLowerCase();
+      logger.info(`🔍 Original neighborhoods: ${JSON.stringify(hardReq.location.neighborhoods)}`);
 
-        return hardReq.location!.neighborhoods!.some(neighborhood => {
-          const searchNeighborhood = neighborhood.toLowerCase();
-
-          // Mapeo de variaciones comunes - EXPANDIDO PARA SUBA
-          const neighborhoodVariations: { [key: string]: string[] } = {
-            'suba': [
-              'suba', 'ciudad jardin norte', 'bosque calderon', 'mazuren', 'cerros de suba',
-              'guaymaral', 'la conejera', 'tibabuyes', 'rincón', 'prado veraniego',
-              'niza', 'alhambra', 'san josé de bavaria', 'lisboa', 'santa cecilia',
-              'bilbao', 'casa blanca suba', 'compartir', 'el prado', 'la gaitana',
-              'san pedro', 'tuna alta', 'tuna baja', 'verbenal', 'villa cindy'
-            ],
-            'usaquen': ['usaquen', 'usaquén', 'el verbenal', 'santa barbara', 'santa bárbara'],
-            'chapinero': ['chapinero', 'chico', 'nogal', 'zona rosa']
-          };
-
-          // Buscar coincidencias directas
-          const directMatch = propertyNeighborhood.includes(searchNeighborhood) ||
-                             propertyAddress.includes(searchNeighborhood) ||
-                             searchNeighborhood.includes(propertyNeighborhood);
-
-          if (directMatch) return true;
-
-          // Buscar coincidencias con variaciones
-          const variations = neighborhoodVariations[searchNeighborhood] || [];
-          return variations.some(variation =>
-            propertyNeighborhood.includes(variation) ||
-            propertyAddress.includes(variation)
-          );
-        });
+      // Detectar si son caracteres especiales para "buscar todo"
+      const hasSpecialChars = hardReq.location.neighborhoods.some(n => {
+        const cleaned = n.trim();
+        return cleaned.length <= 1 ||
+               ['*', '.', '?', '+', '!', '@', '#', '$', '%', '^', '&'].includes(cleaned) ||
+               /^[^\w\s]+$/.test(cleaned);
       });
-      logger.info(`📍 After neighborhoods filter (${hardReq.location.neighborhoods.join(', ')} + variations): ${filtered.length} properties`);
+
+      if (hasSpecialChars) {
+        logger.info(`🚫 SPECIAL CHARACTERS DETECTED - SKIPPING ALL NEIGHBORHOOD FILTERS`);
+        logger.info(`📍 No neighborhood filter applied (special chars detected): ${filtered.length} properties`);
+      } else {
+        // Filtrar caracteres especiales que no son barrios reales
+        const validNeighborhoods = hardReq.location.neighborhoods.filter(n => {
+          const cleaned = n.trim();
+          const isValid = cleaned.length > 1 &&
+                 !['*', '.', '?', '+', '!', '@', '#', '$', '%', '^', '&'].includes(cleaned) &&
+                 !/^[^\w\s]+$/.test(cleaned);
+
+          logger.info(`🔍 Checking neighborhood "${n}" -> cleaned: "${cleaned}" -> valid: ${isValid}`);
+          return isValid;
+        });
+
+        logger.info(`🔍 Valid neighborhoods after filtering: ${JSON.stringify(validNeighborhoods)}`);
+
+        // Solo aplicar filtro si hay barrios válidos
+        if (validNeighborhoods.length > 0) {
+          filtered = filtered.filter(p => {
+            const propertyNeighborhood = (p.location.neighborhood || '').toLowerCase();
+            const propertyAddress = (p.location.address || '').toLowerCase();
+            const propertyCity = (p.location.city || '').toLowerCase();
+
+            return validNeighborhoods.some(neighborhood => {
+              const searchNeighborhood = neighborhood.toLowerCase();
+
+              // Mapeo de variaciones comunes - EXPANDIDO PARA SUBA
+              const neighborhoodVariations: { [key: string]: string[] } = {
+                'suba': [
+                  'suba', 'ciudad jardin norte', 'bosque calderon', 'mazuren', 'cerros de suba',
+                  'guaymaral', 'la conejera', 'tibabuyes', 'rincón', 'prado veraniego',
+                  'niza', 'alhambra', 'san josé de bavaria', 'lisboa', 'santa cecilia',
+                  'bilbao', 'casa blanca suba', 'compartir', 'el prado', 'la gaitana',
+                  'san pedro', 'tuna alta', 'tuna baja', 'verbenal', 'villa cindy'
+                ],
+                'usaquen': ['usaquen', 'usaquén', 'el verbenal', 'santa barbara', 'santa bárbara'],
+                'chapinero': ['chapinero', 'chico', 'nogal', 'zona rosa']
+              };
+
+              // Buscar coincidencias directas
+              const directMatch = propertyNeighborhood.includes(searchNeighborhood) ||
+                                 propertyAddress.includes(searchNeighborhood) ||
+                                 searchNeighborhood.includes(propertyNeighborhood);
+
+              if (directMatch) return true;
+
+              // Buscar coincidencias con variaciones
+              const variations = neighborhoodVariations[searchNeighborhood] || [];
+              return variations.some(variation =>
+                propertyNeighborhood.includes(variation) ||
+                propertyAddress.includes(variation)
+              );
+            });
+          });
+          logger.info(`📍 After neighborhoods filter (${validNeighborhoods.join(', ')} + variations): ${filtered.length} properties`);
+        } else {
+          logger.info(`📍 No valid neighborhoods to filter (ignored special characters): ${filtered.length} properties`);
+        }
+      }
     }
 
     logger.info(`✅ Hard filters applied: ${properties.length} -> ${filtered.length} properties`);
@@ -820,14 +770,4 @@ export class SearchService {
     // Return the dynamic URL for the specific source
     return urlTemplates[sourceName] || urlTemplates.fincaraiz;
   }
-
-
-
-
-
-
-
-
-
-
 }

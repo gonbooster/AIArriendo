@@ -25,6 +25,8 @@ import {
 } from '@mui/icons-material';
 
 import AdvancedFilters from '../components/AdvancedFilters';
+import ModernFiltersMUI from '../components/filters/ModernFiltersMUI';
+import PropertyStatsMUI from '../components/stats/PropertyStatsMUI';
 import { Property } from '../types';
 import { searchAPI } from '../services/api';
 
@@ -158,29 +160,16 @@ const NewResultsPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Estadísticas por fuente */}
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          📊 Fuentes de datos
-        </Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          {Object.entries(sourceStats).map(([source, count]) => (
-            <Chip
-              key={source}
-              label={`${source}: ${count}`}
-              variant="outlined"
-              size="small"
-            />
-          ))}
-        </Box>
-      </Paper>
-
-      {/* Filtros Avanzados */}
+      {/* Estadísticas Modernas */}
       {allProperties.length > 0 && (
-        <AdvancedFilters
+        <PropertyStatsMUI properties={filteredProperties} />
+      )}
+
+      {/* Filtros Modernos */}
+      {allProperties.length > 0 && (
+        <ModernFiltersMUI
           properties={allProperties}
-          onFilterChange={setFilteredProperties}
-          onStatsChange={setPropertyStats}
+          onFiltersChange={setFilteredProperties}
         />
       )}
 
@@ -230,7 +219,7 @@ const NewResultsPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <LocationIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
                       <Typography variant="body2" color="text.secondary" noWrap>
-                        {property.location}
+                        {property.location?.address || property.location?.neighborhood || 'Ubicación no especificada'}
                       </Typography>
                     </Box>
 

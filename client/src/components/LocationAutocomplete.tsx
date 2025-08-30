@@ -11,23 +11,27 @@ import { locationService, Location } from '../services/locationService';
 import './LocationAutocomplete.css';
 
 interface LocationAutocompleteProps {
-  value?: string;
+  value?: Location | null;
   onChange: (location: Location | null) => void;
   placeholder?: string;
+  label?: React.ReactNode;
   className?: string;
   disabled?: boolean;
   autoFocus?: boolean;
+  required?: boolean;
 }
 
 const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
-  value = '',
+  value = null,
   onChange,
   placeholder = 'Buscar ciudad, barrio o zona...',
+  label,
   className = '',
   disabled = false,
-  autoFocus = false
+  autoFocus = false,
+  required = false
 }) => {
-  const [inputValue, setInputValue] = useState(value);
+  const [inputValue, setInputValue] = useState(value?.name || '');
   const [suggestions, setSuggestions] = useState<Location[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

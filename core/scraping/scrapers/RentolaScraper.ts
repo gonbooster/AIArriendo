@@ -367,63 +367,103 @@ export class RentolaScraper extends BaseScraper {
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
       // Wait for listings to load
-      await page.waitForTimeout(5000);
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
-      // Extract property data
+      // Extract property data using Rentola's specific text structure
       const items = await page.evaluate(() => {
         const out: Array<{title:string; priceText:string; url:string; imageUrl:string; location:string; rooms:string; bathrooms:string; area:string;}> = [];
         const doc: any = (globalThis as any).document;
 
-        // Try multiple selectors for property cards
-        const selectors = [
-          '[data-testid*="listing"]',
-          '.listing-card',
-          '.property-card',
-          '.rental-listing',
-          '.search-result',
-          'article',
-          '.card'
+        // Get the full page text content
+        const bodyText = doc.body.textContent || '';
+
+        // Debug: Log a sample of the text to understand the format
+        console.log('Rentola body text sample:', bodyText.substring(0, 2000));
+
+        // Multiple patterns to try based on the actual Rentola format
+        const patterns = [
+          // Pattern 1: "3 rooms apartment of 43m²Carrera 32, Puente Aranda, 111611 Bogota, Colombia730,000 $ / month"
+          /(\d+)\s+rooms?\s+(\w+)\s+of\s+(\d+)m²([^$]*?)([\d,]+)\s*\$\s*\/\s*month/gi,
+
+          // Pattern 2: "1 room studio of 40m²Calle 63B, Engativá, 111071 Bogota, Colombia800,000 $ / month"
+          /(\d+)\s+room\s+(\w+)\s+of\s+(\d+)m²([^$]*?)([\d,]+)\s*\$\s*\/\s*month/gi,
+
+          // Pattern 3: More flexible - any number + rooms/room + type + area + location + price
+          /(\d+)\s+rooms?\s+\w+\s+of\s+(\d+)m²[^$]*?([\d,]+)\s*\$\s*\/\s*month/gi,
+
+          // Pattern 4: Even more flexible - just look for area and price patterns
+          /(\d+)m²[^$]*?([\d,]+)\s*\$\s*\/\s*month/gi
         ];
 
-        let cards: any[] = [];
-        for (const selector of selectors) {
-          cards = Array.from(doc.querySelectorAll(selector));
-          if (cards.length > 0) break;
-        }
+        patterns.forEach((pattern, index) => {
+          let match;
+          while ((match = pattern.exec(bodyText)) !== null) {
+            try {
+              let rooms, propertyType, area, locationPart, price;
 
-        cards.forEach((el: any) => {
-          try {
-            const title = el.querySelector('h1, h2, h3, h4, .title, [data-testid*="title"]')?.textContent?.trim() || '';
-            const priceText = el.querySelector('.price, [data-testid*="price"], .cost, .rent')?.textContent?.trim() || '';
-            const linkEl: any = el.querySelector('a[href]');
-            const url = linkEl ? (linkEl.href || linkEl.getAttribute('href')) : '';
-            const imgEl: any = el.querySelector('img');
-            const imageUrl = imgEl?.getAttribute?.('src') || imgEl?.getAttribute?.('data-src') || '';
-            const location = el.querySelector('.location, .address, [data-testid*="location"]')?.textContent?.trim() || '';
+              if (index === 0 || index === 1) {
+                // Full pattern match
+                [, rooms, propertyType, area, locationPart, price] = match;
+              } else if (index === 2) {
+                // Simplified pattern
+                [, rooms, area, price] = match;
+                propertyType = 'apartment';
+                locationPart = 'Bogotá';
+              } else {
+                // Most basic pattern
+                [, area, price] = match;
+                rooms = '1';
+                propertyType = 'apartment';
+                locationPart = 'Bogotá';
+              }
 
-            // Extract rooms, bathrooms, area from text
-            const fullText = el.textContent?.toLowerCase() || '';
-            const roomsMatch = fullText.match(/(\d+)\s*(room|bedroom|habitacion|cuarto)/i);
-            const bathroomMatch = fullText.match(/(\d+)\s*(bathroom|baño)/i);
-            const areaMatch = fullText.match(/(\d+)\s*m[²2]/i);
+              // Clean up location
+              let location = (locationPart || 'Bogotá').trim()
+                .replace(/\s+/g, ' ')
+                .replace(/\d{6}/g, '') // Remove postal codes
+                .replace(/,\s*Colombia\s*$/, '') // Remove country
+                .trim();
 
-            if ((title || priceText) && url) {
-              out.push({
-                title,
-                priceText,
-                url,
-                imageUrl,
-                location,
-                rooms: roomsMatch ? roomsMatch[1] : '',
-                bathrooms: bathroomMatch ? bathroomMatch[1] : '',
-                area: areaMatch ? areaMatch[1] : ''
-              });
+              if (location.length > 50) {
+                location = location.split(',')[0].trim();
+              }
+
+              if (!location || location.length < 3) {
+                location = 'Bogotá';
+              }
+
+              // Create title
+              const title = `${rooms} ${rooms === '1' ? 'room' : 'rooms'} ${propertyType} of ${area}m²`;
+
+              // Format price
+              const cleanPrice = price.replace(/,/g, '');
+              const priceText = `${cleanPrice} $ / month`;
+
+              // Check if already exists
+              const exists = out.some(item =>
+                item.area === area &&
+                item.priceText === priceText
+              );
+
+              if (!exists && rooms && area && cleanPrice && parseInt(cleanPrice) > 0) {
+                out.push({
+                  title,
+                  priceText,
+                  url: `https://rentola.com/for-rent/co/bogota`,
+                  imageUrl: '',
+                  location,
+                  rooms,
+                  bathrooms: '1',
+                  area
+                });
+              }
+            } catch (error) {
+              console.warn(`Error parsing Rentola property with pattern ${index}:`, error);
             }
-          } catch (error) {
-            console.warn('Error parsing property:', error);
           }
         });
 
+        console.log(`Rentola extracted ${out.length} properties`);
         return out;
       });
 
