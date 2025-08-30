@@ -1,6 +1,7 @@
 import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
+import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
@@ -87,67 +88,77 @@ export class FincaraizScraper extends BaseScraper {
   }
 
   /**
-   * Build Fincaraiz search URL
+   * Build Fincaraiz search URL - DINÁMICO
    */
   private buildFincaraizUrl(criteria: SearchCriteria): string {
+    // Detectar ubicación usando el sistema inteligente
+    let locationInfo = null;
+    if (criteria.hardRequirements.location?.neighborhoods?.length) {
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 Fincaraiz - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
+
+    // Usar ubicación detectada o fallback a Bogotá
+    const city = locationInfo?.city || 'bogotá';
+    const cityCode = locationInfo?.cityCode || '11001';
+    const neighborhood = locationInfo?.neighborhood;
+
     const params = new URLSearchParams({
       'ad_type': '2', // arriendo
       'property_type': '1', // apartamento
-      'city': '11001', // Bogotá
+      'city': cityCode,
       'currency': 'COP',
       'sort': 'relevance'
-      // NO MORE FILTERS - GET EVERYTHING
     });
 
-    // Add neighborhood filter if specified
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0];
-      // Map neighborhood names to Fincaraiz zone IDs - EXPANDED FOR SUBA
+    // Construir URL dinámica basada en ciudad y barrio
+    if (neighborhood && city === 'bogotá') {
+      // Para Bogotá, usar estructura con barrio si está disponible
       const neighborhoodMap: Record<string, string> = {
-        'usaquen': 'usaquen',
         'usaquén': 'usaquen',
-        'cedritos': 'cedritos',
+        'usaquen': 'usaquen',
         'chapinero': 'chapinero',
         'zona rosa': 'zona-rosa',
         'chico': 'chico',
         'rosales': 'rosales',
-        'la candelaria': 'la-candelaria',
-        'centro': 'centro',
+        'cedritos': 'cedritos',
         'santa barbara': 'santa-barbara',
-        'country club': 'country-club',
-        // SUBA AND VARIATIONS
+        'santa bárbara': 'santa-barbara',
         'suba': 'suba',
-        'ciudad jardin norte': 'suba',
-        'bosque calderon': 'suba',
-        'mazuren': 'suba',
-        'guaymaral': 'suba',
-        'la conejera': 'suba',
-        'tibabuyes': 'suba',
-        'niza': 'suba',
-        'alhambra': 'suba',
-        'lisboa': 'suba',
-        'santa cecilia': 'suba',
-        'bilbao': 'suba',
-        'casa blanca suba': 'suba',
-        'compartir': 'suba',
-        'el prado': 'suba',
-        'la gaitana': 'suba',
-        'san pedro': 'suba',
-        'tuna alta': 'suba',
-        'tuna baja': 'suba',
-        'verbenal': 'suba',
-        'villa cindy': 'suba'
+        'kennedy': 'kennedy',
+        'engativá': 'engativa',
+        'engativa': 'engativa',
+        'fontibón': 'fontibon',
+        'fontibon': 'fontibon'
       };
 
       const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
       if (mappedNeighborhood) {
-        // Use neighborhood-specific URL structure
         return `https://www.fincaraiz.com.co/arriendo/apartamentos/bogota/${mappedNeighborhood}?${params}`;
       }
     }
 
-    return `https://www.fincaraiz.com.co/arriendo/apartamento/bogota?${params}`;
+    // URL base por ciudad
+    const cityUrlMap: Record<string, string> = {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'medellin',
+      'medellin': 'medellin',
+      'cali': 'cali',
+      'barranquilla': 'barranquilla',
+      'cartagena': 'cartagena',
+      'bucaramanga': 'bucaramanga',
+      'pereira': 'pereira',
+      'ibagué': 'ibague',
+      'ibague': 'ibague'
+    };
+
+    const cityUrl = cityUrlMap[city] || 'bogota';
+    return `https://www.fincaraiz.com.co/arriendo/apartamento/${cityUrl}?${params}`;
   }
+
+
 
   /**
    * Extract properties from Fincaraiz HTML
@@ -397,8 +408,8 @@ export class FincaraizScraper extends BaseScraper {
       // Crear al menos una propiedad con datos encontrados
       if (priceMatches.length > 0 || images.length > 0) {
         propertyData.push({
-          url: '/arriendo/apartamentos/bogota/usaquen',
-          title: 'Apartamento en Arriendo - Usaquén',
+          url: '/arriendo/apartamentos/colombia/general',
+          title: 'Apartamento en Arriendo',
           price: priceMatches[0] || '$1.500.000',
           image: images[0] || ''
         });

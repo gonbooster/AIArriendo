@@ -38,10 +38,7 @@ class RealDataServiceFixed {
           console.warn(`❌ Failed to load ${source}:`, error);
         }
       }
-      
-      // ELIMINAR DUPLICADOS
-      const uniqueProperties = this.removeDuplicates(this.properties);
-      this.properties = uniqueProperties;
+
 
       console.log(`🎉 Total real properties loaded: ${this.properties.length} (after deduplication)`);
       this.isLoaded = true;

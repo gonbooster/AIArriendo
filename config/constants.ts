@@ -83,12 +83,8 @@ export const SCRAPING = {
 // ============================================================================
 
 export const LOCATION = {
-  DEFAULT_CITY: 'Bogotá',
   DEFAULT_COUNTRY: 'Colombia',
   DEFAULT_COORDINATES: { lat: 0, lng: 0 },
-  
-  // Bogotá specific
-  BOGOTA_CITY_CODE: '11001',
 } as const;
 
 // ============================================================================

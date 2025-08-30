@@ -71,7 +71,7 @@ export const FRONTEND_DEFAULT_CRITERIA: SearchCriteria = {
     maxStratum: 6,
     
     location: {
-      city: LOCATION.DEFAULT_CITY,
+      city: '', // Dinámico - no hardcodear
       neighborhoods: [],
       zones: []
     }
@@ -128,7 +128,7 @@ export const SCRAPER_TEST_CRITERIA: SearchCriteria = {
     maxStratum: 6,
     
     location: {
-      city: LOCATION.DEFAULT_CITY,
+      city: '', // Dinámico - no hardcodear
       neighborhoods: [],
       zones: []
     }
@@ -173,9 +173,9 @@ export const LUXURY_CRITERIA: SearchCriteria = {
     maxStratum: 6,
     
     location: {
-      city: LOCATION.DEFAULT_CITY,
-      neighborhoods: ['Zona Rosa', 'Chapinero', 'Usaquén', 'La Candelaria'],
-      zones: ['Norte']
+      city: '', // Dinámico - no hardcodear
+      neighborhoods: [], // Dinámico - no hardcodear barrios específicos
+      zones: []
     }
   },
   preferences: {
@@ -218,7 +218,7 @@ export const BUDGET_CRITERIA: SearchCriteria = {
     maxStratum: 4,
     
     location: {
-      city: LOCATION.DEFAULT_CITY,
+      city: '', // Dinámico - no hardcodear
       neighborhoods: [],
       zones: []
     }

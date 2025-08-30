@@ -1,6 +1,7 @@
 import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
+import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
@@ -96,25 +97,59 @@ export class CiencuadrasScraper extends BaseScraper {
   }
 
   /**
-   * Build Ciencuadras search URL
+   * Build Ciencuadras search URL - DINÁMICO
    */
   private buildCiencuadrasUrl(criteria: SearchCriteria): string {
-    // Use the working URL format found in testing
-    let baseUrl = 'https://www.ciencuadras.com/arriendo/apartamento/bogota';
-
-    // Add neighborhood filter if specified
+    // Detectar ubicación usando el sistema inteligente
+    let locationInfo = null;
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0];
-      // Map neighborhood names to Ciencuadras zone names
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 Ciencuadras - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
+
+    // Usar ubicación detectada o fallback a Bogotá
+    const city = locationInfo?.city || 'bogotá';
+    const neighborhood = locationInfo?.neighborhood;
+
+    // Mapeo de ciudades para Ciencuadras
+    const cityUrlMap: Record<string, string> = {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'medellin',
+      'medellin': 'medellin',
+      'cali': 'cali',
+      'barranquilla': 'barranquilla',
+      'cartagena': 'cartagena',
+      'bucaramanga': 'bucaramanga',
+      'pereira': 'pereira',
+      'ibagué': 'ibague',
+      'ibague': 'ibague'
+    };
+
+    const cityUrl = cityUrlMap[city] || 'bogota';
+    let baseUrl = `https://www.ciencuadras.com/arriendo/apartamento/${cityUrl}`;
+
+    // Agregar barrio si está disponible
+    if (neighborhood) {
       const neighborhoodMap: Record<string, string> = {
-        'usaquen': 'usaquen',
         'usaquén': 'usaquen',
+        'usaquen': 'usaquen',
         'chapinero': 'chapinero',
         'zona rosa': 'zona-rosa',
         'chico': 'chico',
         'rosales': 'rosales',
+        'cedritos': 'cedritos',
+        'santa barbara': 'santa-barbara',
+        'santa bárbara': 'santa-barbara',
+        'suba': 'suba',
+        'centro': 'centro',
         'la candelaria': 'la-candelaria',
-        'centro': 'centro'
+        // Barrios de otras ciudades
+        'el poblado': 'el-poblado',
+        'poblado': 'el-poblado',
+        'laureles': 'laureles',
+        'granada': 'granada'
       };
 
       const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];

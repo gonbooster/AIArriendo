@@ -1,6 +1,7 @@
 import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
+import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
@@ -246,32 +247,63 @@ export class ProperatiScraper extends BaseScraper {
   }
 
   /**
-   * Build Properati search URL
+   * Build Properati search URL - DINÁMICO
    */
   private buildProperatiUrl(criteria: SearchCriteria): string {
-    // Properati: usar ruta estable por ciudad completa; evitar query params que devuelven 404
-    let baseUrl = 'https://www.properati.com.co/s/bogota-d-c-colombia/apartamento/arriendo';
-
-    // Add neighborhood filter if specified
+    // Detectar ubicación usando el sistema inteligente
+    let locationInfo = null;
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0];
-      // Map neighborhood names to Properati zone names
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 Properati - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
+
+    // Usar ubicación detectada o fallback a Bogotá
+    const city = locationInfo?.city || 'bogotá';
+    const neighborhood = locationInfo?.neighborhood;
+
+    // Mapeo de ciudades para Properati
+    const cityUrlMap: Record<string, string> = {
+      'bogotá': 'bogota-d-c-colombia',
+      'bogota': 'bogota-d-c-colombia',
+      'medellín': 'medellin-antioquia-colombia',
+      'medellin': 'medellin-antioquia-colombia',
+      'cali': 'cali-valle-del-cauca-colombia',
+      'barranquilla': 'barranquilla-atlantico-colombia',
+      'cartagena': 'cartagena-bolivar-colombia',
+      'bucaramanga': 'bucaramanga-santander-colombia',
+      'pereira': 'pereira-risaralda-colombia',
+      'ibagué': 'ibague-tolima-colombia',
+      'ibague': 'ibague-tolima-colombia'
+    };
+
+    const cityUrl = cityUrlMap[city] || 'bogota-d-c-colombia';
+    let baseUrl = `https://www.properati.com.co/s/${cityUrl}/apartamento/arriendo`;
+
+    // Agregar barrio como query parameter si está disponible
+    if (neighborhood) {
       const neighborhoodMap: Record<string, string> = {
-        'usaquen': 'usaquen',
         'usaquén': 'usaquen',
+        'usaquen': 'usaquen',
         'chapinero': 'chapinero',
         'zona rosa': 'zona-rosa',
         'chico': 'chico',
         'rosales': 'rosales',
+        'cedritos': 'cedritos',
+        'santa barbara': 'santa-barbara',
+        'santa bárbara': 'santa-barbara',
+        'suba': 'suba',
+        'centro': 'centro',
         'la candelaria': 'la-candelaria',
-        'centro': 'centro'
+        // Barrios de otras ciudades
+        'el poblado': 'el-poblado',
+        'poblado': 'el-poblado',
+        'laureles': 'laureles',
+        'granada': 'granada'
       };
 
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
-      if (mappedNeighborhood) {
-        // Properati: Use search with location parameter instead of URL path
-        baseUrl = `https://www.properati.com.co/s/bogota-d-c-colombia/apartamento/arriendo?q=${mappedNeighborhood}`;
-      }
+      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()] || neighborhood;
+      baseUrl += `?q=${encodeURIComponent(mappedNeighborhood)}`;
     }
 
     return baseUrl;

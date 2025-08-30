@@ -1,6 +1,7 @@
 import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../../scraping/RateLimiter';
+import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 import { SmartExtractor } from '../utils/SmartExtractor';
 import { PropertyEnhancer } from '../utils/PropertyEnhancer';
@@ -91,33 +92,63 @@ export class MercadoLibreScraper extends BaseScraper {
   }
 
   /**
-   * Build MercadoLibre search URL
+   * Build MercadoLibre search URL - DINÁMICO
    */
   private buildMercadoLibreUrl(criteria: SearchCriteria): string {
-    // MercadoLibre uses a different URL structure
-    let baseUrl = 'https://inmuebles.mercadolibre.com.co/apartamentos/arriendo/bogota';
-
-    // Add neighborhood filter if specified
+    // Detectar ubicación usando el sistema inteligente
+    let locationInfo = null;
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0];
-      // Map neighborhood names to MercadoLibre search terms
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 MercadoLibre - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
+
+    // Usar ubicación detectada o fallback a Bogotá
+    const city = locationInfo?.city || 'bogotá';
+    const neighborhood = locationInfo?.neighborhood;
+
+    // Mapeo de ciudades para MercadoLibre
+    const cityUrlMap: Record<string, string> = {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'antioquia/medellin',
+      'medellin': 'antioquia/medellin',
+      'cali': 'valle-del-cauca/cali',
+      'barranquilla': 'atlantico/barranquilla',
+      'cartagena': 'bolivar/cartagena',
+      'bucaramanga': 'santander/bucaramanga',
+      'pereira': 'risaralda/pereira',
+      'ibagué': 'tolima/ibague',
+      'ibague': 'tolima/ibague'
+    };
+
+    const cityUrl = cityUrlMap[city] || 'bogota';
+    let baseUrl = `https://inmuebles.mercadolibre.com.co/apartamentos/arriendo/${cityUrl}`;
+
+    // Agregar barrio si está disponible y es de Bogotá (MercadoLibre tiene mejor soporte para barrios de Bogotá)
+    if (neighborhood && city === 'bogotá') {
       const neighborhoodMap: Record<string, string> = {
-        'usaquen': 'usaquen',
         'usaquén': 'usaquen',
-        'cedritos': 'cedritos',
+        'usaquen': 'usaquen',
         'chapinero': 'chapinero',
         'zona rosa': 'zona-rosa',
         'chico': 'chico',
         'rosales': 'rosales',
-        'la candelaria': 'candelaria',
-        'centro': 'centro',
+        'cedritos': 'cedritos',
         'santa barbara': 'santa-barbara',
-        'country club': 'country-club'
+        'santa bárbara': 'santa-barbara',
+        'suba': 'suba',
+        'kennedy': 'kennedy',
+        'engativá': 'engativa',
+        'engativa': 'engativa',
+        'fontibón': 'fontibon',
+        'fontibon': 'fontibon',
+        'centro': 'centro',
+        'la candelaria': 'candelaria'
       };
 
       const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
       if (mappedNeighborhood) {
-        // Add neighborhood to search URL
         baseUrl += `/${mappedNeighborhood}`;
       }
     }

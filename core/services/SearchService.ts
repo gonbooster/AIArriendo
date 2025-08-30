@@ -268,38 +268,30 @@ export class SearchService {
             const propertyAddress = (p.location.address || '').toLowerCase();
             const propertyCity = (p.location.city || '').toLowerCase();
 
-            return validNeighborhoods.some(neighborhood => {
-              const searchNeighborhood = neighborhood.toLowerCase();
+            return validNeighborhoods.some(searchLocation => {
+              const searchLower = searchLocation.toLowerCase();
 
-              // Mapeo de variaciones comunes - EXPANDIDO PARA SUBA
-              const neighborhoodVariations: { [key: string]: string[] } = {
-                'suba': [
-                  'suba', 'ciudad jardin norte', 'bosque calderon', 'mazuren', 'cerros de suba',
-                  'guaymaral', 'la conejera', 'tibabuyes', 'rincón', 'prado veraniego',
-                  'niza', 'alhambra', 'san josé de bavaria', 'lisboa', 'santa cecilia',
-                  'bilbao', 'casa blanca suba', 'compartir', 'el prado', 'la gaitana',
-                  'san pedro', 'tuna alta', 'tuna baja', 'verbenal', 'villa cindy'
-                ],
-                'usaquen': ['usaquen', 'usaquén', 'el verbenal', 'santa barbara', 'santa bárbara'],
-                'chapinero': ['chapinero', 'chico', 'nogal', 'zona rosa']
-              };
+              // Búsqueda FLEXIBLE en múltiples campos
+              const propertyTitle = (p.title || '').toLowerCase();
+              const propertyDescription = (p.description || '').toLowerCase();
 
-              // Buscar coincidencias directas
-              const directMatch = propertyNeighborhood.includes(searchNeighborhood) ||
-                                 propertyAddress.includes(searchNeighborhood) ||
-                                 searchNeighborhood.includes(propertyNeighborhood);
+              // Buscar en TODOS los campos de texto disponibles
+              const matchesNeighborhood = propertyNeighborhood.includes(searchLower);
+              const matchesAddress = propertyAddress.includes(searchLower);
+              const matchesCity = propertyCity.includes(searchLower);
+              const matchesTitle = propertyTitle.includes(searchLower);
+              const matchesDescription = propertyDescription.includes(searchLower);
 
-              if (directMatch) return true;
+              // También buscar coincidencias parciales (útil para ciudades)
+              const partialMatchNeighborhood = searchLower.includes(propertyNeighborhood) && propertyNeighborhood.length > 2;
+              const partialMatchCity = searchLower.includes(propertyCity) && propertyCity.length > 2;
 
-              // Buscar coincidencias con variaciones
-              const variations = neighborhoodVariations[searchNeighborhood] || [];
-              return variations.some(variation =>
-                propertyNeighborhood.includes(variation) ||
-                propertyAddress.includes(variation)
-              );
+              return matchesNeighborhood || matchesAddress || matchesCity ||
+                     matchesTitle || matchesDescription ||
+                     partialMatchNeighborhood || partialMatchCity;
             });
           });
-          logger.info(`📍 After neighborhoods filter (${validNeighborhoods.join(', ')} + variations): ${filtered.length} properties`);
+          logger.info(`📍 After FLEXIBLE location filter (${validNeighborhoods.join(', ')}): ${filtered.length} properties`);
         } else {
           logger.info(`📍 No valid neighborhoods to filter (ignored special characters): ${filtered.length} properties`);
         }

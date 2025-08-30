@@ -3,6 +3,7 @@ import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria } from '../../types';
 import { PropertyParser } from '../PropertyParser';
 import { RateLimiter } from '../RateLimiter';
+import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 
 export class TrovitScraper extends BaseScraper {
@@ -174,26 +175,60 @@ export class TrovitScraper extends BaseScraper {
   }
 
   /**
-   * Build Trovit search URL with specific parameters
+   * Build Trovit search URL with specific parameters - DINÁMICO
    */
   private buildTrovitSearchUrl(criteria: SearchCriteria, page: number): string {
-    let baseUrl = 'https://casas.trovit.com.co/arriendo-apartamento-bogota';
-    const params = new URLSearchParams();
-
-    // Add neighborhood to search if specified
-    let where = 'bogota';
+    // Detectar ubicación usando el sistema inteligente
+    let locationInfo = null;
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0];
-      // Map neighborhood names to Trovit location format
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 Trovit - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
+
+    // Usar ubicación detectada o fallback a Bogotá
+    const city = locationInfo?.city || 'bogotá';
+    const neighborhood = locationInfo?.neighborhood;
+
+    // Mapeo de ciudades para Trovit
+    const cityUrlMap: Record<string, string> = {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'medellin',
+      'medellin': 'medellin',
+      'cali': 'cali',
+      'barranquilla': 'barranquilla',
+      'cartagena': 'cartagena',
+      'bucaramanga': 'bucaramanga',
+      'pereira': 'pereira',
+      'ibagué': 'ibague',
+      'ibague': 'ibague'
+    };
+
+    const cityUrl = cityUrlMap[city] || 'bogota';
+    let baseUrl = `https://casas.trovit.com.co/arriendo-apartamento-${cityUrl}`;
+    let where = cityUrl;
+
+    // Agregar barrio si está disponible
+    if (neighborhood) {
       const neighborhoodMap: Record<string, string> = {
-        'usaquen': 'usaquen-bogota',
-        'usaquén': 'usaquen-bogota',
-        'chapinero': 'chapinero-bogota',
-        'zona rosa': 'zona-rosa-bogota',
-        'chico': 'chico-bogota',
-        'rosales': 'rosales-bogota',
-        'la candelaria': 'la-candelaria-bogota',
-        'centro': 'centro-bogota'
+        'usaquén': `usaquen-${cityUrl}`,
+        'usaquen': `usaquen-${cityUrl}`,
+        'chapinero': `chapinero-${cityUrl}`,
+        'zona rosa': `zona-rosa-${cityUrl}`,
+        'chico': `chico-${cityUrl}`,
+        'rosales': `rosales-${cityUrl}`,
+        'cedritos': `cedritos-${cityUrl}`,
+        'santa barbara': `santa-barbara-${cityUrl}`,
+        'santa bárbara': `santa-barbara-${cityUrl}`,
+        'suba': `suba-${cityUrl}`,
+        'centro': `centro-${cityUrl}`,
+        'la candelaria': `la-candelaria-${cityUrl}`,
+        // Barrios de otras ciudades
+        'el poblado': `el-poblado-${cityUrl}`,
+        'poblado': `el-poblado-${cityUrl}`,
+        'laureles': `laureles-${cityUrl}`,
+        'granada': `granada-${cityUrl}`
       };
 
       const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
@@ -202,6 +237,8 @@ export class TrovitScraper extends BaseScraper {
         baseUrl = `https://casas.trovit.com.co/arriendo-apartamento-${mappedNeighborhood}`;
       }
     }
+
+    const params = new URLSearchParams();
 
     // Basic search parameters - NO FILTERS, GET EVERYTHING
     params.set('what', 'apartamento arriendo');

@@ -1,6 +1,7 @@
 import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
+import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
@@ -87,19 +88,57 @@ export class RentolaScraper extends BaseScraper {
   }
 
   /**
-   * Build Rentola search URL
+   * Build Rentola search URL - DINÁMICO
    */
   private buildRentolaUrl(criteria: SearchCriteria): string {
-    // Use the specific Suba URL you provided
+    // Detectar ubicación usando el sistema inteligente
+    let locationInfo = null;
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0].toLowerCase();
-      if (neighborhood === 'suba') {
-        return 'https://rentola.com/for-rent/co/bogota-localidad-suba';
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 Rentola - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
+
+    // Usar ubicación detectada o fallback a Bogotá
+    const city = locationInfo?.city || 'bogotá';
+    const neighborhood = locationInfo?.neighborhood;
+
+    // Mapeo de ciudades para Rentola
+    const cityUrlMap: Record<string, string> = {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'medellin',
+      'medellin': 'medellin',
+      'cali': 'cali',
+      'barranquilla': 'barranquilla',
+      'cartagena': 'cartagena',
+      'bucaramanga': 'bucaramanga'
+    };
+
+    const cityUrl = cityUrlMap[city] || 'bogota';
+    let baseUrl = `https://rentola.com/for-rent/co/${cityUrl}`;
+
+    // Agregar barrio específico si está disponible (Rentola tiene URLs específicas para algunos barrios)
+    if (neighborhood && city === 'bogotá') {
+      const neighborhoodMap: Record<string, string> = {
+        'suba': 'bogota-localidad-suba',
+        'usaquén': 'bogota-localidad-usaquen',
+        'usaquen': 'bogota-localidad-usaquen',
+        'chapinero': 'bogota-localidad-chapinero',
+        'kennedy': 'bogota-localidad-kennedy',
+        'engativá': 'bogota-localidad-engativa',
+        'engativa': 'bogota-localidad-engativa',
+        'fontibón': 'bogota-localidad-fontibon',
+        'fontibon': 'bogota-localidad-fontibon'
+      };
+
+      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
+      if (mappedNeighborhood) {
+        baseUrl = `https://rentola.com/for-rent/co/${mappedNeighborhood}`;
       }
     }
 
-    // Fallback to general Bogotá search
-    return 'https://rentola.com/for-rent/co/bogota';
+    return baseUrl;
   }
 
   /**
@@ -449,7 +488,7 @@ export class RentolaScraper extends BaseScraper {
                 out.push({
                   title,
                   priceText,
-                  url: `https://rentola.com/for-rent/co/bogota`,
+                  url: `https://rentola.com/for-rent/co/colombia`,
                   imageUrl: '',
                   location,
                   rooms,

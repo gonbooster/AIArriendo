@@ -194,16 +194,16 @@ export class OutputMapper {
       return {
         address: '',
         neighborhood: '',
-        city: 'Bogotá',
+        city: '', // No hardcodear ciudad
         coordinates: { lat: 0, lng: 0 }
       };
     }
-    
+
     if (typeof location === 'string') {
       return {
         address: location,
         neighborhood: this.extractNeighborhood(location),
-        city: 'Bogotá',
+        city: this.extractCity(location), // Extraer ciudad dinámicamente
         coordinates: { lat: 0, lng: 0 }
       };
     }
@@ -211,7 +211,7 @@ export class OutputMapper {
     return {
       address: this.normalizeString(location.address),
       neighborhood: this.normalizeString(location.neighborhood) || this.extractNeighborhood(location.address || ''),
-      city: this.normalizeString(location.city) || 'Bogotá',
+      city: this.normalizeString(location.city) || this.extractCity(location.address || ''),
       coordinates: location.coordinates || { lat: 0, lng: 0 }
     };
   }
@@ -238,7 +238,32 @@ export class OutputMapper {
     
     return '';
   }
-  
+
+  /**
+   * Extract city from address string
+   */
+  private static extractCity(address: string): string {
+    if (!address) return '';
+
+    const addressLower = address.toLowerCase();
+
+    // Common Colombian cities
+    const cities = [
+      'bogotá', 'bogota', 'medellín', 'medellin', 'cali', 'barranquilla',
+      'cartagena', 'bucaramanga', 'pereira', 'ibagué', 'ibague', 'manizales',
+      'villavicencio', 'pasto', 'montería', 'monteria', 'valledupar',
+      'neiva', 'soledad', 'armenia', 'soacha', 'popayán', 'popayan'
+    ];
+
+    for (const city of cities) {
+      if (addressLower.includes(city)) {
+        return city.charAt(0).toUpperCase() + city.slice(1);
+      }
+    }
+
+    return '';
+  }
+
   /**
    * Normalize string values
    */

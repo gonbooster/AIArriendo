@@ -1,6 +1,7 @@
 import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
+import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
@@ -14,28 +15,58 @@ export class PadsScraper extends BaseScraper {
    * Build PADS search URL
    */
   private buildPadsUrl(criteria: SearchCriteria): string {
-    let baseUrl = 'https://pads.com.co/inmuebles-en-arriendo/bogota';
-
-    // Add neighborhood if specified
+    // Detectar ubicación usando el sistema inteligente
+    let locationInfo = null;
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0].toLowerCase();
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 PADS - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
 
-      // Map neighborhood names to PADS URL structure
+    // Usar ubicación detectada o fallback a Bogotá
+    const city = locationInfo?.city || 'bogotá';
+    const neighborhood = locationInfo?.neighborhood;
+
+    // Mapeo de ciudades para PADS
+    const cityUrlMap: Record<string, string> = {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'medellin',
+      'medellin': 'medellin',
+      'cali': 'cali',
+      'barranquilla': 'barranquilla',
+      'cartagena': 'cartagena',
+      'bucaramanga': 'bucaramanga'
+    };
+
+    const cityUrl = cityUrlMap[city] || 'bogota';
+    let baseUrl = `https://pads.com.co/inmuebles-en-arriendo/${cityUrl}`;
+
+    // Agregar barrio si está disponible
+    if (neighborhood) {
       const neighborhoodMap: Record<string, string> = {
-        'suba': 'suba',
-        'usaquen': 'usaquen',
         'usaquén': 'usaquen',
+        'usaquen': 'usaquen',
         'chapinero': 'chapinero',
         'zona rosa': 'chapinero/zona-rosa',
         'chico': 'chapinero/chico',
         'rosales': 'chapinero/rosales',
+        'cedritos': 'cedritos',
+        'santa barbara': 'santa-barbara',
+        'santa bárbara': 'santa-barbara',
+        'suba': 'suba',
         'centro': 'centro',
-        'la candelaria': 'centro/la-candelaria'
+        'la candelaria': 'centro/la-candelaria',
+        // Barrios de otras ciudades
+        'el poblado': 'el-poblado',
+        'poblado': 'el-poblado',
+        'laureles': 'laureles',
+        'granada': 'granada'
       };
 
-      const mappedNeighborhood = neighborhoodMap[neighborhood];
+      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
       if (mappedNeighborhood) {
-        baseUrl = `https://pads.com.co/inmuebles-en-arriendo/bogota/${mappedNeighborhood}`;
+        baseUrl += `/${mappedNeighborhood}`;
       }
     }
 
@@ -50,7 +81,7 @@ export class PadsScraper extends BaseScraper {
 
     // PADS specific selectors based on real HTML structure
     const propertyCards = $('a[href*="/propiedades/"]');
-    
+
     logger.info(`Found ${propertyCards.length} PADS property cards`);
 
     if (propertyCards.length === 0) {
@@ -65,17 +96,17 @@ export class PadsScraper extends BaseScraper {
         // Extract URL
         const url = $card.attr('href') || '';
         if (!url) return;
-        
+
         // Extract price from .text-lg.font-semibold
         const priceElement = $card.find('.text-lg.font-semibold');
         const priceText = priceElement.text().trim();
-        
+
         // Extract area and rooms info from .flex.text-xs div elements
         const infoElements = $card.find('.flex.text-xs div');
         let rooms = '';
         let area = '';
         let parking = '';
-        
+
         infoElements.each((i, el) => {
           const text = $(el).text().trim();
           if (text.includes('Alc.')) {
@@ -86,11 +117,11 @@ export class PadsScraper extends BaseScraper {
             parking = text.replace('Parq.', '').trim();
           }
         });
-        
+
         // Extract location from .text-sm
         const locationElement = $card.find('.text-sm');
         const location = locationElement.text().trim();
-        
+
         // Extract image from .bg-image style attribute
         const imageElement = $card.find('.bg-image');
         let imageUrl = '';
@@ -101,10 +132,10 @@ export class PadsScraper extends BaseScraper {
             imageUrl = urlMatch[1];
           }
         }
-        
+
         // Create title
         const title = `Propiedad en ${location}`;
-        
+
         // Only add if we have essential data
         if (url && (priceText || location)) {
           const property = this.createPropertyFromData({
@@ -145,7 +176,7 @@ export class PadsScraper extends BaseScraper {
           totalPrice = parseInt(priceMatch[0].replace(/,/g, ''));
         }
       }
-      
+
       // Parse area
       let area = 0;
       if (data.area) {
@@ -154,7 +185,7 @@ export class PadsScraper extends BaseScraper {
           area = parseInt(areaMatch[0]);
         }
       }
-      
+
       // Parse rooms
       let rooms = 1;
       if (data.rooms) {
@@ -163,7 +194,7 @@ export class PadsScraper extends BaseScraper {
           rooms = parseInt(roomsMatch[0]);
         }
       }
-      
+
       // Parse parking
       let parking = 0;
       if (data.parking) {

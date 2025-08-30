@@ -308,9 +308,9 @@ export class SearchController {
         propertyTypes: frontendCriteria.propertyTypes || ['Apartamento'],
         operation: frontendCriteria.operation || 'arriendo',
 
-        // Ubicación
+        // Ubicación - Dinámico basado en texto de búsqueda
         location: {
-          city: 'Bogotá',
+          city: '', // No hardcodear ciudad
           minStreet: frontendCriteria.location?.minStreet,
           maxStreet: frontendCriteria.location?.maxStreet,
           minCarrera: frontendCriteria.location?.minCarrera,
@@ -392,8 +392,8 @@ export class SearchController {
         maxTotalPrice: 10000000,
         allowAdminOverage: true,
         location: {
-          city: 'Bogotá',
-          zones: ['Norte']
+          city: '', // Dinámico
+          zones: []
         }
       },
       preferences: {

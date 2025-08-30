@@ -120,7 +120,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
     sources: [],
     amenities: [],
     pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
-    removeDuplicates: false, // ❌ Desactivado - ya se hace en el backend
+    removeDuplicates: false, // SI activamos este es le que da problemas
     hasParking: null,
     hideCorrupt: true, // ✅ Marcado por defecto
     propertyTypes: [],
