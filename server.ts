@@ -73,7 +73,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'AI Arriendo Pro Server is running!',
+    message: 'AI Arriendo Pro Server is running! (Railway Fixed)',
     timestamp: new Date().toISOString(),
     version: '3.0.0'
   });
