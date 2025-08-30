@@ -147,9 +147,7 @@ ${Object.keys(sourceBreakdown)
 `;
 
     fs.writeFileSync(filepath, content.trim(), 'utf8');
-    // Also write/overwrite latest summary
-    fs.writeFileSync(path.join(this.outputDir, 'SUMMARY_latest.txt'), content.trim(), 'utf8');
-    logger.info(`📄 Generated summary file: ${filename} and SUMMARY_latest.txt`);
+    logger.info(`📄 Generated summary file: ${filename}`);
   }
 
   /**
@@ -211,9 +209,7 @@ ${property.description || 'Sin descripción'}
 `;
 
     fs.writeFileSync(filepath, content.trim(), 'utf8');
-    // Also write/overwrite latest per-source file
-    fs.writeFileSync(path.join(this.outputDir, `${source.toUpperCase()}_latest.txt`), content.trim(), 'utf8');
-    logger.info(`📄 Generated ${source} file: ${filename} and ${source.toUpperCase()}_latest.txt`);
+    logger.info(`📄 Generated ${source} file: ${filename}`);
   }
 
   /**
@@ -261,9 +257,7 @@ ${property.description || 'Sin descripción'}
     
     const content = JSON.stringify(rawData, null, 2);
     fs.writeFileSync(filepath, content, 'utf8');
-    // Also write/overwrite latest raw data
-    fs.writeFileSync(path.join(this.outputDir, `RAW_DATA_latest.txt`), content, 'utf8');
-    logger.info(`📄 Generated raw data file: ${filename} and RAW_DATA_latest.txt`);
+    logger.info(`📄 Generated raw data file: ${filename}`);
   }
 
   /**

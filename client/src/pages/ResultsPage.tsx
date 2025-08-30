@@ -27,6 +27,8 @@ import {
 import AdvancedFilters from '../components/AdvancedFilters';
 import ModernFiltersMUI from '../components/filters/ModernFiltersMUI';
 import PropertyStatsMUI from '../components/stats/PropertyStatsMUI';
+import PropertyCard from '../components/PropertyCard';
+import SearchProgress from '../components/SearchProgress';
 import { Property } from '../types';
 import { searchAPI } from '../services/api';
 
@@ -105,14 +107,28 @@ const NewResultsPage: React.FC = () => {
     });
   };
 
-  // Mostrar loading
+  const handleViewProperty = (property: Property) => {
+    // Abrir la URL de la propiedad en una nueva pestaña
+    if (property.url) {
+      window.open(property.url, '_blank');
+    } else {
+      console.warn('Property has no URL:', property);
+    }
+  };
+
+  // Mostrar SearchProgress si viene de búsqueda simple
+  if (loading && location.state?.showProgress) {
+    return <SearchProgress />;
+  }
+
+  // Mostrar loading normal para otras situaciones
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
           <CircularProgress size={60} />
           <Typography variant="h6" sx={{ ml: 2 }}>
-            Buscando propiedades...
+            Cargando resultados...
           </Typography>
         </Box>
       </Container>
@@ -201,70 +217,10 @@ const NewResultsPage: React.FC = () => {
           <Grid container spacing={3}>
             {currentProperties.map((property, index) => (
               <Grid item xs={12} md={6} lg={4} key={property.id || index}>
-                <Card elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  {property.images && property.images.length > 0 && (
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={property.images[0]}
-                      alt={property.title}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                  )}
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" gutterBottom noWrap>
-                      {property.title}
-                    </Typography>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <LocationIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        {property.location?.address || property.location?.neighborhood || 'Ubicación no especificada'}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <PriceIcon fontSize="small" color="primary" sx={{ mr: 0.5 }} />
-                      <Typography variant="h6" color="primary">
-                        ${property.price?.toLocaleString()}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                      {property.rooms && (
-                        <Chip
-                          icon={<HomeIcon />}
-                          label={`${property.rooms} hab`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
-                      {property.bathrooms && (
-                        <Chip
-                          icon={<BathtubIcon />}
-                          label={`${property.bathrooms} baños`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
-                      {property.area && (
-                        <Chip
-                          icon={<AreaIcon />}
-                          label={`${property.area} m²`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
-                    </Box>
-
-                    <Chip
-                      label={property.source || 'Sin fuente'}
-                      size="small"
-                      color="secondary"
-                      variant="filled"
-                    />
-                  </CardContent>
-                </Card>
+                <PropertyCard
+                  property={property}
+                  onView={handleViewProperty}
+                />
               </Grid>
             ))}
           </Grid>

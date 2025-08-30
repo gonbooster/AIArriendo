@@ -24,6 +24,9 @@ import {
   Star as StarIcon,
   Visibility as ViewIcon,
   Share as ShareIcon,
+  Bathtub as BathtubIcon,
+  DirectionsCar as ParkingIcon,
+  Apartment as StratumIcon
 } from '@mui/icons-material';
 import { Property } from '../types';
 
@@ -160,8 +163,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Chip
               icon={<StarIcon />}
-              label={property.score.toFixed(1)}
-              color={getScoreColor(property.score)}
+              label={property.score?.toFixed(1) || '0.0'}
+              color={getScoreColor(property.score || 0)}
               size="small"
               sx={{
                 fontWeight: 'bold',
@@ -287,7 +290,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         <Stack
           direction="row"
           spacing={2}
-          sx={{ mb: 1.5 }}
+          sx={{ mb: 1.5, flexWrap: 'wrap', gap: 1, alignItems: 'center' }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <HomeIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
@@ -295,13 +298,40 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               {property.rooms} hab
             </Typography>
           </Box>
-          
+
+          {property.bathrooms && property.bathrooms > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <BathtubIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+              <Typography variant="caption" color="text.secondary">
+                {property.bathrooms} baños
+              </Typography>
+            </Box>
+          )}
+
+          {property.parking && property.parking > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <ParkingIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+              <Typography variant="caption" color="text.secondary">
+                {property.parking} parq
+              </Typography>
+            </Box>
+          )}
+
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <AreaIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
             <Typography variant="caption" color="text.secondary">
               {formatArea(property.area)}
             </Typography>
           </Box>
+
+          {property.stratum && property.stratum > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <StratumIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+              <Typography variant="caption" color="text.secondary">
+                Estrato {property.stratum}
+              </Typography>
+            </Box>
+          )}
         </Stack>
 
         {/* Amenities */}

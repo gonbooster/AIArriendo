@@ -11,6 +11,7 @@ export interface Property {
   bathrooms?: number;
   parking?: number;
   stratum?: number;
+  propertyType?: string; // Tipo de propiedad: apartamento, casa, etc.
   location: {
     address: string;
     neighborhood?: string;

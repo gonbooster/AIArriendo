@@ -11,15 +11,11 @@ import {
   FormControlLabel,
   Checkbox,
   Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Button,
   Divider,
   useTheme
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   FilterList as FilterIcon,
   Clear as ClearIcon
 } from '@mui/icons-material';
@@ -44,6 +40,8 @@ interface FilterState {
   pricePerM2Range: [number, number];
   removeDuplicates: boolean;
   hasParking: boolean | null; // null = all, true = with parking, false = without parking
+  hideCorrupt: boolean; // true = hide properties with missing data
+  propertyTypes: string[]; // tipos de propiedad: apartamento, casa, etc.
 }
 
 const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
@@ -91,8 +89,23 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
   }, [properties]);
 
   const uniqueAmenities = React.useMemo(() => {
+    // Amenidades básicas que siempre deben aparecer
+    const basicAmenities = [
+      'Parqueadero', 'Piscina', 'Gimnasio', 'Lavandería', 'Squash',
+      'Portería 24h', 'Ascensor', 'Balcón', 'Terraza', 'Jardín',
+      'Aire Acondicionado', 'Calefacción', 'Chimenea', 'BBQ', 'Sauna'
+    ];
     const allAmenities = properties.flatMap(p => p.amenities || []);
-    return Array.from(new Set(allAmenities)).filter(Boolean).sort();
+    const combinedAmenities = Array.from(new Set([...basicAmenities, ...allAmenities]));
+    return combinedAmenities.filter(Boolean).sort();
+  }, [properties]);
+
+  const uniquePropertyTypes = React.useMemo(() => {
+    // Tipos básicos que siempre deben aparecer
+    const basicTypes = ['Apartamento', 'Casa', 'Townhouse', 'Local Comercial', 'Oficina'];
+    const types = properties.map(p => p.propertyType || 'Apartamento');
+    const allTypes = Array.from(new Set([...basicTypes, ...types]));
+    return allTypes.filter(Boolean).sort();
   }, [properties]);
 
   // Estado de filtros
@@ -109,23 +122,58 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
     pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
     removeDuplicates: false,
     hasParking: null,
+    hideCorrupt: false,
+    propertyTypes: [],
   });
+
+  // Verificar si hay filtros activos
+  const hasActiveFilters = React.useMemo(() => {
+    return (
+      filters.rooms.length > 0 ||
+      filters.bathrooms.length > 0 ||
+      filters.parking.length > 0 ||
+      filters.stratum.length > 0 ||
+      filters.neighborhoods.length > 0 ||
+      filters.sources.length > 0 ||
+      filters.amenities.length > 0 ||
+      filters.propertyTypes.length > 0 ||
+      filters.removeDuplicates ||
+      filters.hasParking !== null ||
+      filters.hideCorrupt ||
+      filters.priceRange[0] !== priceStats.min ||
+      filters.priceRange[1] !== priceStats.max ||
+      filters.areaRange[0] !== areaStats.min ||
+      filters.areaRange[1] !== areaStats.max ||
+      filters.pricePerM2Range[0] !== pricePerM2Stats.min ||
+      filters.pricePerM2Range[1] !== pricePerM2Stats.max
+    );
+  }, [filters, priceStats, areaStats, pricePerM2Stats]);
 
   // Aplicar filtros
   useEffect(() => {
     let filtered = [...properties];
 
-    // Filtro de precio
-    filtered = filtered.filter(p => 
-      p.totalPrice >= filters.priceRange[0] && 
-      p.totalPrice <= filters.priceRange[1]
-    );
+    // Solo aplicar filtros si hay filtros activos
+    if (!hasActiveFilters) {
+      onFiltersChange(filtered);
+      return;
+    }
 
-    // Filtro de área
-    filtered = filtered.filter(p => 
-      p.area >= filters.areaRange[0] && 
-      p.area <= filters.areaRange[1]
-    );
+    // Filtro de precio (solo si no está en el rango completo)
+    if (filters.priceRange[0] !== priceStats.min || filters.priceRange[1] !== priceStats.max) {
+      filtered = filtered.filter(p =>
+        p.totalPrice >= filters.priceRange[0] &&
+        p.totalPrice <= filters.priceRange[1]
+      );
+    }
+
+    // Filtro de área (solo si no está en el rango completo)
+    if (filters.areaRange[0] !== areaStats.min || filters.areaRange[1] !== areaStats.max) {
+      filtered = filtered.filter(p =>
+        p.area >= filters.areaRange[0] &&
+        p.area <= filters.areaRange[1]
+      );
+    }
 
     // Filtro de habitaciones
     if (filters.rooms.length > 0) {
@@ -145,6 +193,14 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
     // Filtro de estrato
     if (filters.stratum.length > 0) {
       filtered = filtered.filter(p => filters.stratum.includes(p.stratum || 0));
+    }
+
+    // Filtro de tipos de propiedad
+    if (filters.propertyTypes.length > 0) {
+      filtered = filtered.filter(p => {
+        const propertyType = p.propertyType || 'Apartamento'; // fallback
+        return filters.propertyTypes.includes(propertyType);
+      });
     }
 
     // Filtro de barrios
@@ -168,19 +224,28 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
       );
     }
 
-    // Filtro de precio por m²
-    filtered = filtered.filter(p => {
-      if (p.area <= 0) return true; // Incluir propiedades sin área
-      const pricePerM2 = p.totalPrice / p.area;
-      return pricePerM2 >= filters.pricePerM2Range[0] &&
-             pricePerM2 <= filters.pricePerM2Range[1];
-    });
-
-    // Filtro de parqueadero
-    if (filters.hasParking !== null) {
+    // Filtro de precio por m² (solo si no está en el rango completo)
+    if (filters.pricePerM2Range[0] !== pricePerM2Stats.min || filters.pricePerM2Range[1] !== pricePerM2Stats.max) {
       filtered = filtered.filter(p => {
-        const hasParking = (p.amenities || []).includes('parqueadero') || (p.parking || 0) > 0;
-        return filters.hasParking ? hasParking : !hasParking;
+        if (p.area <= 0) return true; // Incluir propiedades sin área
+        const pricePerM2 = p.totalPrice / p.area;
+        return pricePerM2 >= filters.pricePerM2Range[0] &&
+               pricePerM2 <= filters.pricePerM2Range[1];
+      });
+    }
+
+    // Filtro de calidad de datos (corruptos)
+    if (filters.hideCorrupt) {
+      filtered = filtered.filter(p => {
+        // Una propiedad es "corrupta" si le falta información esencial
+        const hasPrice = p.price && p.price > 0;
+        const hasTitle = p.title && p.title.trim().length > 0;
+        const hasLocation = p.location && (p.location.address || p.location.neighborhood);
+        const hasUrl = p.url && p.url.trim().length > 0;
+        const hasRooms = p.rooms && p.rooms > 0;
+
+        // Solo mostrar propiedades con datos completos
+        return hasPrice && hasTitle && hasLocation && hasUrl && hasRooms;
       });
     }
 
@@ -199,7 +264,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
     }
 
     onFiltersChange(filtered);
-  }, [filters, properties]); // Removed onFiltersChange from dependencies to prevent infinite loop
+  }, [filters, properties, hasActiveFilters, priceStats, areaStats, pricePerM2Stats]); // Removed onFiltersChange from dependencies to prevent infinite loop
 
   const formatPrice = (price: number) => {
     if (price >= 1000000) {
@@ -222,6 +287,8 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
       pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
       removeDuplicates: false,
       hasParking: null,
+      hideCorrupt: false,
+      propertyTypes: [],
     });
   };
 
@@ -245,43 +312,43 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
       </Box>
 
       <Box sx={{ p: 2 }}>
-        {/* Precio */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Precio: {formatPrice(filters.priceRange[0])} - {formatPrice(filters.priceRange[1])}
-          </Typography>
-          <Slider
-            value={filters.priceRange}
-            onChange={(_, newValue) => setFilters(prev => ({
-              ...prev,
-              priceRange: newValue as [number, number]
-            }))}
-            valueLabelDisplay="auto"
-            valueLabelFormat={formatPrice}
-            min={priceStats.min}
-            max={priceStats.max}
-            sx={{ mt: 1 }}
-          />
-        </Box>
-
-        {/* Área */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Área: {filters.areaRange[0]}m² - {filters.areaRange[1]}m²
-          </Typography>
-          <Slider
-            value={filters.areaRange}
-            onChange={(_, newValue) => setFilters(prev => ({
-              ...prev,
-              areaRange: newValue as [number, number]
-            }))}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(value) => `${value}m²`}
-            min={areaStats.min}
-            max={areaStats.max}
-            sx={{ mt: 1 }}
-          />
-        </Box>
+        {/* Precio y Área en la misma línea */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle2" gutterBottom>
+              Precio: {formatPrice(filters.priceRange[0])} - {formatPrice(filters.priceRange[1])}
+            </Typography>
+            <Slider
+              value={filters.priceRange}
+              onChange={(_, newValue) => setFilters(prev => ({
+                ...prev,
+                priceRange: newValue as [number, number]
+              }))}
+              valueLabelDisplay="auto"
+              valueLabelFormat={formatPrice}
+              min={priceStats.min}
+              max={priceStats.max}
+              sx={{ mt: 1 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle2" gutterBottom>
+              Área: {filters.areaRange[0]}m² - {filters.areaRange[1]}m²
+            </Typography>
+            <Slider
+              value={filters.areaRange}
+              onChange={(_, newValue) => setFilters(prev => ({
+                ...prev,
+                areaRange: newValue as [number, number]
+              }))}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${value}m²`}
+              min={areaStats.min}
+              max={areaStats.max}
+              sx={{ mt: 1 }}
+            />
+          </Grid>
+        </Grid>
 
         {/* Filtros categóricos */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -329,8 +396,8 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
             </Box>
           </Grid>
 
-          {/* Parqueaderos */}
-          <Grid item xs={12} md={4}>
+          {/* Parqueaderos y Estrato en la misma línea */}
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2" gutterBottom>Parqueaderos</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {[0, 1, 2, 3, 4].map(num => (
@@ -339,7 +406,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
                   label={num === 0 ? 'Sin parqueadero' : `${num}${num === 4 ? '+' : ''}`}
                   onClick={() => setFilters(prev => ({
                     ...prev,
-                    parking: prev.parking.includes(num) 
+                    parking: prev.parking.includes(num)
                       ? prev.parking.filter(p => p !== num)
                       : [...prev.parking, num]
                   }))}
@@ -350,92 +417,146 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
               ))}
             </Box>
           </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle2" gutterBottom>Estrato</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {[1, 2, 3, 4, 5, 6].map(num => (
+                <Chip
+                  key={num}
+                  label={`${num}`}
+                  onClick={() => setFilters(prev => ({
+                    ...prev,
+                    stratum: prev.stratum.includes(num)
+                      ? prev.stratum.filter(s => s !== num)
+                      : [...prev.stratum, num]
+                  }))}
+                  color={filters.stratum.includes(num) ? 'primary' : 'default'}
+                  variant={filters.stratum.includes(num) ? 'filled' : 'outlined'}
+                  size="small"
+                />
+              ))}
+            </Box>
+          </Grid>
         </Grid>
 
-        {/* Parqueadero */}
+        {/* Tipos de Propiedad */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Tipo de Propiedad
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {uniquePropertyTypes.map(type => (
+              <Chip
+                key={type}
+                label={type}
+                onClick={() => setFilters(prev => ({
+                  ...prev,
+                  propertyTypes: prev.propertyTypes.includes(type)
+                    ? prev.propertyTypes.filter(t => t !== type)
+                    : [...prev.propertyTypes, type]
+                }))}
+                color={filters.propertyTypes.includes(type) ? 'primary' : 'default'}
+                variant={filters.propertyTypes.includes(type) ? 'filled' : 'outlined'}
+                size="small"
+              />
+            ))}
+          </Box>
+        </Box>
+
+        {/* Amenidades Mejoradas */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Amenidades y Servicios
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: '120px', overflowY: 'auto' }}>
+            {uniqueAmenities.map(amenity => (
+              <Chip
+                key={amenity}
+                label={amenity}
+                onClick={() => setFilters(prev => ({
+                  ...prev,
+                  amenities: prev.amenities.includes(amenity)
+                    ? prev.amenities.filter(a => a !== amenity)
+                    : [...prev.amenities, amenity]
+                }))}
+                color={filters.amenities.includes(amenity) ? 'secondary' : 'default'}
+                variant={filters.amenities.includes(amenity) ? 'filled' : 'outlined'}
+                size="small"
+              />
+            ))}
+          </Box>
+        </Box>
+
+
+
+        {/* Opciones */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" gutterBottom>Parqueadero</Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              <Chip
-                label="Todos"
-                onClick={() => setFilters(prev => ({ ...prev, hasParking: null }))}
-                color={filters.hasParking === null ? 'primary' : 'default'}
-                variant={filters.hasParking === null ? 'filled' : 'outlined'}
-                size="small"
+            <Typography variant="subtitle2" gutterBottom>Opciones</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={filters.removeDuplicates}
+                    onChange={(e) => setFilters(prev => ({
+                      ...prev,
+                      removeDuplicates: e.target.checked
+                    }))}
+                    color="primary"
+                  />
+                }
+                label="Eliminar duplicados"
               />
-              <Chip
-                label="Con parqueadero"
-                onClick={() => setFilters(prev => ({ ...prev, hasParking: true }))}
-                color={filters.hasParking === true ? 'primary' : 'default'}
-                variant={filters.hasParking === true ? 'filled' : 'outlined'}
-                size="small"
-              />
-              <Chip
-                label="Sin parqueadero"
-                onClick={() => setFilters(prev => ({ ...prev, hasParking: false }))}
-                color={filters.hasParking === false ? 'primary' : 'default'}
-                variant={filters.hasParking === false ? 'filled' : 'outlined'}
-                size="small"
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={filters.hideCorrupt}
+                    onChange={(e) => setFilters(prev => ({
+                      ...prev,
+                      hideCorrupt: e.target.checked
+                    }))}
+                    color="secondary"
+                  />
+                }
+                label="Solo datos completos"
               />
             </Box>
-          </Grid>
-
-          {/* Eliminar duplicados */}
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" gutterBottom>Opciones</Typography>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={filters.removeDuplicates}
-                  onChange={(e) => setFilters(prev => ({
-                    ...prev,
-                    removeDuplicates: e.target.checked
-                  }))}
-                  color="primary"
-                />
-              }
-              label="Eliminar duplicados"
-            />
           </Grid>
         </Grid>
 
-        {/* Filtros avanzados en acordeón */}
-        <Accordion>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2">
-              Fuentes de Datos ({filters.sources.length} seleccionadas)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {uniqueSources.map(source => {
-                const count = properties.filter(p => p.source === source).length;
-                return (
-                  <Chip
-                    key={source}
-                    label={`${source} (${count})`}
-                    onClick={() => setFilters(prev => ({
-                      ...prev,
-                      sources: prev.sources.includes(source)
-                        ? prev.sources.filter(s => s !== source)
-                        : [...prev.sources, source]
-                    }))}
-                    color={filters.sources.includes(source) ? 'primary' : 'default'}
-                    variant={filters.sources.includes(source) ? 'filled' : 'outlined'}
-                    size="small"
-                  />
-                );
-              })}
-            </Box>
-          </AccordionDetails>
-        </Accordion>
+        {/* Fuentes de Datos */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Fuentes de Datos ({filters.sources.length} seleccionadas)
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {uniqueSources.map(source => {
+              const count = properties.filter(p => p.source === source).length;
+              return (
+                <Chip
+                  key={source}
+                  label={`${source} (${count})`}
+                  onClick={() => setFilters(prev => ({
+                    ...prev,
+                    sources: prev.sources.includes(source)
+                      ? prev.sources.filter(s => s !== source)
+                      : [...prev.sources, source]
+                  }))}
+                  color={filters.sources.includes(source) ? 'primary' : 'default'}
+                  variant={filters.sources.includes(source) ? 'filled' : 'outlined'}
+                  size="small"
+                />
+              );
+            })}
+          </Box>
+        </Box>
 
         {/* Resumen */}
         <Divider sx={{ my: 2 }} />
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            Mostrando {properties.length} propiedades
+            {hasActiveFilters ? 'Filtros aplicados' : 'Sin filtros aplicados'}
           </Typography>
           <Typography variant="body2" color="primary" sx={{ fontWeight: 'medium' }}>
             {uniqueSources.length} fuentes activas

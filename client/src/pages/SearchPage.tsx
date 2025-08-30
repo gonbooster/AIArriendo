@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import LocationAutocomplete from '../components/LocationAutocomplete';
+import SearchProgress from '../components/SearchProgress';
 import { Location } from '../services/locationService';
 import {
   Container,
@@ -18,12 +19,19 @@ import {
   CircularProgress,
   Alert,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Card,
+  CardContent,
+  Chip,
+  LinearProgress
 } from '@mui/material';
 import {
   Search as SearchIcon,
   LocationOn as LocationIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  TrendingUp as TrendingIcon,
+  Speed as SpeedIcon,
+  Security as SecurityIcon
 } from '@mui/icons-material';
 
 // Tipos para el formulario simplificado - Solo operación y ubicación
@@ -78,11 +86,13 @@ const SimpleSearchPage: React.FC = () => {
 
       console.log('📋 Criterios de búsqueda completos:', searchCriteria);
 
-      // Navegar a la página de resultados con los criterios
+      // Navegar a la página de resultados DESPUÉS de que termine la búsqueda
+      // El SearchProgress se encargará de navegar cuando termine
       navigate('/results', {
         state: {
           searchCriteria,
-          fromSimpleSearch: true
+          fromSimpleSearch: true,
+          showProgress: true // Indicar que debe mostrar progreso
         }
       });
 
@@ -98,21 +108,64 @@ const SimpleSearchPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box textAlign="center" mb={4}>
-        <Typography variant="h3" component="h1" gutterBottom color="primary" fontWeight="bold">
-          🏠 AI Arriendo Pro
-        </Typography>
-        <Typography variant="h6" color="text.secondary" mb={2}>
-          Encuentra tu hogar ideal con inteligencia artificial
-        </Typography>
+      {/* Header Mejorado */}
+      <Paper
+        elevation={2}
+        sx={{
+          p: 4,
+          mb: 4,
+          textAlign: 'center',
+          background: `linear-gradient(135deg, ${theme.palette.primary.light}15, ${theme.palette.secondary.light}15)`,
+          border: `1px solid ${theme.palette.primary.light}30`
+        }}
+      >
+<Typography variant="h3" component="h1" gutterBottom color="primary" fontWeight="bold">
+  🏠 Propiedades en minutos
+</Typography>
+<Typography variant="h6" color="text.secondary" mb={2}>
+  Encuentra viviendas, oficinas y locales con nuestro buscador inteligente
+</Typography>
+
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
+          <Chip
+            icon={<SpeedIcon />}
+            label="Búsqueda Rápida"
+            color="primary"
+            variant="outlined"
+            size="small"
+          />
+          <Chip
+            icon={<SecurityIcon />}
+            label="Datos Verificados"
+            color="secondary"
+            variant="outlined"
+            size="small"
+          />
+          <Chip
+            icon={<TrendingIcon />}
+            label="8 Fuentes"
+            color="success"
+            variant="outlined"
+            size="small"
+          />
+        </Box>
         <Typography variant="body1" color="text.secondary">
           Busca por operación y ubicación. Aplica filtros avanzados en los resultados.
         </Typography>
-      </Box>
+      </Paper>
+
+      {/* Componente de Progreso - PRIMERA PRIORIDAD VISUAL */}
+      <SearchProgress
+        isSearching={loading}
+        onComplete={() => {
+          // El progreso se completa automáticamente cuando la búsqueda termina
+        }}
+      />
 
       {/* Formulario de búsqueda simplificado */}
-      <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+      {!loading && (
+        <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
             {/* Operación */}
@@ -177,13 +230,14 @@ const SimpleSearchPage: React.FC = () => {
                     borderRadius: 2
                   }}
                 >
-                  {loading ? 'Buscando...' : 'Buscar Propiedades'}
+                  {loading ? 'Búsqueda en Progreso...' : 'Buscar Propiedades'}
                 </Button>
               </Box>
             </Grid>
           </Grid>
         </form>
-      </Paper>
+        </Paper>
+      )}
 
       {/* Error */}
       {error && (
@@ -191,30 +245,6 @@ const SimpleSearchPage: React.FC = () => {
           {error}
         </Alert>
       )}
-
-      {/* Info adicional */}
-      <Paper elevation={1} sx={{ p: 3, bgcolor: 'grey.50' }}>
-        <Typography variant="h6" gutterBottom color="primary">
-          ¿Cómo funciona?
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
-          1. <strong>Selecciona</strong> si quieres arrendar o comprar
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
-          2. <strong>Elige</strong> la ubicación donde quieres buscar
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
-          3. <strong>Aplica filtros</strong> avanzados en la página de resultados
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          4. <strong>Encuentra</strong> tu hogar ideal con IA
-        </Typography>
-      </Paper>
-
-      {/* Loading backdrop */}
-      <Backdrop open={loading} sx={{ zIndex: theme.zIndex.drawer + 1 }}>
-        <CircularProgress color="primary" />
-      </Backdrop>
     </Container>
   );
 };
