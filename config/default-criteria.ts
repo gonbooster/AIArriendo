@@ -32,7 +32,7 @@ export const MINIMAL_CRITERIA: SearchCriteria = {
     maxStratum: PROPERTY_DEFAULTS.MAX_STRATUM,
     
     location: {
-      city: LOCATION.DEFAULT_CITY,
+      city: '', // Dinámico - no hardcodear
       neighborhoods: [],
       zones: []
     }
@@ -95,7 +95,7 @@ export function createNeighborhoodCriteria(neighborhood: string): SearchCriteria
     hardRequirements: {
       ...MINIMAL_CRITERIA.hardRequirements,
       location: {
-        city: LOCATION.DEFAULT_CITY,
+        city: '', // Dinámico - no hardcodear
         neighborhoods: [neighborhood],
         zones: []
       }

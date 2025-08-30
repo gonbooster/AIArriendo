@@ -32,7 +32,7 @@ export const URL_PATTERNS = {
     params: {
       adType: '2', // rent
       propertyType: '1', // apartment
-      city: LOCATION.BOGOTA_CITY_CODE,
+      city: '11001', // Bogotá por defecto - será dinámico
       currency: 'COP',
       sort: 'relevance',
     },

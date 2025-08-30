@@ -191,7 +191,7 @@ export const PadsSchema: ProviderSchema = {
       propertyType: SEARCH.DEFAULT_PROPERTY_TYPE,
       source: 'PADS',
       location: {
-        city: LOCATION.DEFAULT_CITY,
+        city: '', // Dinámico - no hardcodear
         address: '',
         neighborhood: '',
         coordinates: LOCATION.DEFAULT_COORDINATES
