@@ -1,9 +1,27 @@
 import axios from 'axios';
 import { SearchCriteria, SearchResult } from '../types';
 
-// Create axios instance for backend API
-const apiBaseURL = (process.env.REACT_APP_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
-console.log('🌐 API base URL:', apiBaseURL);
+// Create axios instance for backend API - Dynamic detection
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isRailway = window.location.hostname.includes('railway.app') || window.location.hostname.includes('up.railway.app');
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Dynamic API URL detection
+let apiBaseURL: string;
+if (isLocalhost && isDevelopment) {
+  // Local development
+  apiBaseURL = 'http://localhost:3001/api';
+} else {
+  // Production (Railway or any other deployment) - use relative path
+  apiBaseURL = '/api';
+}
+
+console.log('🌐 Environment:', process.env.NODE_ENV);
+console.log('🌐 Hostname:', window.location.hostname);
+console.log('🌐 Is Localhost:', isLocalhost);
+console.log('🌐 Is Railway:', isRailway);
+console.log('🌐 Is Development:', isDevelopment);
+console.log('🌐 Final API base URL:', apiBaseURL);
 
 const apiClient = axios.create({
   baseURL: apiBaseURL,
