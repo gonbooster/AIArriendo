@@ -164,11 +164,11 @@ async function startServer() {
     // Start server with port from env or default 3001, fallback if in use
     const tryListen = (port: number, attempts = 0) => {
       const server = app.listen(port, '0.0.0.0', () => {
-        logger.info(`🚀 AI Arriendo Pro Server running on port ${port}`);
+        logger.info(`🚀 AI Arriendo Pro Server running on 0.0.0.0:${port}`);
         logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-        logger.info(`🔗 Health check: http://localhost:${port}/api/health`);
-        logger.info(`📊 Dashboard: http://localhost:${port}/api/dashboard/stats`);
-        logger.info(`🔍 Search API: http://localhost:${port}/api/search`);
+        logger.info(`🔗 Health check: http://0.0.0.0:${port}/api/health`);
+        logger.info(`📊 Dashboard: http://0.0.0.0:${port}/api/dashboard/stats`);
+        logger.info(`🔍 Search API: http://0.0.0.0:${port}/api/search`);
       });
       server.on('error', (err: any) => {
         if (err.code === 'EADDRINUSE' && attempts < 5) {
