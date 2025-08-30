@@ -168,7 +168,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               size="small"
               sx={{
                 fontWeight: 'bold',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                '& .MuiChip-icon': {
+                  color: 'white'
+                }
               }}
             />
             <Chip
@@ -225,10 +229,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           flexDirection: 'column',
           p: compact ? 1.5 : 2,
           '&:last-child': { pb: compact ? 1.5 : 2 },
+          justifyContent: 'space-between' // ✅ Distribuir contenido uniformemente
         }}
       >
-        {/* Price */}
-        <Typography
+        {/* Main Content Container */}
+        <Box sx={{ flex: 1 }}>
+          {/* Price */}
+          <Typography
           variant={compact ? 'h6' : 'h5'}
           component="div"
           sx={{
@@ -262,9 +269,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             display: '-webkit-box',
-            WebkitLineClamp: compact ? 2 : 3,
+            WebkitLineClamp: compact ? 2 : 2, // ✅ Fijar a 2 líneas para consistencia
             WebkitBoxOrient: 'vertical',
             lineHeight: 1.3,
+            minHeight: compact ? '2.6em' : '2.6em', // ✅ Altura mínima fija
           }}
         >
           {property.title}
@@ -290,7 +298,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         <Stack
           direction="row"
           spacing={2}
-          sx={{ mb: 1.5, flexWrap: 'wrap', gap: 1, alignItems: 'center' }}
+          sx={{
+            mb: 1.5,
+            flexWrap: 'wrap',
+            gap: 1,
+            alignItems: 'center',
+            minHeight: '24px' // ✅ Altura mínima para consistencia
+          }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <HomeIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
@@ -335,35 +349,41 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </Stack>
 
         {/* Amenities */}
-        {!compact && property.amenities.length > 0 && (
-          <Box sx={{ mb: 1.5 }}>
-            <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-              {property.amenities.slice(0, 3).map((amenity, index) => (
-                <Chip
-                  key={index}
-                  label={amenity}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontSize: '0.7rem',
-                    height: 20,
-                  }}
-                />
-              ))}
-              {property.amenities.length > 3 && (
-                <Chip
-                  label={`+${property.amenities.length - 3}`}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontSize: '0.7rem',
-                    height: 20,
-                  }}
-                />
-              )}
-            </Stack>
-          </Box>
-        )}
+        <Box sx={{ mb: 1.5, minHeight: compact ? '0px' : '32px' }}>
+          {!compact && property.amenities.length > 0 && (
+            <Tooltip
+              title={
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                    Amenidades ({property.amenities.length})
+                  </Typography>
+                  {property.amenities.map((amenity, index) => (
+                    <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
+                      • {amenity}
+                    </Typography>
+                  ))}
+                </Box>
+              }
+              arrow
+              placement="top"
+            >
+              <Chip
+                label={`${property.amenities.length} amenidades`}
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontSize: '0.7rem',
+                  height: 20,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  }
+                }}
+              />
+            </Tooltip>
+          )}
+        </Box>
+        </Box>
 
         {/* Action Button */}
         <Box sx={{ mt: 'auto' }}>

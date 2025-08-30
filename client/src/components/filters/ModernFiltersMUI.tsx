@@ -120,9 +120,9 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
     sources: [],
     amenities: [],
     pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
-    removeDuplicates: false,
+    removeDuplicates: true, // ✅ Marcado por defecto
     hasParking: null,
-    hideCorrupt: false,
+    hideCorrupt: true, // ✅ Marcado por defecto
     propertyTypes: [],
   });
 
@@ -153,11 +153,8 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
   useEffect(() => {
     let filtered = [...properties];
 
-    // Solo aplicar filtros si hay filtros activos
-    if (!hasActiveFilters) {
-      onFiltersChange(filtered);
-      return;
-    }
+    // Siempre aplicar los filtros básicos (duplicados y calidad de datos)
+    // Los otros filtros solo se aplican si están activos
 
     // Filtro de precio (solo si no está en el rango completo)
     if (filters.priceRange[0] !== priceStats.min || filters.priceRange[1] !== priceStats.max) {
@@ -234,27 +231,25 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
       });
     }
 
-    // Filtro de calidad de datos (corruptos)
+    // Filtro de calidad de datos (corruptos) - Menos restrictivo
     if (filters.hideCorrupt) {
       filtered = filtered.filter(p => {
-        // Una propiedad es "corrupta" si le falta información esencial
+        // Una propiedad es "corrupta" si le falta información CRÍTICA
         const hasPrice = p.price && p.price > 0;
         const hasTitle = p.title && p.title.trim().length > 0;
         const hasLocation = p.location && (p.location.address || p.location.neighborhood);
-        const hasUrl = p.url && p.url.trim().length > 0;
-        const hasRooms = p.rooms && p.rooms > 0;
 
-        // Solo mostrar propiedades con datos completos
-        return hasPrice && hasTitle && hasLocation && hasUrl && hasRooms;
+        // Solo requerir precio, título y ubicación (más flexible)
+        return hasPrice && hasTitle && hasLocation;
       });
     }
 
-    // Eliminar duplicados si está activado
+    // Eliminar duplicados si está activado - Más específico
     if (filters.removeDuplicates) {
       const seen = new Set();
       filtered = filtered.filter(p => {
-        // Crear una clave única basada en ubicación y precio
-        const key = `${p.location.neighborhood || ''}-${p.totalPrice}-${p.area}-${p.rooms}`;
+        // Crear una clave única más específica para evitar falsos positivos
+        const key = `${p.location.neighborhood || 'unknown'}-${p.totalPrice || p.price}-${p.area}-${p.rooms}-${p.title?.substring(0, 50) || ''}`;
         if (seen.has(key)) {
           return false;
         }
@@ -285,9 +280,9 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
       sources: [],
       amenities: [],
       pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
-      removeDuplicates: false,
+      removeDuplicates: true, // ✅ Mantener marcado por defecto
       hasParking: null,
-      hideCorrupt: false,
+      hideCorrupt: true, // ✅ Mantener marcado por defecto
       propertyTypes: [],
     });
   };

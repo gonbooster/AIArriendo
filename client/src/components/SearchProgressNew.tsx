@@ -156,7 +156,7 @@ const SearchProgress: React.FC = () => {
             >
               <Typography variant="body2" color="text.secondary">
                 {timeElapsed < 15 ? (
-                  <>🚀 <strong>¡Despegamos!</strong> Nuestros robots están corriendo por toda Bogotá buscando tu hogar perfecto.</>
+                  <>🚀 <strong>¡Despegamos!</strong> Nuestros robots están corriendo por todas partes buscando tu hogar perfecto.</>
                 ) : timeElapsed < 30 ? (
                   <>🕵️ <strong>Misión en progreso:</strong> Infiltrándonos en las mejores páginas inmobiliarias... ¡Shh!</>
                 ) : timeElapsed < 45 ? (
