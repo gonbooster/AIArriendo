@@ -101,8 +101,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Root health check for Railway
-app.get('/', (req, res) => {
+// Root health check for Railway (only for API requests)
+app.get('/api', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'AI Arriendo Pro - Railway Deployment',
