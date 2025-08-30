@@ -14,7 +14,7 @@ export class PadsScraper extends BaseScraper {
   /**
    * Scrape PADS specifically
    */
-  async scrape(criteria: SearchCriteria, maxPages: number = 10): Promise<Property[]> {
+  async scrape(criteria: SearchCriteria, maxPages: number = 1): Promise<Property[]> {
     logger.info('Starting PADS scraping');
 
     try {
@@ -28,7 +28,7 @@ export class PadsScraper extends BaseScraper {
         await this.rateLimiter.waitForSlot();
 
         try {
-          const pageUrl = currentPage === 1 ? searchUrl : `${searchUrl}&page=${currentPage}`;
+          const pageUrl = currentPage === 1 ? searchUrl : `${searchUrl}?page=${currentPage}`;
           logger.info(`Scraping PADS page ${currentPage}: ${pageUrl}`);
 
           const response = await axios.get(pageUrl, {
@@ -87,30 +87,32 @@ export class PadsScraper extends BaseScraper {
    * Build PADS search URL
    */
   private buildPadsUrl(criteria: SearchCriteria): string {
-    let baseUrl = 'https://www.pads.com/bogota-apartments-for-rent';
+    // Use the correct PADS URL structure: /inmuebles-en-arriendo/ciudad/localidad/barrio
+    let baseUrl = 'https://pads.com.co/inmuebles-en-arriendo/bogota';
 
-    // Add neighborhood filter if specified
+    // Add neighborhood if specified
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0];
-      // Map neighborhood names to PADS zone names
+      const neighborhood = criteria.hardRequirements.location.neighborhoods[0].toLowerCase();
+
+      // Map neighborhood names to PADS URL structure
       const neighborhoodMap: Record<string, string> = {
+        'suba': 'suba',
         'usaquen': 'usaquen',
         'usaquén': 'usaquen',
         'chapinero': 'chapinero',
-        'zona rosa': 'zona-rosa',
-        'chico': 'chico',
-        'rosales': 'rosales',
-        'la candelaria': 'la-candelaria',
-        'centro': 'centro'
+        'zona rosa': 'chapinero/zona-rosa',
+        'chico': 'chapinero/chico',
+        'rosales': 'chapinero/rosales',
+        'centro': 'centro',
+        'la candelaria': 'centro/la-candelaria'
       };
 
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
+      const mappedNeighborhood = neighborhoodMap[neighborhood];
       if (mappedNeighborhood) {
-        baseUrl = `https://www.pads.com/${mappedNeighborhood}-bogota-apartments-for-rent`;
+        baseUrl = `https://pads.com.co/inmuebles-en-arriendo/bogota/${mappedNeighborhood}`;
       }
     }
 
-    // Remove all parameter restrictions - get everything
     return baseUrl;
   }
 
@@ -278,12 +280,12 @@ export class PadsScraper extends BaseScraper {
       await page.waitForSelector('.property-listing, .listing-card, .search-result-item, article, li', { timeout: 15000 }).catch(()=>{});
 
       const items = await page.evaluate(() => {
-        const out: Array<{title:string; priceText:string; url:string; imageUrl:string; location:string;}> = [];
+        const out: Array<{title:string; priceText:string; url:string; imageUrl:string; location:string; rooms:string; bathrooms:string; area:string;}> = [];
         const doc: any = (globalThis as any).document;
-        const cards = doc ? Array.from(doc.querySelectorAll('.property-listing, .listing-card, .search-result-item, article, li')) : [];
+        const cards = doc ? Array.from(doc.querySelectorAll('.property-listing, .listing-card, .search-result-item, article, li, .property-card, .inmueble-card')) : [];
         cards.forEach((el:any) => {
-          const title = el.querySelector('.property-name, .listing-title, h3, h4')?.textContent?.trim() || '';
-          const priceText = el.querySelector('.rent-price, .price, .listing-price, [class*="price"]')?.textContent?.trim() || '';
+          const title = el.querySelector('.property-name, .listing-title, h3, h4, .title, .name')?.textContent?.trim() || '';
+          const priceText = el.querySelector('.rent-price, .price, .listing-price, [class*="price"], .valor, .precio')?.textContent?.trim() || '';
           const linkEl: any = el.querySelector('a[href]');
           const url = linkEl ? (linkEl.href || linkEl.getAttribute('href')) : '';
           const imgEl: any = el.querySelector('img');
@@ -292,8 +294,27 @@ export class PadsScraper extends BaseScraper {
             const srcset = imgEl?.getAttribute?.('srcset') || '';
             if (srcset) imageUrl = srcset.split(',')[0]?.trim().split(' ')[0] || '';
           }
-          const location = el.querySelector('.property-address, .address, .location')?.textContent?.trim() || '';
-          if ((title || priceText) && url) out.push({ title, priceText, url, imageUrl, location });
+          const location = el.querySelector('.property-address, .address, .location, .ubicacion, .zona')?.textContent?.trim() || '';
+
+          // Extract rooms, bathrooms, and area from text content
+          const fullText = el.textContent?.toLowerCase() || '';
+
+          // Extract rooms
+          let rooms = '';
+          const roomsMatch = fullText.match(/(\d+)\s*(hab|habitacion|alcoba|dormitorio|cuarto|bedroom)/i);
+          if (roomsMatch) rooms = roomsMatch[1];
+
+          // Extract bathrooms
+          let bathrooms = '';
+          const bathroomMatch = fullText.match(/(\d+)\s*(baño|bathroom|baños)/i);
+          if (bathroomMatch) bathrooms = bathroomMatch[1];
+
+          // Extract area
+          let area = '';
+          const areaMatch = fullText.match(/(\d+)\s*m[²2]/i);
+          if (areaMatch) area = areaMatch[1];
+
+          if ((title || priceText) && url) out.push({ title, priceText, url, imageUrl, location, rooms, bathrooms, area });
         });
 
         if (out.length === 0 && doc) {
@@ -306,7 +327,19 @@ export class PadsScraper extends BaseScraper {
             const priceText = (container?.querySelector?.('[class*="price"], .price, .rent-price')?.textContent || '').trim();
             const imgEl: any = container?.querySelector?.('img');
             const imageUrl = imgEl?.getAttribute?.('data-src') || imgEl?.getAttribute?.('src') || '';
-            if ((title || priceText) && url) out.push({ title, priceText, url, imageUrl, location: '' });
+
+            // Extract data from container text
+            const fullText = container?.textContent?.toLowerCase() || '';
+            const roomsMatch = fullText.match(/(\d+)\s*(hab|habitacion|alcoba|dormitorio|cuarto|bedroom)/i);
+            const bathroomMatch = fullText.match(/(\d+)\s*(baño|bathroom|baños)/i);
+            const areaMatch = fullText.match(/(\d+)\s*m[²2]/i);
+
+            if ((title || priceText) && url) out.push({
+              title, priceText, url, imageUrl, location: '',
+              rooms: roomsMatch ? roomsMatch[1] : '',
+              bathrooms: bathroomMatch ? bathroomMatch[1] : '',
+              area: areaMatch ? areaMatch[1] : ''
+            });
           });
         }
 
@@ -318,16 +351,16 @@ export class PadsScraper extends BaseScraper {
         const raw = {
           title: it.title || 'Apartamento en arriendo',
           price: it.priceText,
-          area: '',
-          rooms: '',
-          bathrooms: '',
+          area: it.area || '',
+          rooms: it.rooms || '',
+          bathrooms: it.bathrooms || '',
           location: it.location || 'Bogotá',
           images: it.imageUrl ? [it.imageUrl] : [],
           url: it.url,
           description: ''
         };
         const parsed = this.parser.parseProperty(raw);
-        if (parsed && parsed.price <= criteria.hardRequirements.maxTotalPrice) remapped.push(parsed);
+        if (parsed && parsed.price > 0 && parsed.price <= criteria.hardRequirements.maxTotalPrice) remapped.push(parsed);
       });
 
       return remapped;

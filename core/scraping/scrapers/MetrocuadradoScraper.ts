@@ -185,15 +185,54 @@ export class MetrocuadradoScraper extends BaseScraper {
       const price = parseInt((priceText || '').replace(/[^\d]/g, '')) || 0;
       if (!title || price <= 0) return;
 
+      // Extract rooms and bathrooms from title/description
+      const fullText = `${title} ${loc}`.toLowerCase();
+
+      // Extract rooms
+      let rooms = 0;
+      const roomsMatches = [
+        fullText.match(/(\d+)\s*hab/i),
+        fullText.match(/(\d+)\s*habitacion/i),
+        fullText.match(/(\d+)\s*alcoba/i),
+        fullText.match(/(\d+)\s*dormitorio/i),
+        fullText.match(/(\d+)\s*cuarto/i)
+      ];
+      for (const match of roomsMatches) {
+        if (match) {
+          rooms = parseInt(match[1]) || 0;
+          break;
+        }
+      }
+
+      // Extract bathrooms
+      let bathrooms = 0;
+      const bathroomMatches = [
+        fullText.match(/(\d+)\s*baño/i),
+        fullText.match(/(\d+)\s*bathroom/i)
+      ];
+      for (const match of bathroomMatches) {
+        if (match) {
+          bathrooms = parseInt(match[1]) || 0;
+          break;
+        }
+      }
+
+      // Extract area
+      let area = 0;
+      const areaMatch = fullText.match(/(\d+)\s*m[²2]/i);
+      if (areaMatch) {
+        area = parseInt(areaMatch[1]) || 0;
+      }
+
       const prop: Property = {
         id: `metrocuadrado_${Date.now()}_${idx}`,
         title,
         price,
         adminFee: 0,
         totalPrice: price,
-        area: 0,
-        rooms: 0,
-        bathrooms: 0,
+        area,
+        rooms,
+        bathrooms,
         location: { address: loc, neighborhood: '', city: 'Bogotá' },
         images: img ? [img] : [],
         url: url.startsWith('http') ? url : `https://www.metrocuadrado.com${url}`,
@@ -201,7 +240,7 @@ export class MetrocuadradoScraper extends BaseScraper {
         description: '',
         amenities: [],
         scrapedDate: new Date().toISOString(),
-        pricePerM2: 0,
+        pricePerM2: area > 0 ? Math.round(price / area) : 0,
         isActive: true
       };
 

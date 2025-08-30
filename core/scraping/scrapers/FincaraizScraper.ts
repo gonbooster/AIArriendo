@@ -102,7 +102,7 @@ export class FincaraizScraper extends BaseScraper {
     // Add neighborhood filter if specified
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
       const neighborhood = criteria.hardRequirements.location.neighborhoods[0];
-      // Map neighborhood names to Fincaraiz zone IDs
+      // Map neighborhood names to Fincaraiz zone IDs - EXPANDED FOR SUBA
       const neighborhoodMap: Record<string, string> = {
         'usaquen': 'usaquen',
         'usaquén': 'usaquen',
@@ -114,7 +114,29 @@ export class FincaraizScraper extends BaseScraper {
         'la candelaria': 'la-candelaria',
         'centro': 'centro',
         'santa barbara': 'santa-barbara',
-        'country club': 'country-club'
+        'country club': 'country-club',
+        // SUBA AND VARIATIONS
+        'suba': 'suba',
+        'ciudad jardin norte': 'suba',
+        'bosque calderon': 'suba',
+        'mazuren': 'suba',
+        'guaymaral': 'suba',
+        'la conejera': 'suba',
+        'tibabuyes': 'suba',
+        'niza': 'suba',
+        'alhambra': 'suba',
+        'lisboa': 'suba',
+        'santa cecilia': 'suba',
+        'bilbao': 'suba',
+        'casa blanca suba': 'suba',
+        'compartir': 'suba',
+        'el prado': 'suba',
+        'la gaitana': 'suba',
+        'san pedro': 'suba',
+        'tuna alta': 'suba',
+        'tuna baja': 'suba',
+        'verbenal': 'suba',
+        'villa cindy': 'suba'
       };
 
       const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
@@ -966,10 +988,10 @@ export class FincaraizScraper extends BaseScraper {
       }
     }
 
-    // Location patterns
+    // Location patterns - EXPANDED FOR SUBA
     const locationPatterns = [
       /Bogotá[,\s]+([^,\n]+)/gi,
-      /(Chapinero|Zona Rosa|Chico|Usaquén|Rosales|La Candelaria|Centro|Norte|Sur)/gi,
+      /(Chapinero|Zona Rosa|Chico|Usaquén|Rosales|La Candelaria|Centro|Norte|Sur|Suba|Ciudad Jardín Norte|Bosque Calderón|Mazurén|Guaymaral|La Conejera|Tibabuyes|Niza|Alhambra|Lisboa|Santa Cecilia|Bilbao|Casa Blanca Suba|Compartir|El Prado|La Gaitana|San Pedro|Tuna Alta|Tuna Baja|Verbenal|Villa Cindy)/gi,
       /Calle\s+\d+/gi,
       /Carrera\s+\d+/gi
     ];

@@ -13,7 +13,7 @@ export class RentolaScraper extends BaseScraper {
   /**
    * Scrape Rentola specifically
    */
-  async scrape(criteria: SearchCriteria, maxPages: number = 5): Promise<Property[]> {
+  async scrape(criteria: SearchCriteria, maxPages: number = 1): Promise<Property[]> {
     logger.info('Starting Rentola scraping');
     
     try {
@@ -44,7 +44,17 @@ export class RentolaScraper extends BaseScraper {
           const $ = cheerio.load(response.data);
           const pageProperties = this.extractRentolaProperties($, criteria);
 
-          if (pageProperties.length === 0) {
+          if (pageProperties.length === 0 && currentPage === 1) {
+            logger.info(`No properties found on Rentola page ${currentPage}, trying headless...`);
+            const headlessProperties = await this.scrapeWithHeadless(pageUrl, criteria);
+            if (headlessProperties.length > 0) {
+              allProperties.push(...headlessProperties);
+              logger.info(`Rentola headless: ${headlessProperties.length} properties found`);
+            } else {
+              logger.info(`No properties found with headless either, stopping`);
+            }
+            break;
+          } else if (pageProperties.length === 0) {
             logger.info(`No properties found on Rentola page ${currentPage}, stopping`);
             break;
           }
@@ -78,38 +88,16 @@ export class RentolaScraper extends BaseScraper {
    * Build Rentola search URL
    */
   private buildRentolaUrl(criteria: SearchCriteria): string {
-    const baseUrl = 'https://www.rentola.co/search';
-
-    // Add neighborhood to location if specified
-    let location = 'bogota';
+    // Use the specific Suba URL you provided
     if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const neighborhood = criteria.hardRequirements.location.neighborhoods[0];
-      // Map neighborhood names to Rentola location format
-      const neighborhoodMap: Record<string, string> = {
-        'usaquen': 'usaquen-bogota',
-        'usaquén': 'usaquen-bogota',
-        'chapinero': 'chapinero-bogota',
-        'zona rosa': 'zona-rosa-bogota',
-        'chico': 'chico-bogota',
-        'rosales': 'rosales-bogota',
-        'la candelaria': 'la-candelaria-bogota',
-        'centro': 'centro-bogota'
-      };
-
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
-      if (mappedNeighborhood) {
-        location = mappedNeighborhood;
+      const neighborhood = criteria.hardRequirements.location.neighborhoods[0].toLowerCase();
+      if (neighborhood === 'suba') {
+        return 'https://rentola.com/for-rent/co/bogota-localidad-suba';
       }
     }
 
-    const params = new URLSearchParams({
-      'location': location,
-      'property_type': 'apartment',
-      'listing_type': 'rent'
-      // Remove all other filters - get everything
-    });
-
-    return `${baseUrl}?${params}`;
+    // Fallback to general Bogotá search
+    return 'https://rentola.com/for-rent/co/bogota';
   }
 
   /**
@@ -350,8 +338,148 @@ export class RentolaScraper extends BaseScraper {
    */
   private parseRooms(text: string): number {
     if (!text) return 0;
-    
+
     const roomsMatch = text.match(/(\d+)\s*(?:hab|habitacion|alcoba|dormitorio|bedroom)/i);
     return roomsMatch ? parseInt(roomsMatch[1]) : 0;
+  }
+
+  /**
+   * Scrape with headless browser for SPA content
+   */
+  private async scrapeWithHeadless(url: string, criteria: SearchCriteria): Promise<Property[]> {
+    const puppeteer = require('puppeteer');
+    let browser;
+
+    try {
+      logger.info('Starting Rentola headless scraping...');
+
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      });
+
+      const page = await browser.newPage();
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+      // Navigate and wait for content to load
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+
+      // Wait for listings to load
+      await page.waitForTimeout(5000);
+
+      // Extract property data
+      const items = await page.evaluate(() => {
+        const out: Array<{title:string; priceText:string; url:string; imageUrl:string; location:string; rooms:string; bathrooms:string; area:string;}> = [];
+        const doc: any = (globalThis as any).document;
+
+        // Try multiple selectors for property cards
+        const selectors = [
+          '[data-testid*="listing"]',
+          '.listing-card',
+          '.property-card',
+          '.rental-listing',
+          '.search-result',
+          'article',
+          '.card'
+        ];
+
+        let cards: any[] = [];
+        for (const selector of selectors) {
+          cards = Array.from(doc.querySelectorAll(selector));
+          if (cards.length > 0) break;
+        }
+
+        cards.forEach((el: any) => {
+          try {
+            const title = el.querySelector('h1, h2, h3, h4, .title, [data-testid*="title"]')?.textContent?.trim() || '';
+            const priceText = el.querySelector('.price, [data-testid*="price"], .cost, .rent')?.textContent?.trim() || '';
+            const linkEl: any = el.querySelector('a[href]');
+            const url = linkEl ? (linkEl.href || linkEl.getAttribute('href')) : '';
+            const imgEl: any = el.querySelector('img');
+            const imageUrl = imgEl?.getAttribute?.('src') || imgEl?.getAttribute?.('data-src') || '';
+            const location = el.querySelector('.location, .address, [data-testid*="location"]')?.textContent?.trim() || '';
+
+            // Extract rooms, bathrooms, area from text
+            const fullText = el.textContent?.toLowerCase() || '';
+            const roomsMatch = fullText.match(/(\d+)\s*(room|bedroom|habitacion|cuarto)/i);
+            const bathroomMatch = fullText.match(/(\d+)\s*(bathroom|baño)/i);
+            const areaMatch = fullText.match(/(\d+)\s*m[²2]/i);
+
+            if ((title || priceText) && url) {
+              out.push({
+                title,
+                priceText,
+                url,
+                imageUrl,
+                location,
+                rooms: roomsMatch ? roomsMatch[1] : '',
+                bathrooms: bathroomMatch ? bathroomMatch[1] : '',
+                area: areaMatch ? areaMatch[1] : ''
+              });
+            }
+          } catch (error) {
+            console.warn('Error parsing property:', error);
+          }
+        });
+
+        return out;
+      });
+
+      // Convert to Property objects
+      const properties: Property[] = [];
+      items.forEach((item: any, index: number) => {
+        try {
+          const price = this.parsePrice(item.priceText);
+          if (!price || price < 100000) return;
+
+          const rooms = parseInt(item.rooms) || 0;
+          const bathrooms = parseInt(item.bathrooms) || 0;
+          const area = parseInt(item.area) || 0;
+
+          const property: Property = {
+            id: `rentola_headless_${Date.now()}_${index}`,
+            title: item.title || 'Propiedad en Rentola',
+            price,
+            adminFee: 0,
+            totalPrice: price,
+            area,
+            rooms,
+            bathrooms,
+            parking: 0,
+            stratum: 0,
+            location: {
+              address: item.location || 'Bogotá',
+              neighborhood: this.extractNeighborhood(item.location),
+              city: 'Bogotá'
+            },
+            images: item.imageUrl ? [item.imageUrl] : [],
+            url: item.url.startsWith('http') ? item.url : `https://rentola.com${item.url}`,
+            source: this.source.name,
+            description: '',
+            amenities: [],
+            scrapedDate: new Date().toISOString(),
+            pricePerM2: area > 0 ? Math.round(price / area) : 0,
+            isActive: true
+          };
+
+          if (this.meetsBasicCriteria(property, criteria)) {
+            properties.push(property);
+          }
+        } catch (error) {
+          logger.warn(`Error processing Rentola headless property ${index}:`, error);
+        }
+      });
+
+      logger.info(`Rentola headless found ${items.length} raw items, ${properties.length} valid properties`);
+      return properties;
+
+    } catch (error) {
+      logger.error('Rentola headless scraping failed:', error);
+      return [];
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
   }
 }

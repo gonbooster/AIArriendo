@@ -107,7 +107,7 @@ const SearchPage: React.FC = () => {
   // Función para convertir criterios de búsqueda a formato de formulario
   const convertCriteriaToFormValues = (criteria: any): SearchForm => {
     if (!criteria || !shouldRememberInputs) {
-      // Valores SIN FILTROS RESTRICTIVOS - MOSTRAR TODAS LAS PROPIEDADES
+      // VALORES EXACTOS DEL SCRIPT SIN FILTROS
       return {
         operation: 'arriendo',
         propertyTypes: ['Apartamento', 'Casa', 'Apartaestudio', 'Loft', 'Penthouse'],
@@ -382,14 +382,14 @@ const SearchPage: React.FC = () => {
                     <Box sx={{ px: 1 }}>
                       <Slider
                         value={[watch('minPrice'), watch('maxPrice')]}
-                        min={500000}
-                        max={10000000}
+                        min={1}
+                        max={50000000}
                         step={100000}
                         marks={[
-                          { value: 500000, label: '$500K' },
+                          { value: 1, label: '$0' },
                           { value: 2000000, label: '$2M' },
-                          { value: 5000000, label: '$5M' },
-                          { value: 10000000, label: '$10M' }
+                          { value: 10000000, label: '$10M' },
+                          { value: 50000000, label: '$50M' }
                         ]}
                         valueLabelDisplay="auto"
                         valueLabelFormat={(value) => `$${(value / 1000000).toFixed(1)}M`}
@@ -428,15 +428,14 @@ const SearchPage: React.FC = () => {
                       <Slider
                         value={[watch('minRooms'), watch('maxRooms')]}
                         min={1}
-                        max={6}
+                        max={10}
                         step={1}
                         marks={[
                           { value: 1, label: '1' },
-                          { value: 2, label: '2' },
                           { value: 3, label: '3' },
-                          { value: 4, label: '4' },
                           { value: 5, label: '5' },
-                          { value: 6, label: '6' }
+                          { value: 7, label: '7' },
+                          { value: 10, label: '10' }
                         ]}
                         valueLabelDisplay="auto"
                         onChange={(_, value) => {
@@ -463,13 +462,13 @@ const SearchPage: React.FC = () => {
                       <Slider
                         value={[watch('minBathrooms'), watch('maxBathrooms')]}
                         min={1}
-                        max={4}
+                        max={10}
                         step={1}
                         marks={[
                           { value: 1, label: '1' },
-                          { value: 2, label: '2' },
                           { value: 3, label: '3' },
-                          { value: 4, label: '4' }
+                          { value: 5, label: '5' },
+                          { value: 10, label: '10' }
                         ]}
                         valueLabelDisplay="auto"
                         onChange={(_, value) => {
@@ -496,13 +495,14 @@ const SearchPage: React.FC = () => {
                       <Slider
                         value={[watch('minParking'), watch('maxParking')]}
                         min={0}
-                        max={3}
+                        max={10}
                         step={1}
                         marks={[
                           { value: 0, label: '0' },
                           { value: 1, label: '1' },
                           { value: 2, label: '2' },
-                          { value: 3, label: '3+' }
+                          { value: 5, label: '5' },
+                          { value: 10, label: '10+' }
                         ]}
                         valueLabelDisplay="auto"
                         onChange={(_, value) => {
@@ -569,8 +569,8 @@ const SearchPage: React.FC = () => {
                         <Box sx={{ px: 1 }}>
                           <Slider
                             value={[watch('minArea'), watch('maxArea')]}
-                            min={20}
-                            max={500}
+                            min={1}
+                            max={1000}
                             step={10}
                             marks={[
                               { value: 20, label: '20m²' },

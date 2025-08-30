@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { connectDatabase } from './config/database';
 import { logger } from './utils/logger';
 import searchRoutes from './routes/search';
@@ -97,6 +98,9 @@ app.get('/api/dashboard/stats', (req, res) => {
 // Use search routes
 app.use('/api/search', searchRoutes);
 
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, '../client/build')));
+
 app.get('/api/search/sources', (req, res) => {
   res.json({
     success: true,
@@ -107,6 +111,11 @@ app.get('/api/search/sources', (req, res) => {
       { id: 'facebook', name: 'Facebook Marketplace', isActive: true, priority: 4 }
     ]
   });
+});
+
+// Catch-all handler: send back React's index.html file for non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
 // Error handling

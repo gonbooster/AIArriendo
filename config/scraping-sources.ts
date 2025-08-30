@@ -224,8 +224,8 @@ export const SCRAPING_SOURCES: ScrapingSource[] = [
   {
     id: 'pads',
     name: 'PADS',
-    baseUrl: 'https://www.pads.com',
-    isActive: true,
+    baseUrl: 'https://pads.com.co',
+    isActive: false, // DISABLED: No properties in Suba (confirmed)
     priority: 11,
     rateLimit: {
       requestsPerMinute: 20,
@@ -244,6 +244,35 @@ export const SCRAPING_SOURCES: ScrapingSource[] = [
       images: '.property-image img, img, [data-testid="property-image"] img',
       link: 'a, .property-link',
       nextPage: '.pagination .next, [aria-label="Next"], .siguiente'
+    },
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    }
+  },
+
+  {
+    id: 'rentola',
+    name: 'Rentola',
+    baseUrl: 'https://rentola.com',
+    isActive: false, // DISABLED: Not finding properties
+    priority: 12,
+    rateLimit: {
+      requestsPerMinute: 15,
+      delayBetweenRequests: 4000,
+      maxConcurrentRequests: 1
+    },
+    selectors: {
+      propertyCard: '.listing-card, .property-item, .rental-listing, [data-testid="listing"], .search-result, .listing, .property, .card, article',
+      title: '.listing-title, .property-title, h3, h4, h2, [data-testid="listing-title"], .title, .name',
+      price: '.listing-price, .price, .rent-price, [data-testid="listing-price"], .cost, .amount, .value',
+      area: '.listing-area, .area, .size, [data-testid="listing-area"], .square-meters, .m2, .sqm',
+      rooms: '.listing-rooms, .bedrooms, .rooms, [data-testid="bedrooms"], .bed-count, .beds, .habitaciones',
+      bathrooms: '.listing-bathrooms, .bathrooms, .baños, [data-testid="bathrooms"], .bath-count, .baths',
+      location: '.listing-location, .location, .address, [data-testid="listing-location"], .neighborhood, .area-name',
+      amenities: '.listing-amenities, .amenities, .features, [data-testid="amenities"]',
+      images: '.listing-image img, .property-image img, img, [data-testid="listing-image"] img',
+      link: 'a, .listing-link, .property-link',
+      nextPage: '.pagination .next, [aria-label="Next"], .siguiente, .pager-next'
     },
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'

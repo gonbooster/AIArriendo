@@ -163,7 +163,7 @@ export class SearchService {
       const requestedSources = criteria.optionalFilters?.sources as string[] | undefined;
       const enabledScraperIds = (requestedSources && requestedSources.length > 0)
         ? requestedSources
-        : ['ciencuadras', 'metrocuadrado', 'fincaraiz', 'mercadolibre', 'properati', 'trovit'];
+        : ['ciencuadras', 'metrocuadrado', 'fincaraiz', 'mercadolibre', 'properati', 'trovit', 'pads', 'rentola'];
       const activeSources = SCRAPING_SOURCES.filter(source => source.isActive && enabledScraperIds.includes(source.id));
       logger.info(`🔥 STARTING REAL SCRAPING across ${activeSources.length} sources: ${activeSources.map(s=>s.id).join(', ')}`);
 
@@ -323,9 +323,15 @@ export class SearchService {
         return hardReq.location!.neighborhoods!.some(neighborhood => {
           const searchNeighborhood = neighborhood.toLowerCase();
 
-          // Mapeo de variaciones comunes
+          // Mapeo de variaciones comunes - EXPANDIDO PARA SUBA
           const neighborhoodVariations: { [key: string]: string[] } = {
-            'suba': ['suba', 'ciudad jardin norte', 'bosque calderon', 'mazuren'],
+            'suba': [
+              'suba', 'ciudad jardin norte', 'bosque calderon', 'mazuren', 'cerros de suba',
+              'guaymaral', 'la conejera', 'tibabuyes', 'rincón', 'prado veraniego',
+              'niza', 'alhambra', 'san josé de bavaria', 'lisboa', 'santa cecilia',
+              'bilbao', 'casa blanca suba', 'compartir', 'el prado', 'la gaitana',
+              'san pedro', 'tuna alta', 'tuna baja', 'verbenal', 'villa cindy'
+            ],
             'usaquen': ['usaquen', 'usaquén', 'el verbenal', 'santa barbara', 'santa bárbara'],
             'chapinero': ['chapinero', 'chico', 'nogal', 'zona rosa']
           };
@@ -471,9 +477,19 @@ export class SearchService {
 
     logger.info(`🔍 Applying optional filters to ${filtered.length} properties`);
 
-    // Source filter
+    // Source filter - FIXED: Case-insensitive matching for both ID and name
     if (optionalFilters.sources && optionalFilters.sources.length > 0) {
-      filtered = filtered.filter(p => optionalFilters.sources!.includes(p.source));
+      filtered = filtered.filter(p => {
+        const propertySource = (p.source || '').toLowerCase();
+        return optionalFilters.sources!.some(requestedSource => {
+          const requested = requestedSource.toLowerCase();
+          // Match both ID (fincaraiz) and name (Fincaraiz)
+          return propertySource === requested ||
+                 propertySource === requested.charAt(0).toUpperCase() + requested.slice(1) ||
+                 propertySource.includes(requested) ||
+                 requested.includes(propertySource);
+        });
+      });
       logger.info(`🌐 After sources filter (${optionalFilters.sources.join(', ')}): ${filtered.length} properties`);
     }
 
@@ -755,6 +771,14 @@ export class SearchService {
    */
   private getNeighborhoodVariations(neighborhood: string): string[] {
     const variations: Record<string, string[]> = {
+      'suba': [
+        'ciudad jardin norte', 'bosque calderon', 'mazuren', 'cerros de suba',
+        'guaymaral', 'la conejera', 'tibabuyes', 'rincón', 'prado veraniego',
+        'niza', 'alhambra', 'san josé de bavaria', 'lisboa', 'santa cecilia',
+        'bilbao', 'casa blanca suba', 'compartir', 'el prado', 'la gaitana',
+        'san pedro', 'tuna alta', 'tuna baja', 'verbenal', 'villa cindy',
+        'britalia', 'garcés navas', 'engativá', 'fontibón'
+      ],
       'usaquen': ['usaquén', 'santa barbara', 'cedritos', 'country', 'santa ana'],
       'cedritos': ['usaquen', 'usaquén', 'santa barbara', 'country club'],
       'chapinero': ['zona rosa', 'rosales', 'chico', 'nogal', 'chicó'],
