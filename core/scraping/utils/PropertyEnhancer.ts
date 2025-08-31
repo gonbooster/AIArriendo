@@ -45,7 +45,7 @@ export class PropertyEnhancer {
     }
 
     // Context-aware title generation
-    const neighborhood = context.neighborhood || 'Bogotá';
+    const neighborhood = context.neighborhood || context.city || 'Bogotá';
     const source = context.source || '';
     
     const titleOptions = [
@@ -65,9 +65,9 @@ export class PropertyEnhancer {
   private static enhanceLocation(location: any, context: any): any {
     const enhanced = {
       address: location?.address || '',
-      neighborhood: location?.neighborhood || context.neighborhood || 'Bogotá',
-      city: location?.city || 'Bogotá',
-      department: location?.department || 'Bogotá D.C.',
+      neighborhood: location?.neighborhood || context.neighborhood || context.city || 'Bogotá',
+      city: location?.city || context.city || 'Bogotá',
+      department: location?.department || PropertyEnhancer.getDepartmentForCity(location?.city || context.city) || 'Bogotá D.C.',
       country: location?.country || 'Colombia'
     };
 
@@ -145,9 +145,9 @@ export class PropertyEnhancer {
       return price;
     }
 
-    // Market-based price estimation (Bogotá 2024)
+    // Market-based price estimation (Colombia 2024)
     const neighborhood = context.neighborhood?.toLowerCase() || '';
-    
+
     // Price per m² by neighborhood (COP)
     const pricePerM2ByNeighborhood: Record<string, number> = {
       'usaquen': 25000,
@@ -166,6 +166,23 @@ export class PropertyEnhancer {
     // Add some randomness (±20%)
     const variation = 0.8 + (Math.random() * 0.4);
     return Math.round(estimatedPrice * variation);
+  }
+
+  private static getDepartmentForCity(city?: string): string {
+    if (!city) return 'Bogotá D.C.';
+
+    const cityDepartmentMap: Record<string, string> = {
+      'bogotá': 'Bogotá D.C.',
+      'bogota': 'Bogotá D.C.',
+      'medellín': 'Antioquia',
+      'medellin': 'Antioquia',
+      'cali': 'Valle del Cauca',
+      'barranquilla': 'Atlántico',
+      'bucaramanga': 'Santander',
+      'cartagena': 'Bolívar'
+    };
+
+    return cityDepartmentMap[city.toLowerCase()] || 'Colombia';
   }
 
   /**

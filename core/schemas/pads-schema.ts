@@ -131,9 +131,10 @@ export const PadsSchema: ProviderSchema = {
         /parking[:\s]*(\d+)/gi
       ],
       location: [
-        /([^,]+),\s*Bogotá/gi,
-        /(Bogotá[^C]*Colombia)/gi,
-        /([a-záéíóúñü\s]+),?\s*bogotá/gi
+        // Patrones dinámicos para múltiples ciudades
+        /([^,]+),\s*(Bogotá|Medellín|Cali|Barranquilla|Bucaramanga|Cartagena)/gi,
+        /(Bogotá|Medellín|Cali|Barranquilla|Bucaramanga|Cartagena)[^C]*Colombia/gi,
+        /([a-záéíóúñü\s]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/gi
       ]
     }
   },

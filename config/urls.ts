@@ -27,12 +27,11 @@ export const BASE_URLS = {
 
 export const URL_PATTERNS = {
   fincaraiz: {
-    base: '/arriendo/apartamento/bogota',
-    withNeighborhood: '/arriendo/apartamento/bogota/{neighborhood}',
+    base: '/arriendo/apartamento/{city}',
+    withNeighborhood: '/arriendo/apartamento/{city}/{neighborhood}',
     params: {
       adType: '2', // rent
       propertyType: '1', // apartment
-      city: '11001', // Bogotá por defecto - será dinámico
       currency: 'COP',
       sort: 'relevance',
     },
@@ -48,40 +47,40 @@ export const URL_PATTERNS = {
   },
   
   mercadolibre: {
-    base: '/apartamentos/arriendo/bogota',
-    withNeighborhood: '/apartamentos/arriendo/bogota/{neighborhood}',
+    base: '/apartamentos/arriendo/{city}',
+    withNeighborhood: '/apartamentos/arriendo/{city}/{neighborhood}',
     pagination: '_Desde_{offset}',
   },
   
   ciencuadras: {
-    base: '/arriendo/apartamento/bogota',
-    withNeighborhood: '/arriendo/apartamento/bogota/{neighborhood}',
+    base: '/arriendo/apartamento/{city}',
+    withNeighborhood: '/arriendo/apartamento/{city}/{neighborhood}',
   },
   
   properati: {
-    base: '/s/bogota-d-c-colombia/apartamento/arriendo',
-    withNeighborhood: '/s/bogota-d-c-colombia/apartamento/arriendo?q={neighborhood}',
+    base: '/s/{city}-colombia/apartamento/arriendo',
+    withNeighborhood: '/s/{city}-colombia/apartamento/arriendo?q={neighborhood}',
     pagination: '?page={page}',
   },
   
   trovit: {
-    base: '/arriendo-apartamento-bogota',
-    withNeighborhood: '/arriendo-apartamento-{neighborhood}-bogota',
+    base: '/arriendo-apartamento-{city}',
+    withNeighborhood: '/arriendo-apartamento-{neighborhood}-{city}',
     params: {
       what: 'apartamento+arriendo',
-      where: 'bogota',
+      where: '{city}',
     },
     pagination: '&page={page}',
   },
   
   pads: {
-    base: '/inmuebles-en-arriendo/bogota',
-    withNeighborhood: '/inmuebles-en-arriendo/bogota/{neighborhood}',
+    base: '/inmuebles-en-arriendo/{city}',
+    withNeighborhood: '/inmuebles-en-arriendo/{city}/{neighborhood}',
     pagination: '?page={page}',
   },
   
   rentola: {
-    base: '/for-rent/co/bogota',
+    base: '/for-rent/co/{city}',
     pagination: '?page={page}',
   },
 } as const;
@@ -176,7 +175,7 @@ export class URLBuilder {
   /**
    * Build Trovit search URL
    */
-  static trovit(neighborhood?: string, page?: number): string {
+  static trovit(neighborhood?: string, page?: number, city?: string): string {
     const baseUrl = BASE_URLS.trovit;
     const pattern = neighborhood 
       ? URL_PATTERNS.trovit.withNeighborhood.replace('{neighborhood}', neighborhood)
@@ -184,7 +183,7 @@ export class URLBuilder {
     
     const searchParams = new URLSearchParams(URL_PATTERNS.trovit.params);
     if (neighborhood) {
-      searchParams.set('where', `${neighborhood}-bogota`);
+      searchParams.set('where', `${neighborhood}-${city || 'bogota'}`);
     }
     if (page && page > 1) {
       searchParams.set('page', page.toString());

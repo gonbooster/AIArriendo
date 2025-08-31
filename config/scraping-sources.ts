@@ -280,21 +280,12 @@ export const SCRAPING_SOURCES: ScrapingSource[] = [
   }
 ];
 
-// URL builders for each source
+// URL builders for each source - DEPRECATED: Now using dynamic URL generation in scrapers
 export const URL_BUILDERS = {
   fincaraiz: (criteria: any) => {
-    const params = new URLSearchParams({
-      'ad_type': '2', // rent
-      'property_type': '1', // apartment
-      'city': '11001', // Bogotá
-      'min_rooms': criteria.hardRequirements.minRooms.toString(),
-      'max_rooms': (criteria.hardRequirements.maxRooms || criteria.hardRequirements.minRooms + 2).toString(),
-      'min_area': criteria.hardRequirements.minArea.toString(),
-      'max_area': (criteria.hardRequirements.maxArea || criteria.hardRequirements.minArea + 50).toString(),
-      'max_price': criteria.hardRequirements.maxTotalPrice.toString(),
-      'currency': 'COP'
-    });
-    return `https://www.fincaraiz.com.co/arriendo/apartamento/bogota?${params}`;
+    // DEPRECATED: This is now handled dynamically in FincaraizScraper
+    console.warn('⚠️ URL_BUILDERS.fincaraiz is deprecated. Use FincaraizScraper dynamic URL generation.');
+    return 'https://www.fincaraiz.com.co/arriendo/apartamento';
   },
 
   metrocuadrado: (criteria: any) => {
@@ -307,18 +298,22 @@ export const URL_BUILDERS = {
       'precio': `0-${criteria.hardRequirements.maxTotalPrice}`,
       'orden': 'relevancia'
     });
-    return `https://www.metrocuadrado.com/apartamentos/arriendo/bogota/?${params}`;
+    // DEPRECATED: This is now handled dynamically in MetrocuadradoScraper
+    console.warn('⚠️ URL_BUILDERS.metrocuadrado is deprecated. Use MetrocuadradoScraper dynamic URL generation.');
+    return 'https://www.metrocuadrado.com/apartamentos/arriendo';
   },
 
   trovit: (criteria: any) => {
     const params = new URLSearchParams({
       'what': 'apartamento arriendo',
-      'where': 'bogota',
+      'where': 'dynamic', // Will be replaced by scraper
       'min_rooms': criteria.hardRequirements.minRooms.toString(),
       'min_size': criteria.hardRequirements.minArea.toString(),
       'max_price': criteria.hardRequirements.maxTotalPrice.toString()
     });
-    return `https://casas.trovit.com.co/arriendo-apartamento-bogota?${params}`;
+    // DEPRECATED: This is now handled dynamically in TrovitScraper
+    console.warn('⚠️ URL_BUILDERS.trovit is deprecated. Use TrovitScraper dynamic URL generation.');
+    return 'https://casas.trovit.com.co/arriendo-apartamento';
   },
 
 
@@ -331,16 +326,14 @@ export const URL_BUILDERS = {
   },
 
   ciencuadras: (criteria: any) => {
-    // FIXED: Use correct URL format for Ciencuadras - TIMESTAMP: 2025-08-26-22:40
-    const baseUrl = 'https://www.ciencuadras.com/arriendo/apartamento/bogota';
-    console.log('🔧 Ciencuadras URL Builder TIMESTAMP 22:40: Using FIXED URL:', baseUrl);
-    return baseUrl;
+    // DEPRECATED: This is now handled dynamically in CiencuadrasScraper
+    console.warn('⚠️ URL_BUILDERS.ciencuadras is deprecated. Use CiencuadrasScraper dynamic URL generation.');
+    return 'https://www.ciencuadras.com/arriendo/apartamento';
   },
 
   mercadolibre: (criteria: any) => {
-    // OPTIMIZED: Use best performing URL for maximum property extraction - TIMESTAMP: 2025-08-26-23:40
-    const optimizedUrl = 'https://inmuebles.mercadolibre.com.co/apartamentos/arriendo/bogota/';
-    console.log('🔧 MercadoLibre URL Builder TIMESTAMP 23:40: Using OPTIMIZED URL for maximum results:', optimizedUrl);
-    return optimizedUrl;
+    // DEPRECATED: This is now handled dynamically in MercadoLibreScraper
+    console.warn('⚠️ URL_BUILDERS.mercadolibre is deprecated. Use MercadoLibreScraper dynamic URL generation.');
+    return 'https://inmuebles.mercadolibre.com.co/apartamentos/arriendo';
   }
 };

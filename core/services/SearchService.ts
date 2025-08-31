@@ -8,7 +8,7 @@ import { searchResultsExporter } from './SearchResultsExporter';
 import { RateLimiter } from '../scraping/RateLimiter';
 import { BaseScraper } from '../scraping/BaseScraper';
 import { ProperatiScraper } from '../scraping/scrapers/ProperatiScraper';
-import { SEARCH, SCRAPING, LOCATION } from '../../config/constants';
+import { SEARCH, SCRAPING } from '../../config/constants';
 
 import { PropertyValidator } from '../scraping/PropertyValidator';
 export class SearchService {
@@ -737,29 +737,5 @@ export class SearchService {
     return variations[neighborhood.toLowerCase()] || [];
   }
 
-  /**
-   * Genera URLs reales de anuncios específicos en los portales
-   */
-  private getRealPropertyUrl(sourceIndex: number, neighborhood: string, rooms: number, price: number): string {
-    // Generate dynamic URLs based on the neighborhood
-    const neighborhoodSlug = neighborhood.toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[áéíóúñü]/g, (match) => {
-        const map: Record<string, string> = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n', 'ü': 'u' };
-        return map[match] || match;
-      });
-
-    const urlTemplates = {
-      fincaraiz: `https://www.fincaraiz.com.co/arriendo/apartamentos/bogota/${neighborhoodSlug}`,
-      metrocuadrado: `https://www.metrocuadrado.com/apartamentos/arriendo/bogota/${neighborhoodSlug}/`,
-      trovit: `https://apartamentos.trovit.com.co/apartamentos-${neighborhoodSlug}-bogota`,
-      ciencuadras: `https://www.ciencuadras.com/apartamentos-arriendo-${neighborhoodSlug}-bogota`
-    };
-
-    const sources = ['fincaraiz', 'metrocuadrado', 'trovit', 'ciencuadras'];
-    const sourceName = sources[sourceIndex] as keyof typeof urlTemplates;
-
-    // Return the dynamic URL for the specific source
-    return urlTemplates[sourceName] || urlTemplates.fincaraiz;
-  }
+  // REMOVED: getRealPropertyUrl - function was not being used and contained hardcoded Bogotá URLs
 }

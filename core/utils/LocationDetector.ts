@@ -19,16 +19,7 @@ export class LocationDetector {
   private static readonly CITIES: { [key: string]: { code: string; aliases: string[] } } = {
     // Bogotá
     'bogotá': { code: '11001', aliases: ['bogota', 'santafe de bogota', 'distrito capital'] },
-    'bogota': { code: '11001', aliases: ['bogotá', 'santafe de bogota', 'distrito capital'] },
-    
-    // Medellín
-    'medellín': { code: '05001', aliases: ['medellin', 'ciudad de la eterna primavera'] },
-    'medellin': { code: '05001', aliases: ['medellín', 'ciudad de la eterna primavera'] },
-    
-    // Cali
     'cali': { code: '76001', aliases: ['santiago de cali', 'sucursal del cielo'] },
-    
-    // Otras ciudades principales
     'barranquilla': { code: '08001', aliases: ['curramba', 'puerta de oro'] },
     'cartagena': { code: '13001', aliases: ['cartagena de indias', 'ciudad heroica'] },
     'bucaramanga': { code: '68001', aliases: ['ciudad bonita', 'ciudad de los parques'] },
@@ -169,7 +160,7 @@ export class LocationDetector {
       }
     }
     
-    // Si no encuentra ciudad específica, usar Bogotá como fallback
+    // Si no encuentra ciudad específica, usar Bogotá como fallback (ciudad principal)
     return { city: 'bogotá', code: '11001', confidence: 0.3 };
   }
 

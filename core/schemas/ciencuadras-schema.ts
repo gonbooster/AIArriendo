@@ -13,7 +13,8 @@ export const CiencuadrasSchema: ProviderSchema = {
     supportedFilters: ['operation', 'propertyTypes', 'location.city'],
     urlBuilder: (criteria: WebSearchCriteria) => {
       const operation = criteria.operation === 'arriendo' ? 'arriendo' : 'venta';
-      return `https://www.ciencuadras.com/${operation}/apartamento/bogota`;
+      // DEPRECATED: Use dynamic URL generation in CiencuadrasScraper instead
+      return `https://www.ciencuadras.com/${operation}/apartamento`;
     },
     requiresPostFiltering: ['minRooms', 'maxRooms', 'minBathrooms', 'maxBathrooms', 'minArea', 'maxArea', 'minPrice', 'maxPrice', 'minParking', 'maxParking', 'neighborhoods', 'amenities']
   },
@@ -109,8 +110,8 @@ export const CiencuadrasSchema: ProviderSchema = {
         /parqueaderos[:\s]*(\d+)/gi
       ],
       location: [
-        /bogotá,\s*([^,]+(?:,\s*[^,]+)?)/gi,
-        /([a-záéíóúñü\s]+),?\s*bogotá/gi
+        // DEPRECATED: Use LocationDetector for dynamic city detection
+        /([a-záéíóúñü\s,]+?)(?:\d+\.?\d*\s*m[²2]|habit\.|baños|garaje|$)/gi
       ]
     }
   },
@@ -163,7 +164,7 @@ export const CiencuadrasSchema: ProviderSchema = {
       propertyType: 'Apartamento',
       source: 'Ciencuadras',
       location: {
-        city: 'Bogotá',
+        city: 'Dynamic', // Will be set by LocationDetector
         address: '',
         neighborhood: '',
         coordinates: { lat: 0, lng: 0 }

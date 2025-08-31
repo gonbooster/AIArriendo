@@ -64,8 +64,8 @@ export const SEARCH = {
 
 export const SCRAPING = {
   // Global limits
-  MAX_PAGES_PER_SOURCE: 3,
-  TIMEOUT_PER_SOURCE_MS: 70000, // 70 seconds
+  MAX_PAGES_PER_SOURCE: 5, // Aumentado para pruebas
+  TIMEOUT_PER_SOURCE_MS: 120000, // 2 minutos - aumentado para más páginas
   MAX_CONCURRENT_SOURCES: 8,
   
   // Rate limiting defaults

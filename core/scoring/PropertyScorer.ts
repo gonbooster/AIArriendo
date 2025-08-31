@@ -154,7 +154,7 @@ export class PropertyScorer {
       score += weights.location * 0.3; // Smaller bonus for premium areas
     }
 
-    // Street/Carrera preference (higher numbers generally better in north Bogotá)
+    // Street/Carrera preference (higher numbers generally better in major cities)
     if (property.location.street && property.location.street >= 120) {
       score += 0.1; // Small bonus for good streets
     }

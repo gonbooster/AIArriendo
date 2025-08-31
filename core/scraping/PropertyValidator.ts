@@ -62,7 +62,7 @@ export class PropertyValidator {
       return false;
     }
 
-    // Rango razonable para Bogotá (300k - 50M)
+    // Rango razonable para Colombia (300k - 50M)
     if (price < 300000 || price > 50000000) {
       return false;
     }

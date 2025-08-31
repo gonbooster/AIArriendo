@@ -10,7 +10,7 @@ export class PropertyParser {
   /**
    * Parsea una propiedad raw en un objeto Property
    */
-  parseProperty(rawProperty: any): Property | null {
+  parseProperty(rawProperty: any, context?: any): Property | null {
     try {
       if (!rawProperty) return null;
 
@@ -33,7 +33,7 @@ export class PropertyParser {
         area,
         rooms: roomsVal,
         bathrooms: bathsVal,
-        location: this.parseLocation(rawProperty.location),
+        location: this.parseLocation(rawProperty.location, context),
         amenities: this.parseAmenities(rawProperty.amenities),
         images: this.parseImages(rawProperty.images),
         url: this.parseUrl(rawProperty.url),
@@ -116,12 +116,12 @@ export class PropertyParser {
   /**
    * Parsea ubicación
    */
-  private parseLocation(location: any): any {
+  private parseLocation(location: any, context?: any): any {
     if (!location) {
       return {
         address: '',
         neighborhood: '',
-        city: 'Bogotá',
+        city: context?.city || 'Bogotá',
         coordinates: { lat: 0, lng: 0 }
       };
     }
@@ -130,7 +130,7 @@ export class PropertyParser {
       return {
         address: location,
         neighborhood: this.extractNeighborhood(location),
-        city: 'Bogotá',
+        city: context?.city || 'Bogotá',
         coordinates: { lat: 0, lng: 0 }
       };
     }
@@ -138,7 +138,7 @@ export class PropertyParser {
     return {
       address: location.address || '',
       neighborhood: location.neighborhood || this.extractNeighborhood(location.address || ''),
-      city: location.city || 'Bogotá',
+      city: location.city || context?.city || 'Bogotá',
       coordinates: location.coordinates || { lat: 0, lng: 0 }
     };
   }

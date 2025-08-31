@@ -2,6 +2,7 @@ import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
 import { logger } from '../../../utils/logger';
+import { LocationDetector } from '../../utils/LocationDetector';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
@@ -98,7 +99,28 @@ export class ArriendoScraper extends BaseScraper {
 
     // Basic search parameters
     params.append('tipo', 'arriendo');
-    params.append('ciudad', 'bogota');
+    // Detectar ubicación usando el sistema inteligente
+    let locationInfo = null;
+    if (criteria.hardRequirements.location?.neighborhoods?.length) {
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 Arriendo - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
+
+    // Usar ubicación detectada o fallback a Bogotá
+    const city = locationInfo?.city || 'bogota';
+    const cityUrlMap: Record<string, string> = {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'medellin',
+      'medellin': 'medellin',
+      'cali': 'cali',
+      'barranquilla': 'barranquilla',
+      'bucaramanga': 'bucaramanga',
+      'cartagena': 'cartagena'
+    };
+    const cityUrl = cityUrlMap[city.toLowerCase()] || 'bogota';
+    params.append('ciudad', cityUrl);
 
     // Location
     if (criteria.hardRequirements.location?.neighborhoods && criteria.hardRequirements.location.neighborhoods.length > 0) {
@@ -195,7 +217,7 @@ export class ArriendoScraper extends BaseScraper {
           location: {
             address: location,
             neighborhood: this.extractNeighborhood(location),
-            city: 'Bogotá'
+            city: 'Bogotá' // Will be enhanced by LocationDetector
           },
           images: imageUrl ? [this.normalizeUrl(imageUrl)] : [],
           url: url,

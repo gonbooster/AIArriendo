@@ -15,7 +15,7 @@ export const FincaraizSchema: ProviderSchema = {
       const params = new URLSearchParams({
         'ad_type': criteria.operation === 'arriendo' ? '2' : '1',
         'property_type': '1', // apartamento
-        'city': '11001', // Bogotá
+        'city': 'dynamic', // Will be set by LocationDetector
         'min_rooms': (criteria.minRooms || 1).toString(),
         'max_rooms': (criteria.maxRooms || criteria.minRooms! + 2 || 6).toString(),
         'min_area': (criteria.minArea || 30).toString(),
@@ -23,7 +23,8 @@ export const FincaraizSchema: ProviderSchema = {
         'max_price': (criteria.maxPrice || 10000000).toString(),
         'currency': 'COP'
       });
-      return `https://www.fincaraiz.com.co/${criteria.operation}/apartamento/bogota?${params}`;
+      // DEPRECATED: Use dynamic URL generation in FincaraizScraper instead
+      return `https://www.fincaraiz.com.co/${criteria.operation}/apartamento?${params}`;
     },
     requiresPostFiltering: ['minPrice', 'minBathrooms', 'maxBathrooms', 'minParking', 'maxParking', 'neighborhoods', 'amenities', 'minRooms', 'maxRooms', 'minArea', 'maxArea', 'location.city']
   },

@@ -112,7 +112,7 @@ export class SmartExtractor {
   /**
    * Extract location with smart parsing
    */
-  static extractLocation($: cheerio.CheerioAPI, $element: cheerio.Cheerio<any>, defaultNeighborhood: string = ''): string {
+  static extractLocation($: cheerio.CheerioAPI, $element: cheerio.Cheerio<any>, defaultNeighborhood: string = '', defaultCity: string = 'Bogotá'): string {
     const locationSelectors = [
       '.location',
       '[class*="location"]',
@@ -131,10 +131,10 @@ export class SmartExtractor {
 
     // Fallback: Use default neighborhood
     if (defaultNeighborhood) {
-      return `${defaultNeighborhood}, Bogotá`;
+      return `${defaultNeighborhood}, ${defaultCity || 'Bogotá'}`;
     }
 
-    return 'Bogotá, Colombia';
+    return `${defaultCity || 'Bogotá'}, Colombia`;
   }
 
   /**

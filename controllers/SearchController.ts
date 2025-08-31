@@ -20,17 +20,17 @@ export class SearchController {
    * Execute property search
    */
   search = asyncHandler(async (req: Request, res: Response) => {
-    const { criteria, page = SEARCH.DEFAULT_PAGE, limit = SEARCH.DEFAULT_LIMIT } = req.body;
+    // El frontend envía los datos directamente, no dentro de un objeto 'criteria'
+    const { page = SEARCH.DEFAULT_PAGE, limit = SEARCH.DEFAULT_LIMIT, ...frontendCriteria } = req.body;
 
     logger.info('🔍 Search request received:', {
       body: req.body,
-      criteria: criteria,
       page,
       limit
     });
 
     // Convert frontend criteria to backend format
-    const backendCriteria = this.convertFrontendCriteria(criteria);
+    const backendCriteria = this.convertFrontendCriteria(frontendCriteria);
 
     // Validate search criteria
     const validationError = this.validateSearchCriteria(backendCriteria);
