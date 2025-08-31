@@ -10,55 +10,50 @@ npm install
 cd client && npm install
 ```
 
-### 2. Run Scrapers
+### 2. Start the Application
 ```bash
-# Run all scrapers
-npm run scrape:all
+# Development mode
+npm run dev:server  # Start backend server
+npm run client      # Start React client (port 3000)
 
-# Run specific scraper
-npm run scrape:ciencuadras
-npm run scrape:mercadolibre
-npm run scrape:fincaraiz
-```
-
-### 3. Copy Data to React App
-```bash
-npm run copy-data
-```
-
-### 4. Start the Application
-```bash
-# Start React client (port 3001)
-cd client && npm start
+# Production mode
+npm run build       # Build both server and client
+npm start          # Start production server
 ```
 
 ## 📁 Project Structure
 
 ```
 AIArriendo/
-├── scrapers/           # 🕷️ Web scrapers for each property site
-│   ├── index.ts        # Main scraper manager
-│   ├── ciencuadras.ts  # Ciencuadras.com scraper
-│   ├── mercadolibre.ts # MercadoLibre scraper
-│   └── fincaraiz.ts    # Fincaraiz.com scraper
+├── core/               # 🏗️ Core business logic
+│   ├── scraping/       # 🕷️ Web scrapers for each property site
+│   ├── services/       # 🔧 Business services
+│   ├── utils/          # 🛠️ Utilities and helpers
+│   └── types.ts        # 📝 TypeScript interfaces
 ├── client/             # ⚛️ React frontend application
 │   ├── src/
 │   │   ├── pages/      # React pages
-│   │   ├── services/   # API and data services
-│   │   └── types/      # TypeScript interfaces
-│   └── public/output/  # Scraped data files
-├── output/             # 📊 Raw scraped data (git ignored)
-├── scripts/            # 🛠️ Utility scripts
-└── README.md           # This file
+│   │   ├── components/ # UI components
+│   │   └── services/   # API and data services
+├── config/             # ⚙️ Configuration files
+├── routes/             # 🛣️ API routes
+├── controllers/        # 🎮 API controllers
+└── server.ts           # 🚀 Express server
 ```
 
 ## 🕷️ Available Scrapers
 
-| Website | Status | Properties | Command |
-|---------|--------|------------|---------|
-| Ciencuadras | ✅ Working | ~25 | `npm run scrape:ciencuadras` |
-| MercadoLibre | ✅ Working | ~25 | `npm run scrape:mercadolibre` |
-| Fincaraiz | ✅ Working | ~25 | `npm run scrape:fincaraiz` |
+| Website | Status | Properties |
+|---------|--------|------------|
+| Ciencuadras | ✅ Working | ~25+ |
+| MercadoLibre | ✅ Working | ~25+ |
+| Fincaraiz | ✅ Working | ~25+ |
+| Metrocuadrado | ✅ Working | ~25+ |
+| Properati | ✅ Working | ~25+ |
+| Trovit | ✅ Working | ~25+ |
+| Rentola | ✅ Working | ~25+ |
+| PADS | ✅ Working | ~25+ |
+| Arriendo.com | ✅ Working | ~25+ |
 
 ## 📊 Features
 
@@ -70,10 +65,15 @@ AIArriendo/
 
 ## 🛠️ Development
 
-### Run Individual Scraper
-```bash
-npx ts-node scrapers/ciencuadras.ts
-```
+### API Endpoints
+- `POST /api/search` - Search properties with criteria
+- `GET /api/dashboard/stats` - Get dashboard statistics
+
+### Architecture
+- **Backend**: Express.js + TypeScript
+- **Frontend**: React + Material-UI
+- **Scrapers**: Puppeteer + Cheerio
+- **Database**: In-memory (Redis optional)
 
 ### Debug Mode
 Set `headless: false` in scraper files to see browser automation.

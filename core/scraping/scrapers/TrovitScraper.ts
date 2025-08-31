@@ -1,7 +1,7 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
-import { BaseScraper } from '../BaseScraper';
-import { Property, SearchCriteria } from '../../types';
+import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { PropertyParser } from '../PropertyParser';
+import { PropertyValidator } from '../PropertyValidator';
 import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
@@ -533,14 +533,10 @@ export class TrovitScraper extends BaseScraper {
   }
 
   /**
-   * Validate Trovit-specific property
+   * Validate Trovit-specific property - USAR PROPERTYVALIDATOR CENTRALIZADO
    */
   private validateTrovitProperty(property: Property): boolean {
-    // Basic validation
-    if (!property.url || property.price <= 0) return false;
-    if (!property.title) property.title = 'Apartamento en arriendo';
-
-    // Normalize/validate URL
+    // Normalize/validate URL específico de Trovit
     if (!property.url.startsWith('http')) {
       property.url = `https://casas.trovit.com.co${property.url}`;
     }
@@ -549,9 +545,8 @@ export class TrovitScraper extends BaseScraper {
       return false;
     }
 
-    // Broader price range; filtramos por criterio máximo arriba
-    if (property.totalPrice < 300000 || property.totalPrice > 30000000) return false;
-
-    return true;
+    // USAR VALIDACIÓN CENTRALIZADA - elimina duplicación
+    const validator = new PropertyValidator();
+    return validator.isValid(property);
   }
 }
