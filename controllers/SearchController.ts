@@ -20,11 +20,13 @@ export class SearchController {
    * Execute property search
    */
   search = asyncHandler(async (req: Request, res: Response) => {
-    // El frontend envía los datos directamente, no dentro de un objeto 'criteria'
-    const { page = SEARCH.DEFAULT_PAGE, limit = SEARCH.DEFAULT_LIMIT, ...frontendCriteria } = req.body;
+    // El frontend envía los datos dentro de un objeto 'criteria'
+    const { page = SEARCH.DEFAULT_PAGE, limit = SEARCH.DEFAULT_LIMIT, criteria } = req.body;
+    const frontendCriteria = criteria || req.body;
 
     logger.info('🔍 Search request received:', {
       body: req.body,
+      criteria: frontendCriteria,
       page,
       limit
     });
@@ -386,7 +388,7 @@ export class SearchController {
 
       const searchResults = LocationDetector.smartLocationSearch(locationText);
 
-      if (searchResults.bestMatch && searchResults.bestMatch.confidence >= 0.7) {
+      if (searchResults.bestMatch && searchResults.bestMatch.confidence >= 0.6) {
         const match = searchResults.bestMatch;
         logger.info(`🎯 Mejor coincidencia: ${match.type} "${match.name}" (confianza: ${match.confidence.toFixed(2)})`);
 
@@ -404,8 +406,15 @@ export class SearchController {
           };
         }
       } else {
-        // 🚫 NO SE ENCONTRÓ UBICACIÓN VÁLIDA - NO BUSCAR
+        // 🚫 NO SE ENCONTRÓ UBICACIÓN VÁLIDA - MOSTRAR INFORMACIÓN DE DEBUG
         logger.warn(`🚫 No se encontró ubicación válida para: "${locationText}"`);
+        logger.warn(`🔍 Resultados de búsqueda:`, {
+          bestMatch: searchResults.bestMatch,
+          cities: searchResults.cities.length,
+          neighborhoods: searchResults.neighborhoods.length,
+          allNeighborhoods: searchResults.neighborhoods,
+          allCities: searchResults.cities
+        });
         throw new Error(`No se encontró la ubicación "${locationText}". Por favor verifica el nombre de la ciudad o barrio.`);
       }
     }

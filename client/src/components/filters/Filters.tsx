@@ -120,7 +120,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
     sources: [],
     amenities: [],
     pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
-    removeDuplicates: false, // SI activamos este es le que da problemas
+    removeDuplicates: true, // ✅ Activado por defecto para mejor experiencia
     hasParking: null,
     hideCorrupt: true, // ✅ Marcado por defecto
     propertyTypes: [],

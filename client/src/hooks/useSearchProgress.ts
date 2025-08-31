@@ -27,8 +27,8 @@ const SOURCES = [
   'Fincaraiz',
   'Metrocuadrado',
   'Trovit',
+  'Arriendo',
   'Ciencuadras',
-  'MercadoLibre',
   'Rentola',
   'Properati',
   'PADS'
@@ -50,6 +50,17 @@ const FUNNY_MESSAGES = [
   '🎪 ¡Señoras y señores, el show debe continuar!',
   '🚀 Houston, tenemos propiedades...',
   '🎯 Apuntando al blanco perfecto...'
+];
+
+const COMPLETION_MESSAGES = [
+  '🎯 ¡Casi listo! Puliendo los resultados como diamantes... ¡Brillarán para ti!',
+  '✨ ¡Perfecto! Organizando las mejores opciones para tu nuevo hogar...',
+  '🏆 ¡Misión cumplida! Hemos encontrado tesoros inmobiliarios para ti...',
+  '🎉 ¡Eureka! Las mejores propiedades están listas para conquistar...',
+  '💎 ¡Excelente! Seleccionando las joyas inmobiliarias más brillantes...',
+  '🌟 ¡Fantástico! Preparando una experiencia inmobiliaria estelar...',
+  '🎪 ¡Show time! Los mejores arriendos están listos para el gran debut...',
+  '🚀 ¡Despegue exitoso! Aterrizando en el planeta de las oportunidades...'
 ];
 
 export const useSearchProgress = () => {
@@ -88,12 +99,14 @@ export const useSearchProgress = () => {
   }, []);
 
   const completeSearch = useCallback(() => {
+    const randomCompletionMessage = COMPLETION_MESSAGES[Math.floor(Math.random() * COMPLETION_MESSAGES.length)];
     setState(prev => ({
       ...prev,
       isSearching: false,
       progress: 100,
-      currentPhase: '¡Búsqueda completada!',
-      estimatedTimeRemaining: 0
+      currentPhase: randomCompletionMessage,
+      estimatedTimeRemaining: 0,
+      sourcesCompleted: SOURCES.length // Asegurar que todas las fuentes aparezcan como completadas
     }));
   }, []);
 

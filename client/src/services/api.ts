@@ -63,9 +63,20 @@ export const searchAPI = {
       console.log('🚀🚀🚀 USANDO BACKEND REPARADO - VERSIÓN NUEVA 🚀🚀🚀');
       console.log('📋 CRITERIOS EXACTOS RECIBIDOS:', JSON.stringify(criteria, null, 2));
 
+      // 🚀 NORMALIZAR CRITERIOS ANTES DE ENVIAR
+      const normalizedCriteria = {
+        ...criteria,
+        // 🔧 CONVERTIR UBICACIÓN A MINÚSCULAS AUTOMÁTICAMENTE
+        location: typeof (criteria as any).location === 'string'
+          ? (criteria as any).location.toLowerCase().trim()
+          : (criteria as any).location
+      };
+
+      console.log('🔧 Criterios normalizados:', normalizedCriteria);
+
       // 🚀 SOLO SCRAPERS REALES - SIN FALLBACK
       const response = await apiClient.post('/search', {
-        criteria: criteria,
+        criteria: normalizedCriteria,
         page: page,
         limit: limit
       });
