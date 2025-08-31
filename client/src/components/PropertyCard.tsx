@@ -384,23 +384,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           )}
         </Box>
         </Box>
-
-        {/* Action Button */}
-        <Box sx={{ mt: 'auto' }}>
-          <Button
-            variant="contained"
-            fullWidth
-            startIcon={<ViewIcon />}
-            onClick={handleViewClick}
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-            }}
-          >
-            Ver Detalles
-          </Button>
-        </Box>
       </CardContent>
     </Card>
   );
