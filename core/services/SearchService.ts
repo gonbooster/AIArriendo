@@ -131,7 +131,7 @@ export class SearchService {
       const requestedSources = criteria.optionalFilters?.sources as string[] | undefined;
       const enabledScraperIds = (requestedSources && requestedSources.length > 0)
         ? requestedSources
-        : ['ciencuadras', 'metrocuadrado', 'fincaraiz', 'mercadolibre', 'properati', 'trovit', 'pads', 'rentola'];
+        : ['ciencuadras', 'metrocuadrado', 'fincaraiz', 'mercadolibre', 'properati', 'trovit', 'pads', 'rentola', 'arriendo'];
       const activeSources = SCRAPING_SOURCES.filter(source => source.isActive && enabledScraperIds.includes(source.id));
       logger.info(`🔥 STARTING REAL SCRAPING across ${activeSources.length} sources: ${activeSources.map(s=>s.id).join(', ')}`);
 

@@ -277,36 +277,5 @@ export const SCRAPING_SOURCES: ScrapingSource[] = [
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
-  },
-
-  {
-    id: 'arriendo',
-    name: 'Arriendo.com',
-    baseUrl: 'https://www.arriendo.com',
-    isActive: true,
-    priority: 12,
-    rateLimit: {
-      requestsPerMinute: 25,
-      delayBetweenRequests: 2500,
-      maxConcurrentRequests: 2
-    },
-    selectors: {
-      propertyCard: '.property-card, .listing-item, [class*="property"], .search-result, .rental-item, .property-listing',
-      title: '.property-title, .listing-title, h3, h4, [class*="title"], .property-name',
-      price: '.price, .rental-price, [class*="price"], .cost, .rent-price',
-      area: '.area, .size, [class*="area"], .square-meters, .m2',
-      rooms: '.bedrooms, .rooms, [class*="bedroom"], [class*="room"], .habitaciones',
-      bathrooms: '.bathrooms, .baños, .banos, [class*="bathroom"]',
-      location: '.location, .address, [class*="location"], .neighborhood, .direccion',
-      amenities: '.amenities, .features, .caracteristicas',
-      images: '.property-image img, img, .listing-image img',
-      link: 'a, .property-link, .listing-link',
-      nextPage: '.pagination .next, [aria-label="Next"], .siguiente'
-    },
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
   }
 ];
-
-// URL_BUILDERS ELIMINADO - Ahora se usa LocationDetector.buildScraperUrl()

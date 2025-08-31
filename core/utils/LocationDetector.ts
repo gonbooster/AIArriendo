@@ -127,7 +127,7 @@ export class LocationDetector {
         neighborhoodMappings.standard.set(name, neighborhood.urls.standard || neighborhood.name);
         neighborhoodMappings.pads.set(name, neighborhood.urls.pads || neighborhood.urls.standard || neighborhood.name);
         neighborhoodMappings.mercadolibre.set(name, neighborhood.urls.mercadolibre || neighborhood.urls.standard || neighborhood.name);
-        neighborhoodMappings.rentola.set(name, neighborhood.urls.rentola || `bogota-localidad-${neighborhood.urls.standard || neighborhood.name}`);
+        neighborhoodMappings.rentola.set(name, neighborhood.urls.rentola || neighborhood.urls.standard || neighborhood.name);
       };
 
       addNeighborhoodMapping(neighborhood.name);
@@ -135,6 +135,46 @@ export class LocationDetector {
     });
 
     return { cities: cityMappings, neighborhoods: neighborhoodMappings };
+  }
+
+  // ============================================================================
+  // FUNCIONES PARA OBTENER URLs - REQUERIDAS POR SCRAPERS
+  // ============================================================================
+
+  /**
+   * Obtener URL de ciudad para un scraper específico
+   */
+  static getCityUrl(cityName: string, scraperType: string): string {
+    const cityMapping = this.URL_MAPPINGS.cities[scraperType];
+    if (!cityMapping) return cityName.toLowerCase().replace(/\s+/g, '-');
+
+    return cityMapping.get(cityName.toLowerCase()) || cityName.toLowerCase().replace(/\s+/g, '-');
+  }
+
+  /**
+   * Obtener URL de barrio para un scraper específico
+   */
+  static getNeighborhoodUrl(neighborhoodName: string, scraperType: string): string {
+    if (!neighborhoodName) return '';
+
+    const neighborhoodMapping = this.URL_MAPPINGS.neighborhoods[scraperType];
+    if (!neighborhoodMapping) return neighborhoodName.toLowerCase().replace(/\s+/g, '-');
+
+    return neighborhoodMapping.get(neighborhoodName.toLowerCase()) || neighborhoodName.toLowerCase().replace(/\s+/g, '-');
+  }
+
+  /**
+   * Construir URL completa para scraper
+   */
+  static buildScraperUrl(baseUrl: string, cityName: string, neighborhoodName?: string, scraperType: string = 'standard'): string {
+    const cityUrl = this.getCityUrl(cityName, scraperType);
+
+    if (neighborhoodName) {
+      const neighborhoodUrl = this.getNeighborhoodUrl(neighborhoodName, scraperType);
+      return `${baseUrl}/${cityUrl}/${neighborhoodUrl}`;
+    }
+
+    return `${baseUrl}/${cityUrl}`;
   }
 
   // ============================================================================
@@ -172,19 +212,7 @@ export class LocationDetector {
     };
   }
 
-  /**
-   * Obtener URL de ciudad para scraper específico
-   */
-  static getCityUrl(city: string, scraper: 'standard' | 'mercadolibre' | 'properati' = 'standard'): string {
-    return this.URL_MAPPINGS.cities[scraper].get(city?.toLowerCase()) || 'bogota';
-  }
-
-  /**
-   * Obtener URL de barrio para scraper específico
-   */
-  static getNeighborhoodUrl(neighborhood: string, scraper: 'standard' | 'pads' | 'mercadolibre' | 'rentola' = 'standard'): string | null {
-    return this.URL_MAPPINGS.neighborhoods[scraper].get(neighborhood?.toLowerCase()) || null;
-  }
+  // FUNCIONES DUPLICADAS ELIMINADAS - USAR LAS DE ARRIBA
 
   /**
    * Obtener todos los barrios de una ciudad
@@ -243,20 +271,5 @@ export class LocationDetector {
     return null;
   }
 
-  /**
-   * Construir URL de scraper dinámicamente
-   */
-  static buildScraperUrl(baseUrl: string, city: string, neighborhood?: string, scraper: string = 'standard'): string {
-    const cityUrl = this.getCityUrl(city, scraper as any);
-    let url = `${baseUrl}/${cityUrl}`;
-    
-    if (neighborhood) {
-      const neighborhoodUrl = this.getNeighborhoodUrl(neighborhood, scraper as any);
-      if (neighborhoodUrl) {
-        url += `/${neighborhoodUrl}`;
-      }
-    }
-    
-    return url;
-  }
+  // FUNCIÓN DUPLICADA ELIMINADA - USAR LA DE ARRIBA
 }
