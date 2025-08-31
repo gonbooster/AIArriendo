@@ -14,7 +14,11 @@ export interface LocationInfo {
 }
 
 export class LocationDetector {
-  
+
+  // ============================================================================
+  // MAPEOS CENTRALIZADOS PARA TODOS LOS SCRAPERS
+  // ============================================================================
+
   // Mapeo de ciudades principales con sus códigos
   private static readonly CITIES: { [key: string]: { code: string; aliases: string[] } } = {
     // Bogotá
@@ -38,6 +42,132 @@ export class LocationDetector {
     'soacha': { code: '25754', aliases: [] },
     'popayán': { code: '19001', aliases: ['popayan', 'ciudad blanca'] },
     'popayan': { code: '19001', aliases: ['popayán', 'ciudad blanca'] }
+  };
+
+  // ============================================================================
+  // MAPEOS DE URL PARA CADA SCRAPER - CENTRALIZADOS
+  // ============================================================================
+
+  // Mapeos de ciudades para URLs de scrapers
+  public static readonly CITY_URL_MAPPINGS = {
+    // Mapeo estándar (usado por la mayoría)
+    standard: {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'medellin',
+      'medellin': 'medellin',
+      'cali': 'cali',
+      'barranquilla': 'barranquilla',
+      'cartagena': 'cartagena',
+      'bucaramanga': 'bucaramanga',
+      'pereira': 'pereira',
+      'ibagué': 'ibague',
+      'ibague': 'ibague'
+    },
+
+    // Mapeo específico para Properati
+    properati: {
+      'bogotá': 'bogota-d-c-colombia',
+      'bogota': 'bogota-d-c-colombia',
+      'medellín': 'medellin-antioquia-colombia',
+      'medellin': 'medellin-antioquia-colombia',
+      'cali': 'cali-valle-del-cauca-colombia',
+      'barranquilla': 'barranquilla-atlantico-colombia',
+      'cartagena': 'cartagena-bolivar-colombia',
+      'bucaramanga': 'bucaramanga-santander-colombia',
+      'pereira': 'pereira-risaralda-colombia',
+      'ibagué': 'ibague-tolima-colombia',
+      'ibague': 'ibague-tolima-colombia'
+    },
+
+    // Mapeo específico para MercadoLibre
+    mercadolibre: {
+      'bogotá': 'bogota',
+      'bogota': 'bogota',
+      'medellín': 'antioquia/medellin',
+      'medellin': 'antioquia/medellin',
+      'cali': 'valle-del-cauca/cali',
+      'barranquilla': 'atlantico/barranquilla',
+      'cartagena': 'bolivar/cartagena',
+      'bucaramanga': 'santander/bucaramanga',
+      'pereira': 'risaralda/pereira',
+      'ibagué': 'tolima/ibague',
+      'ibague': 'tolima/ibague'
+    }
+  };
+
+  // ============================================================================
+  // MAPEOS DE BARRIOS PARA URLS - CENTRALIZADOS
+  // ============================================================================
+
+  // Mapeos de barrios para URLs de scrapers
+  public static readonly NEIGHBORHOOD_URL_MAPPINGS = {
+    // Mapeo estándar (usado por la mayoría de scrapers)
+    standard: {
+      'usaquén': 'usaquen',
+      'usaquen': 'usaquen',
+      'chapinero': 'chapinero',
+      'zona rosa': 'zona-rosa',
+      'chico': 'chico',
+      'rosales': 'rosales',
+      'cedritos': 'cedritos',
+      'santa barbara': 'santa-barbara',
+      'santa bárbara': 'santa-barbara',
+      'suba': 'suba',
+      'kennedy': 'kennedy',
+      'engativá': 'engativa',
+      'engativa': 'engativa',
+      'fontibón': 'fontibon',
+      'fontibon': 'fontibon',
+      'centro': 'centro',
+      'la candelaria': 'la-candelaria',
+      // Barrios de otras ciudades
+      'el poblado': 'el-poblado',
+      'poblado': 'el-poblado',
+      'laureles': 'laureles',
+      'granada': 'granada'
+    },
+
+    // Mapeo específico para PADS
+    pads: {
+      'usaquén': 'usaquen',
+      'usaquen': 'usaquen',
+      'chapinero': 'chapinero',
+      'zona rosa': 'chapinero/zona-rosa',
+      'chico': 'chapinero/chico',
+      'rosales': 'chapinero/rosales',
+      'cedritos': 'cedritos',
+      'santa barbara': 'santa-barbara',
+      'santa bárbara': 'santa-barbara',
+      'suba': 'suba',
+      'centro': 'centro',
+      'la candelaria': 'centro/la-candelaria',
+      'el poblado': 'el-poblado',
+      'poblado': 'el-poblado',
+      'laureles': 'laureles',
+      'granada': 'granada'
+    },
+
+    // Mapeo específico para MercadoLibre
+    mercadolibre: {
+      'usaquén': 'usaquen',
+      'usaquen': 'usaquen',
+      'chapinero': 'chapinero',
+      'zona rosa': 'zona-rosa',
+      'chico': 'chico',
+      'rosales': 'rosales',
+      'cedritos': 'cedritos',
+      'santa barbara': 'santa-barbara',
+      'santa bárbara': 'santa-barbara',
+      'suba': 'suba',
+      'kennedy': 'kennedy',
+      'engativá': 'engativa',
+      'engativa': 'engativa',
+      'fontibón': 'fontibon',
+      'fontibon': 'fontibon',
+      'centro': 'centro',
+      'la candelaria': 'candelaria'
+    }
   };
 
   // Barrios principales por ciudad
@@ -224,5 +354,289 @@ export class LocationDetector {
    */
   static getNeighborhoodsByCity(city: string): string[] {
     return this.NEIGHBORHOODS[city.toLowerCase()] || [];
+  }
+
+  // ============================================================================
+  // MÉTODOS PÚBLICOS PARA SCRAPERS - ELIMINAR DUPLICACIÓN
+  // ============================================================================
+
+  /**
+   * Obtener mapeo de ciudad para URL de scraper específico
+   */
+  public static getCityUrlMapping(city: string, scraperType: 'standard' | 'properati' | 'mercadolibre' = 'standard'): string {
+    const mapping = this.CITY_URL_MAPPINGS[scraperType] as Record<string, string>;
+    return mapping[city?.toLowerCase()] || mapping['bogota'];
+  }
+
+  /**
+   * Obtener mapeo de barrio para URL de scraper específico
+   */
+  public static getNeighborhoodUrlMapping(
+    neighborhood: string,
+    scraperType: 'standard' | 'pads' | 'mercadolibre' = 'standard'
+  ): string | null {
+    const mapping = this.NEIGHBORHOOD_URL_MAPPINGS[scraperType] as Record<string, string>;
+    return mapping[neighborhood?.toLowerCase()] || null;
+  }
+
+  /**
+   * Obtener mapeo de barrio para Trovit (formato especial con ciudad)
+   */
+  public static getTrovitNeighborhoodMapping(neighborhood: string, cityUrl: string): string | null {
+    const baseMapping = (this.NEIGHBORHOOD_URL_MAPPINGS.standard as Record<string, string>)[neighborhood?.toLowerCase()];
+    return baseMapping ? `${baseMapping}-${cityUrl}` : null;
+  }
+
+  /**
+   * Obtener mapeo de barrio para Rentola (formato específico)
+   */
+  public static getRentolaNeighborhoodMapping(neighborhood: string): string | null {
+    const rentolaMapping: Record<string, string> = {
+      'suba': 'bogota-localidad-suba',
+      'usaquén': 'bogota-localidad-usaquen',
+      'usaquen': 'bogota-localidad-usaquen',
+      'chapinero': 'bogota-localidad-chapinero',
+      'kennedy': 'bogota-localidad-kennedy',
+      'engativá': 'bogota-localidad-engativa',
+      'engativa': 'bogota-localidad-engativa',
+      'fontibón': 'bogota-localidad-fontibon',
+      'fontibon': 'bogota-localidad-fontibon'
+    };
+
+    return rentolaMapping[neighborhood?.toLowerCase()] || null;
+  }
+
+  // ============================================================================
+  // PATRONES DE REGEX CENTRALIZADOS - ELIMINAR DUPLICACIÓN TOTAL
+  // ============================================================================
+
+  /**
+   * Lista de ciudades principales para patrones dinámicos
+   */
+  private static readonly MAIN_CITIES = 'bogotá|medellín|cali|barranquilla|bucaramanga|cartagena';
+
+  /**
+   * Patrones de regex centralizados para extracción de ubicaciones
+   * ELIMINA DUPLICACIÓN en todos los scrapers
+   */
+  public static readonly LOCATION_EXTRACTION_PATTERNS = [
+    new RegExp(`en\\s+([^,\\n]+),?\\s*(${LocationDetector.MAIN_CITIES})`, 'i'),
+    new RegExp(`arriendo\\s+([^,\\n]+),?\\s*(${LocationDetector.MAIN_CITIES})`, 'i'),
+    /apartamento\s+([^,\n]+)/i,
+    new RegExp(`([a-záéíóúñ\\s]+)\\s+(${LocationDetector.MAIN_CITIES})`, 'i'),
+    new RegExp(`([a-záéíóúñ\\s]+),\\s*(${LocationDetector.MAIN_CITIES})`, 'i'),
+    new RegExp(`(${LocationDetector.MAIN_CITIES})[,\\s]+([^,\\n]+)`, 'i')
+  ];
+
+  /**
+   * Patrón para limpiar nombres de ciudades de texto
+   */
+  private static readonly CITY_CLEANUP_PATTERN = new RegExp(`[,\\s]*(${LocationDetector.MAIN_CITIES})`, 'gi');
+
+  /**
+   * Limpiar texto de ubicación removiendo nombres de ciudades
+   * MÉTODO CENTRALIZADO - elimina duplicación
+   */
+  public static cleanLocationText(locationText: string): string {
+    if (!locationText) return '';
+
+    return locationText
+      .replace(LocationDetector.CITY_CLEANUP_PATTERN, '')
+      .trim();
+  }
+
+  /**
+   * Extraer ubicación usando patrones centralizados
+   * MÉTODO UNIFICADO para todos los scrapers
+   */
+  public static extractLocationFromText(text: string): { neighborhood?: string; city?: string } | null {
+    if (!text) return null;
+
+    for (const pattern of LocationDetector.LOCATION_EXTRACTION_PATTERNS) {
+      const match = text.match(pattern);
+      if (match) {
+        // Diferentes patrones tienen diferentes grupos de captura
+        if (match[1] && match[2]) {
+          return {
+            neighborhood: LocationDetector.cleanLocationText(match[1]),
+            city: match[2].toLowerCase()
+          };
+        } else if (match[1]) {
+          return {
+            neighborhood: LocationDetector.cleanLocationText(match[1])
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Patrón para URLs de ciudades (usado en MetrocuadradoScraper)
+   */
+  public static readonly CITY_URL_PATTERN = /(?:bogota|medellin|cali|barranquilla|cartagena|bucaramanga|pereira|ibague)-([^-]+)/;
+
+  /**
+   * Verificar si un texto contiene nombres de ciudades principales
+   */
+  public static containsMainCities(text: string): boolean {
+    return new RegExp(LocationDetector.MAIN_CITIES, 'i').test(text);
+  }
+
+  /**
+   * Obtener departamento para una ciudad - CENTRALIZADO
+   */
+  public static getDepartmentForCity(city?: string): string {
+    if (!city) return 'Colombia';
+
+    const cityDepartmentMap: Record<string, string> = {
+      'bogotá': 'Bogotá D.C.',
+      'bogota': 'Bogotá D.C.',
+      'medellín': 'Antioquia',
+      'medellin': 'Antioquia',
+      'cali': 'Valle del Cauca',
+      'barranquilla': 'Atlántico',
+      'bucaramanga': 'Santander',
+      'cartagena': 'Bolívar',
+      'pereira': 'Risaralda',
+      'ibagué': 'Tolima',
+      'ibague': 'Tolima',
+      'manizales': 'Caldas',
+      'villavicencio': 'Meta',
+      'pasto': 'Nariño',
+      'montería': 'Córdoba',
+      'monteria': 'Córdoba',
+      'valledupar': 'Cesar',
+      'neiva': 'Huila',
+      'armenia': 'Quindío',
+      'popayán': 'Cauca',
+      'popayan': 'Cauca'
+    };
+
+    return cityDepartmentMap[city.toLowerCase()] || 'Colombia';
+  }
+
+
+
+  // ============================================================================
+  // URL BUILDER UNIFICADO - ELIMINAR DUPLICACIÓN TOTAL
+  // ============================================================================
+
+  /**
+   * Configuraciones de URL para cada scraper
+   */
+  private static readonly SCRAPER_URL_CONFIGS = {
+    ciencuadras: {
+      baseTemplate: 'https://www.ciencuadras.com/arriendo/apartamento/{city}',
+      neighborhoodTemplate: '/{neighborhood}',
+      cityMapping: 'standard',
+      neighborhoodMapping: 'standard'
+    },
+    metrocuadrado: {
+      baseTemplate: 'https://www.metrocuadrado.com/inmuebles/arriendo/apartamento/{city}/',
+      neighborhoodTemplate: '{neighborhood}/',
+      cityMapping: 'standard',
+      neighborhoodMapping: 'standard'
+    },
+    mercadolibre: {
+      baseTemplate: 'https://inmuebles.mercadolibre.com.co/apartamentos/arriendo/{city}',
+      neighborhoodTemplate: '/{neighborhood}',
+      cityMapping: 'mercadolibre',
+      neighborhoodMapping: 'mercadolibre'
+    },
+    properati: {
+      baseTemplate: 'https://www.properati.com.co/s/{city}/apartamento/arriendo',
+      neighborhoodTemplate: '?q={neighborhood}',
+      cityMapping: 'properati',
+      neighborhoodMapping: 'standard'
+    },
+    trovit: {
+      baseTemplate: 'https://casas.trovit.com.co/arriendo-apartamento-{city}',
+      neighborhoodTemplate: 'https://casas.trovit.com.co/arriendo-apartamento-{neighborhood}',
+      cityMapping: 'standard',
+      neighborhoodMapping: 'trovit'
+    },
+    rentola: {
+      baseTemplate: 'https://rentola.com/for-rent/co/{city}',
+      neighborhoodTemplate: 'https://rentola.com/for-rent/co/{neighborhood}',
+      cityMapping: 'standard',
+      neighborhoodMapping: 'rentola'
+    },
+    pads: {
+      baseTemplate: 'https://pads.com.co/inmuebles-en-arriendo/{city}',
+      neighborhoodTemplate: '/{neighborhood}',
+      cityMapping: 'standard',
+      neighborhoodMapping: 'pads'
+    },
+    arriendo: {
+      baseTemplate: 'https://www.arriendo.com/buscar',
+      neighborhoodTemplate: '',
+      cityMapping: 'standard',
+      neighborhoodMapping: 'standard'
+    },
+    fincaraiz: {
+      baseTemplate: 'https://www.fincaraiz.com.co/arriendo/apartamento/{city}',
+      neighborhoodTemplate: '/{neighborhood}',
+      cityMapping: 'standard',
+      neighborhoodMapping: 'standard'
+    }
+  };
+
+  /**
+   * MÉTODO UNIFICADO: Construir URL para cualquier scraper
+   * ELIMINA TODA LA DUPLICACIÓN DE buildXXXUrl()
+   */
+  public static buildScraperUrl(
+    scraperName: keyof typeof LocationDetector.SCRAPER_URL_CONFIGS,
+    criteria: any
+  ): { url: string; locationInfo: any } {
+    // 1. Detectar ubicación (LÓGICA UNIFICADA)
+    let locationInfo = null;
+    if (criteria.hardRequirements?.location?.neighborhoods?.length) {
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = this.detectLocation(searchText);
+    }
+
+    const config = this.SCRAPER_URL_CONFIGS[scraperName];
+    const city = locationInfo?.city;
+    const neighborhood = locationInfo?.neighborhood;
+
+    // 2. Mapear ciudad (LÓGICA UNIFICADA)
+    const cityUrl = this.getCityUrlMapping(
+      city || 'bogotá',
+      config.cityMapping as any
+    );
+
+    // 3. Construir URL base
+    let finalUrl = config.baseTemplate.replace('{city}', cityUrl);
+
+    // 4. Agregar barrio si está disponible (LÓGICA UNIFICADA)
+    if (neighborhood && config.neighborhoodTemplate) {
+      let neighborhoodUrl = '';
+
+      if (config.neighborhoodMapping === 'trovit') {
+        neighborhoodUrl = this.getTrovitNeighborhoodMapping(neighborhood, cityUrl) || '';
+      } else if (config.neighborhoodMapping === 'rentola') {
+        neighborhoodUrl = this.getRentolaNeighborhoodMapping(neighborhood) || '';
+      } else {
+        neighborhoodUrl = this.getNeighborhoodUrlMapping(
+          neighborhood,
+          config.neighborhoodMapping as any
+        ) || '';
+      }
+
+      if (neighborhoodUrl) {
+        if (config.neighborhoodTemplate.includes('https://')) {
+          // Template completo (Trovit, Rentola)
+          finalUrl = config.neighborhoodTemplate.replace('{neighborhood}', neighborhoodUrl);
+        } else {
+          // Template parcial (otros scrapers)
+          finalUrl += config.neighborhoodTemplate.replace('{neighborhood}', neighborhoodUrl);
+        }
+      }
+    }
+
+    return { url: finalUrl, locationInfo };
   }
 }

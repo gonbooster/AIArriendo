@@ -12,65 +12,17 @@ export class PadsScraper extends BaseScraper {
   }
 
   /**
-   * Build PADS search URL
+   * Build PADS search URL - UNIFICADO
    */
   private buildPadsUrl(criteria: SearchCriteria): string {
-    // Detectar ubicación usando el sistema inteligente
-    let locationInfo = null;
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const searchText = criteria.hardRequirements.location.neighborhoods[0];
-      locationInfo = LocationDetector.detectLocation(searchText);
-      logger.info(`🎯 PADS - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
+    const result = LocationDetector.buildScraperUrl('pads', criteria);
+
+    if (result.locationInfo) {
+      logger.info(`🎯 PADS - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
-    const city = locationInfo?.city || 'bogotá';
-    const neighborhood = locationInfo?.neighborhood;
-
-    // Mapeo de ciudades para PADS
-    const cityUrlMap: Record<string, string> = {
-      'bogotá': 'bogota',
-      'bogota': 'bogota',
-      'medellín': 'medellin',
-      'medellin': 'medellin',
-      'cali': 'cali',
-      'barranquilla': 'barranquilla',
-      'cartagena': 'cartagena',
-      'bucaramanga': 'bucaramanga'
-    };
-
-    const cityUrl = cityUrlMap[city] || 'bogota';
-    let baseUrl = `https://pads.com.co/inmuebles-en-arriendo/${cityUrl}`;
-
-    // Agregar barrio si está disponible
-    if (neighborhood) {
-      const neighborhoodMap: Record<string, string> = {
-        'usaquén': 'usaquen',
-        'usaquen': 'usaquen',
-        'chapinero': 'chapinero',
-        'zona rosa': 'chapinero/zona-rosa',
-        'chico': 'chapinero/chico',
-        'rosales': 'chapinero/rosales',
-        'cedritos': 'cedritos',
-        'santa barbara': 'santa-barbara',
-        'santa bárbara': 'santa-barbara',
-        'suba': 'suba',
-        'centro': 'centro',
-        'la candelaria': 'centro/la-candelaria',
-        // Barrios de otras ciudades
-        'el poblado': 'el-poblado',
-        'poblado': 'el-poblado',
-        'laureles': 'laureles',
-        'granada': 'granada'
-      };
-
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
-      if (mappedNeighborhood) {
-        baseUrl += `/${mappedNeighborhood}`;
-      }
-    }
-
-    return baseUrl;
+    return result.url;
   }
 
   /**

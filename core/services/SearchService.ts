@@ -4,7 +4,7 @@ import { PropertyScorer } from '../scoring/PropertyScorer';
 // import { ScrapingEngine } from '../scraping/ScrapingEngine';
 import { SCRAPING_SOURCES } from '../../config/scraping-sources';
 import { logger } from '../../utils/logger';
-import { searchResultsExporter } from './SearchResultsExporter';
+// ELIMINADO: import { searchResultsExporter } from './SearchResultsExporter';
 import { RateLimiter } from '../scraping/RateLimiter';
 import { BaseScraper } from '../scraping/BaseScraper';
 import { ProperatiScraper } from '../scraping/scrapers/ProperatiScraper';
@@ -60,12 +60,12 @@ export class SearchService {
       const executionTime = Date.now() - startTime;
       logger.info(`Search completed in ${executionTime}ms. Returning ${paginatedProperties.length} of ${total} properties`);
 
-      // Export results to TXT files (summary, per source, raw json)
-      try {
-        await searchResultsExporter.exportSearchResults(paginatedProperties, criteria, `${startTime}`);
-      } catch (exportError) {
-        logger.error('Failed to export search results:', exportError);
-      }
+      // ELIMINADO: Export results to TXT files - no generar archivos
+      // try {
+      //   await searchResultsExporter.exportSearchResults(paginatedProperties, criteria, `${startTime}`);
+      // } catch (exportError) {
+      //   logger.error('Failed to export search results:', exportError);
+      // }
 
       return {
         properties: paginatedProperties,

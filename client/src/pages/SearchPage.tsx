@@ -175,7 +175,7 @@ const SimpleSearchPage: React.FC = () => {
           />
           <Chip
             icon={<TrendingIcon />}
-            label="8 Fuentes"
+            label="9 Fuentes"
             color="success"
             variant="outlined"
             size="small"

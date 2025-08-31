@@ -4,7 +4,7 @@ import { RateLimiter } from '../../scraping/RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 import { SmartExtractor } from '../utils/SmartExtractor';
-import { PropertyEnhancer } from '../utils/PropertyEnhancer';
+
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import puppeteer from 'puppeteer';
@@ -92,68 +92,17 @@ export class MercadoLibreScraper extends BaseScraper {
   }
 
   /**
-   * Build MercadoLibre search URL - DINÁMICO
+   * Build MercadoLibre search URL - UNIFICADO
    */
   private buildMercadoLibreUrl(criteria: SearchCriteria): string {
-    // Detectar ubicación usando el sistema inteligente
-    let locationInfo = null;
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const searchText = criteria.hardRequirements.location.neighborhoods[0];
-      locationInfo = LocationDetector.detectLocation(searchText);
-      logger.info(`🎯 MercadoLibre - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
+    const result = LocationDetector.buildScraperUrl('mercadolibre', criteria);
+
+    if (result.locationInfo) {
+      logger.info(`🎯 MercadoLibre - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
-    const city = locationInfo?.city || 'bogotá';
-    const neighborhood = locationInfo?.neighborhood;
-
-    // Mapeo de ciudades para MercadoLibre
-    const cityUrlMap: Record<string, string> = {
-      'bogotá': 'bogota',
-      'bogota': 'bogota',
-      'medellín': 'antioquia/medellin',
-      'medellin': 'antioquia/medellin',
-      'cali': 'valle-del-cauca/cali',
-      'barranquilla': 'atlantico/barranquilla',
-      'cartagena': 'bolivar/cartagena',
-      'bucaramanga': 'santander/bucaramanga',
-      'pereira': 'risaralda/pereira',
-      'ibagué': 'tolima/ibague',
-      'ibague': 'tolima/ibague'
-    };
-
-    const cityUrl = cityUrlMap[city] || 'bogota';
-    let baseUrl = `https://inmuebles.mercadolibre.com.co/apartamentos/arriendo/${cityUrl}`;
-
-    // Agregar barrio si está disponible (MercadoLibre tiene soporte para barrios principales)
-    if (neighborhood && (city === 'bogotá' || city === 'medellín')) {
-      const neighborhoodMap: Record<string, string> = {
-        'usaquén': 'usaquen',
-        'usaquen': 'usaquen',
-        'chapinero': 'chapinero',
-        'zona rosa': 'zona-rosa',
-        'chico': 'chico',
-        'rosales': 'rosales',
-        'cedritos': 'cedritos',
-        'santa barbara': 'santa-barbara',
-        'santa bárbara': 'santa-barbara',
-        'suba': 'suba',
-        'kennedy': 'kennedy',
-        'engativá': 'engativa',
-        'engativa': 'engativa',
-        'fontibón': 'fontibon',
-        'fontibon': 'fontibon',
-        'centro': 'centro',
-        'la candelaria': 'candelaria'
-      };
-
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
-      if (mappedNeighborhood) {
-        baseUrl += `/${mappedNeighborhood}`;
-      }
-    }
-
-    return baseUrl;
+    return result.url;
   }
 
   /**
@@ -218,9 +167,9 @@ export class MercadoLibreScraper extends BaseScraper {
           '.ui-search-item__group__element span'
         ]);
 
-        // If no location found, use detected city or default
+        // If no location found, use default
         if (!location || location.trim() === '') {
-          location = locationInfo?.city || 'Dynamic';
+          location = 'Dynamic';
         }
 
         // Extract URL
@@ -425,7 +374,7 @@ export class MercadoLibreScraper extends BaseScraper {
             location: {
               address: location,
               neighborhood: this.extractNeighborhood(location),
-              city: locationInfo?.city || 'Dynamic',
+              city: 'Dynamic',
               coordinates: { lat: 0, lng: 0 }
             },
             amenities: [], // Would need to extract from detail page
@@ -438,16 +387,10 @@ export class MercadoLibreScraper extends BaseScraper {
             isActive: true
           };
 
-          // Enhance property with intelligent fallbacks
-          const enhancedProperty = PropertyEnhancer.enhance(property, {
-            neighborhood: criteria.hardRequirements.location?.neighborhoods?.[0],
-            source: 'MercadoLibre',
-            searchCriteria: criteria
-          });
-
+          // ELIMINAR PropertyEnhancer - usar validación simple
           // Apply basic filtering
-          if (this.meetsBasicCriteria(enhancedProperty, criteria)) {
-            properties.push(enhancedProperty);
+          if (this.meetsBasicCriteria(property, criteria)) {
+            properties.push(property);
           }
         }
 
@@ -465,11 +408,8 @@ export class MercadoLibreScraper extends BaseScraper {
   private extractNeighborhood(locationText: string): string {
     if (!locationText) return '';
 
-    // Remove city name and get neighborhood
-    const cleaned = locationText.replace(/,?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i, '').trim();
-    const parts = cleaned.split(',');
-
-    return parts[0]?.trim() || '';
+    // USAR MÉTODO CENTRALIZADO - ELIMINA HARDCODEOS
+    return LocationDetector.cleanLocationText(locationText);
   }
 
   private async scrapeMercadoLibreHeadless(pageUrl: string, criteria: SearchCriteria): Promise<Property[]> {
@@ -546,7 +486,7 @@ export class MercadoLibreScraper extends BaseScraper {
           location: {
             address: it.location,
             neighborhood: this.extractNeighborhood(it.location),
-            city: locationInfo?.city || 'Dynamic',
+            city: 'Dynamic',
             coordinates: { lat: 0, lng: 0 }
           },
           amenities: [],

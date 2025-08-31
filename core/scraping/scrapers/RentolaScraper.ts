@@ -88,62 +88,17 @@ export class RentolaScraper extends BaseScraper {
   }
 
   /**
-   * Build Rentola search URL - DINÁMICO
+   * Build Rentola search URL - UNIFICADO
    */
   private buildRentolaUrl(criteria: SearchCriteria): string {
-    // Detectar ubicación usando el sistema inteligente
-    let locationInfo = null;
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const searchText = criteria.hardRequirements.location.neighborhoods[0];
-      locationInfo = LocationDetector.detectLocation(searchText);
-      logger.info(`🎯 Rentola - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
+    const result = LocationDetector.buildScraperUrl('rentola', criteria);
+
+    if (result.locationInfo) {
+      logger.info(`🎯 Rentola - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback dinámico
-    const city = locationInfo?.city || 'bogotá';
-    const neighborhood = locationInfo?.neighborhood;
-
-    // Mapeo de ciudades para Rentola
-    const cityUrlMap: Record<string, string> = {
-      'bogotá': 'bogota',
-      'bogota': 'bogota',
-      'medellín': 'medellin',
-      'medellin': 'medellin',
-      'cali': 'cali',
-      'barranquilla': 'barranquilla',
-      'cartagena': 'cartagena',
-      'bucaramanga': 'bucaramanga'
-    };
-
-    const cityUrl = cityUrlMap[city] || 'bogota';
-    let baseUrl = `https://rentola.com/for-rent/co/${cityUrl}`;
-
-    // Agregar barrio específico si está disponible (Rentola tiene URLs específicas para algunos barrios)
-    if (neighborhood && (city === 'bogotá' || city === 'medellín')) {
-      const neighborhoodMap: Record<string, string> = {
-        // Bogotá
-        'suba': 'bogota-localidad-suba',
-        'usaquén': 'bogota-localidad-usaquen',
-        'usaquen': 'bogota-localidad-usaquen',
-        'chapinero': 'bogota-localidad-chapinero',
-        'kennedy': 'bogota-localidad-kennedy',
-        'engativá': 'bogota-localidad-engativa',
-        'engativa': 'bogota-localidad-engativa',
-        'fontibón': 'bogota-localidad-fontibon',
-        'fontibon': 'bogota-localidad-fontibon',
-        // Medellín
-        'poblado': 'medellin-el-poblado',
-        'laureles': 'medellin-laureles',
-        'envigado': 'medellin-envigado'
-      };
-
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
-      if (mappedNeighborhood) {
-        baseUrl = `https://rentola.com/for-rent/co/${mappedNeighborhood}`;
-      }
-    }
-
-    return baseUrl;
+    return result.url;
   }
 
   /**
@@ -280,16 +235,13 @@ export class RentolaScraper extends BaseScraper {
   }
 
   /**
-   * Extract neighborhood from location text
+   * Extract neighborhood from location text - USAR LOCATIONDETECTOR
    */
   private extractNeighborhood(locationText: string): string {
     if (!locationText) return '';
-    
-    // Remove city name and get neighborhood
-    const cleaned = locationText.replace(/,?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i, '').trim();
-    const parts = cleaned.split(',');
-    
-    return parts[0]?.trim() || '';
+
+    // USAR MÉTODO CENTRALIZADO - ELIMINA HARDCODEOS
+    return LocationDetector.cleanLocationText(locationText);
   }
 
   /**

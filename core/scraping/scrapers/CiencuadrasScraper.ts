@@ -97,68 +97,17 @@ export class CiencuadrasScraper extends BaseScraper {
   }
 
   /**
-   * Build Ciencuadras search URL - DINÁMICO
+   * Build Ciencuadras search URL - UNIFICADO
    */
   private buildCiencuadrasUrl(criteria: SearchCriteria): string {
-    // Detectar ubicación usando el sistema inteligente
-    let locationInfo = null;
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const searchText = criteria.hardRequirements.location.neighborhoods[0];
-      locationInfo = LocationDetector.detectLocation(searchText);
-      logger.info(`🎯 Ciencuadras - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
+    const result = LocationDetector.buildScraperUrl('ciencuadras', criteria);
+
+    if (result.locationInfo) {
+      logger.info(`🎯 Ciencuadras - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
-    const city = locationInfo?.city || 'bogotá';
-    const neighborhood = locationInfo?.neighborhood;
-
-    // Mapeo de ciudades para Ciencuadras
-    const cityUrlMap: Record<string, string> = {
-      'bogotá': 'bogota',
-      'bogota': 'bogota',
-      'medellín': 'medellin',
-      'medellin': 'medellin',
-      'cali': 'cali',
-      'barranquilla': 'barranquilla',
-      'cartagena': 'cartagena',
-      'bucaramanga': 'bucaramanga',
-      'pereira': 'pereira',
-      'ibagué': 'ibague',
-      'ibague': 'ibague'
-    };
-
-    const cityUrl = cityUrlMap[city] || 'bogota';
-    let baseUrl = `https://www.ciencuadras.com/arriendo/apartamento/${cityUrl}`;
-
-    // Agregar barrio si está disponible
-    if (neighborhood) {
-      const neighborhoodMap: Record<string, string> = {
-        'usaquén': 'usaquen',
-        'usaquen': 'usaquen',
-        'chapinero': 'chapinero',
-        'zona rosa': 'zona-rosa',
-        'chico': 'chico',
-        'rosales': 'rosales',
-        'cedritos': 'cedritos',
-        'santa barbara': 'santa-barbara',
-        'santa bárbara': 'santa-barbara',
-        'suba': 'suba',
-        'centro': 'centro',
-        'la candelaria': 'la-candelaria',
-        // Barrios de otras ciudades
-        'el poblado': 'el-poblado',
-        'poblado': 'el-poblado',
-        'laureles': 'laureles',
-        'granada': 'granada'
-      };
-
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
-      if (mappedNeighborhood) {
-        baseUrl += `/${mappedNeighborhood}`;
-      }
-    }
-
-    return baseUrl;
+    return result.url;
   }
 
   /**
@@ -272,28 +221,17 @@ export class CiencuadrasScraper extends BaseScraper {
         // IMPROVED: Extract location using LocationDetector for dynamic city support
         let location = 'Dynamic'; // Will be enhanced by LocationDetector
 
-        // Enhanced location patterns for multiple cities
-        const locationPatterns = [
-          /([a-záéíóúñ\s]+),\s*([a-záéíóúñ\s,]+?)(?:\d+\.?\d*\s*m[²2]|habit\.|baños|garaje|$)/i,
-          /apartamento en arriendo\s*([a-záéíóúñ\s]+),\s*([a-záéíóúñ\s,]+?)(?:\d+\.?\d*\s*m[²2]|habit\.|baños|garaje|$)/i,
-          /([a-záéíóúñ\s]+),\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i
-        ];
-
-        for (const pattern of locationPatterns) {
-          const match = fullText.match(pattern);
-          if (match && match[1]) {
-            const neighborhood = match[1].trim();
-            const detectedCity = match[2]?.trim() || locationInfo?.city || 'Bogotá';
-            if (neighborhood && typeof neighborhood === 'string') {
-              location = `${neighborhood}, ${detectedCity}`;
-              break;
-            }
-          }
+        // Usar extracción centralizada de ubicación - ELIMINA DUPLICACIÓN
+        const extractedLocation = LocationDetector.extractLocationFromText(fullText);
+        if (extractedLocation) {
+          const neighborhood = extractedLocation.neighborhood || '';
+          const city = extractedLocation.city || 'dynamic';
+          location = neighborhood ? `${neighborhood}, ${city}` : city;
         }
 
         // Ensure location is always a string
         if (typeof location !== 'string' || !location) {
-          location = locationInfo?.city || 'Bogotá';
+          location = 'Dynamic';
         }
 
         // IMPROVED: Extract image with better selectors and fallbacks
@@ -380,7 +318,7 @@ export class CiencuadrasScraper extends BaseScraper {
             roomsText: roomsText || '',
             bathrooms: bathroomsNumber > 0 ? bathroomsNumber : bathroomsText,
             bathroomsText: bathroomsText || '',
-            location: typeof location === 'string' ? location : (locationInfo?.city || 'Dynamic'),
+            location: typeof location === 'string' ? location : 'Dynamic',
             imageUrl: imageUrl || '',
             images: imageUrl ? [imageUrl] : [],
             url: propertyUrl || 'https://www.ciencuadras.com',
@@ -536,7 +474,7 @@ export class CiencuadrasScraper extends BaseScraper {
         rooms: rooms,
         bathrooms: bathrooms,
         parking: parking,
-        location: location || locationInfo?.city || 'Dynamic',
+        location: location || 'Dynamic',
         address: address,
         amenities: [],
         images: imageUrl ? [imageUrl] : [],
@@ -642,7 +580,7 @@ export class CiencuadrasScraper extends BaseScraper {
           area: '',
           rooms: '',
           bathrooms: '',
-          location: locationInfo?.city || 'Dynamic',
+          location: 'Dynamic',
           amenities: [],
           images: it.imageUrl ? [it.imageUrl] : [],
           url: it.url.startsWith('http') ? it.url : `https://www.ciencuadras.com${it.url}`,

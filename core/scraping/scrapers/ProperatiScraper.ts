@@ -247,66 +247,17 @@ export class ProperatiScraper extends BaseScraper {
   }
 
   /**
-   * Build Properati search URL - DINÁMICO
+   * Build Properati search URL - UNIFICADO
    */
   private buildProperatiUrl(criteria: SearchCriteria): string {
-    // Detectar ubicación usando el sistema inteligente
-    let locationInfo = null;
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const searchText = criteria.hardRequirements.location.neighborhoods[0];
-      locationInfo = LocationDetector.detectLocation(searchText);
-      logger.info(`🎯 Properati - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
+    const result = LocationDetector.buildScraperUrl('properati', criteria);
+
+    if (result.locationInfo) {
+      logger.info(`🎯 Properati - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
-    const city = locationInfo?.city || 'bogotá';
-    const neighborhood = locationInfo?.neighborhood;
-
-    // Mapeo de ciudades para Properati
-    const cityUrlMap: Record<string, string> = {
-      'bogotá': 'bogota-d-c-colombia',
-      'bogota': 'bogota-d-c-colombia',
-      'medellín': 'medellin-antioquia-colombia',
-      'medellin': 'medellin-antioquia-colombia',
-      'cali': 'cali-valle-del-cauca-colombia',
-      'barranquilla': 'barranquilla-atlantico-colombia',
-      'cartagena': 'cartagena-bolivar-colombia',
-      'bucaramanga': 'bucaramanga-santander-colombia',
-      'pereira': 'pereira-risaralda-colombia',
-      'ibagué': 'ibague-tolima-colombia',
-      'ibague': 'ibague-tolima-colombia'
-    };
-
-    const cityUrl = cityUrlMap[city] || 'bogota-d-c-colombia';
-    let baseUrl = `https://www.properati.com.co/s/${cityUrl}/apartamento/arriendo`;
-
-    // Agregar barrio como query parameter si está disponible
-    if (neighborhood) {
-      const neighborhoodMap: Record<string, string> = {
-        'usaquén': 'usaquen',
-        'usaquen': 'usaquen',
-        'chapinero': 'chapinero',
-        'zona rosa': 'zona-rosa',
-        'chico': 'chico',
-        'rosales': 'rosales',
-        'cedritos': 'cedritos',
-        'santa barbara': 'santa-barbara',
-        'santa bárbara': 'santa-barbara',
-        'suba': 'suba',
-        'centro': 'centro',
-        'la candelaria': 'la-candelaria',
-        // Barrios de otras ciudades
-        'el poblado': 'el-poblado',
-        'poblado': 'el-poblado',
-        'laureles': 'laureles',
-        'granada': 'granada'
-      };
-
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()] || neighborhood;
-      baseUrl += `?q=${encodeURIComponent(mappedNeighborhood)}`;
-    }
-
-    return baseUrl;
+    return result.url;
   }
 
   /**
@@ -479,16 +430,13 @@ export class ProperatiScraper extends BaseScraper {
   }
 
   /**
-   * Extract neighborhood from location text
+   * Extract neighborhood from location text - USAR LOCATIONDETECTOR
    */
   private extractNeighborhood(locationText: string): string {
     if (!locationText) return '';
-    
-    // Remove city name and get neighborhood
-    const cleaned = locationText.replace(/,?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i, '').trim();
-    const parts = cleaned.split(',');
-    
-    return parts[0]?.trim() || '';
+
+    // USAR MÉTODO CENTRALIZADO - ELIMINA HARDCODEOS
+    return LocationDetector.cleanLocationText(locationText);
   }
 
   /**

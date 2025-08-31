@@ -3,7 +3,7 @@
  */
 
 import { Property } from '../../types';
-import { PropertyEnhancer } from './PropertyEnhancer';
+// PropertyEnhancer eliminado - usar validación simple
 
 export interface ScrapingStats {
   source: string;
@@ -48,8 +48,8 @@ export class ExtractionStats {
     // Update field statistics
     this.updateFieldStats(stats, property);
     
-    // Update quality distribution
-    const completeness = PropertyEnhancer.calculateCompleteness(property);
+    // Update quality distribution - USAR CÁLCULO SIMPLE
+    const completeness = this.calculateCompleteness(property);
     this.updateQualityDistribution(stats, completeness);
     
     // Recalculate averages
@@ -139,6 +139,30 @@ export class ExtractionStats {
       });
     }
     return this.stats.get(source)!;
+  }
+
+  /**
+   * Calculate completeness score (0-100) - REEMPLAZA PropertyEnhancer
+   */
+  private static calculateCompleteness(property: Property): number {
+    let score = 0;
+    const weights = {
+      title: 20,
+      price: 25,
+      area: 15,
+      rooms: 15,
+      location: 15,
+      image: 10
+    };
+
+    if (property.title && property.title.length > 5) score += weights.title;
+    if (property.price && property.price > 100000) score += weights.price;
+    if (property.area && property.area > 20) score += weights.area;
+    if (property.rooms && property.rooms > 0) score += weights.rooms;
+    if (property.location?.address) score += weights.location;
+    if (property.images && property.images.length > 0 && property.images[0].startsWith('http')) score += weights.image;
+
+    return score;
   }
 
   private static updateFieldStats(stats: ScrapingStats, property: Property): void {

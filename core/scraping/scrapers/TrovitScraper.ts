@@ -178,63 +178,21 @@ export class TrovitScraper extends BaseScraper {
    * Build Trovit search URL with specific parameters - DINÁMICO
    */
   private buildTrovitSearchUrl(criteria: SearchCriteria, page: number): string {
-    // Detectar ubicación usando el sistema inteligente
-    let locationInfo = null;
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const searchText = criteria.hardRequirements.location.neighborhoods[0];
-      locationInfo = LocationDetector.detectLocation(searchText);
-      logger.info(`🎯 Trovit - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
+    const result = LocationDetector.buildScraperUrl('trovit', criteria);
+
+    if (result.locationInfo) {
+      logger.info(`🎯 Trovit - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
-    const city = locationInfo?.city || 'bogotá';
-    const neighborhood = locationInfo?.neighborhood;
-
-    // Mapeo de ciudades para Trovit
-    const cityUrlMap: Record<string, string> = {
-      'bogotá': 'bogota',
-      'bogota': 'bogota',
-      'medellín': 'medellin',
-      'medellin': 'medellin',
-      'cali': 'cali',
-      'barranquilla': 'barranquilla',
-      'cartagena': 'cartagena',
-      'bucaramanga': 'bucaramanga',
-      'pereira': 'pereira',
-      'ibagué': 'ibague',
-      'ibague': 'ibague'
-    };
-
-    const cityUrl = cityUrlMap[city] || 'bogota';
-    let baseUrl = `https://casas.trovit.com.co/arriendo-apartamento-${cityUrl}`;
+    // Extraer where parameter para Trovit
+    const cityUrl = LocationDetector.getCityUrlMapping(result.locationInfo?.city);
     let where = cityUrl;
 
-    // Agregar barrio si está disponible
-    if (neighborhood) {
-      const neighborhoodMap: Record<string, string> = {
-        'usaquén': `usaquen-${cityUrl}`,
-        'usaquen': `usaquen-${cityUrl}`,
-        'chapinero': `chapinero-${cityUrl}`,
-        'zona rosa': `zona-rosa-${cityUrl}`,
-        'chico': `chico-${cityUrl}`,
-        'rosales': `rosales-${cityUrl}`,
-        'cedritos': `cedritos-${cityUrl}`,
-        'santa barbara': `santa-barbara-${cityUrl}`,
-        'santa bárbara': `santa-barbara-${cityUrl}`,
-        'suba': `suba-${cityUrl}`,
-        'centro': `centro-${cityUrl}`,
-        'la candelaria': `la-candelaria-${cityUrl}`,
-        // Barrios de otras ciudades
-        'el poblado': `el-poblado-${cityUrl}`,
-        'poblado': `el-poblado-${cityUrl}`,
-        'laureles': `laureles-${cityUrl}`,
-        'granada': `granada-${cityUrl}`
-      };
-
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
-      if (mappedNeighborhood) {
-        where = mappedNeighborhood;
-        baseUrl = `https://casas.trovit.com.co/arriendo-apartamento-${mappedNeighborhood}`;
+    if (result.locationInfo?.neighborhood) {
+      const neighborhoodUrl = LocationDetector.getTrovitNeighborhoodMapping(result.locationInfo.neighborhood, cityUrl);
+      if (neighborhoodUrl) {
+        where = neighborhoodUrl;
       }
     }
 
@@ -249,7 +207,7 @@ export class TrovitScraper extends BaseScraper {
       params.set('page', page.toString());
     }
 
-    return `${baseUrl}?${params.toString()}`;
+    return `${result.url}?${params.toString()}`;
   }
 
   /**
@@ -419,43 +377,18 @@ export class TrovitScraper extends BaseScraper {
           let enhancedLocation = location || '';
 
           if (!enhancedLocation) {
-            // Extraer ubicación del título
-            const titleLocationPatterns = [
-              /en\s+([^,\n]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i,           // "en el nogal, [city]"
-              /arriendo\s+([^,\n]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i,     // "arriendo chico alto"
-              /apartamento\s+([^,\n]+)/i,             // "apartamento rosales"
-              /([a-záéíóúñ\s]+)\s+(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i            // "santa barbara [city]"
-            ];
-
-            for (const pattern of titleLocationPatterns) {
-              const match = (title || '').match(pattern);
-              if (match && match[1]) {
-                const neighborhood = match[1].trim();
-                if (neighborhood.length > 2 && !neighborhood.match(/\d/)) {
-                  enhancedLocation = neighborhood;
-                  break;
-                }
-              }
+            // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA DUPLICACIÓN TOTAL
+            const extractedFromTitle = LocationDetector.extractLocationFromText(title || '');
+            if (extractedFromTitle?.neighborhood) {
+              enhancedLocation = extractedFromTitle.neighborhood;
             }
           }
 
           if (!enhancedLocation) {
-            // Extraer ubicación del texto completo
-            const textLocationPatterns = [
-              /localidad de\s+([^)]+)/i,              // "localidad de suba"
-              /en\s+([^,\n]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i,           // "en cerros de suba"
-              /(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)[,\s]+([^,\n]+)/i                // "[city], chapinero"
-            ];
-
-            for (const pattern of textLocationPatterns) {
-              const match = fullText.match(pattern);
-              if (match && match[1]) {
-                const neighborhood = match[1].trim();
-                if (neighborhood.length > 2 && !neighborhood.match(/\d/)) {
-                  enhancedLocation = neighborhood;
-                  break;
-                }
-              }
+            // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA DUPLICACIÓN TOTAL
+            const extractedFromText = LocationDetector.extractLocationFromText(fullText);
+            if (extractedFromText?.neighborhood) {
+              enhancedLocation = extractedFromText.neighborhood;
             }
           }
 

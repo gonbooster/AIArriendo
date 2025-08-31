@@ -91,35 +91,22 @@ export class ArriendoScraper extends BaseScraper {
   }
 
   /**
-   * Build Arriendo.com search URL
+   * Build Arriendo.com search URL - UNIFICADO
    */
   private buildArriendoUrl(criteria: SearchCriteria): string {
-    const baseUrl = 'https://www.arriendo.com/buscar';
-    const params = new URLSearchParams();
+    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
+    const result = LocationDetector.buildScraperUrl('arriendo', criteria);
 
-    // Basic search parameters
-    params.append('tipo', 'arriendo');
-    // Detectar ubicación usando el sistema inteligente
-    let locationInfo = null;
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const searchText = criteria.hardRequirements.location.neighborhoods[0];
-      locationInfo = LocationDetector.detectLocation(searchText);
-      logger.info(`🎯 Arriendo - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    if (result.locationInfo) {
+      logger.info(`🎯 Arriendo - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
-    const city = locationInfo?.city || 'bogota';
-    const cityUrlMap: Record<string, string> = {
-      'bogotá': 'bogota',
-      'bogota': 'bogota',
-      'medellín': 'medellin',
-      'medellin': 'medellin',
-      'cali': 'cali',
-      'barranquilla': 'barranquilla',
-      'bucaramanga': 'bucaramanga',
-      'cartagena': 'cartagena'
-    };
-    const cityUrl = cityUrlMap[city.toLowerCase()] || 'bogota';
+    // Arriendo.com usa parámetros específicos
+    const params = new URLSearchParams();
+    params.append('tipo', 'arriendo');
+
+    // Usar mapeo centralizado para ciudad
+    const cityUrl = LocationDetector.getCityUrlMapping(result.locationInfo?.city);
     params.append('ciudad', cityUrl);
 
     // Location
@@ -132,7 +119,7 @@ export class ArriendoScraper extends BaseScraper {
       params.append('precio_max', criteria.hardRequirements.maxTotalPrice.toString());
     }
 
-    const finalUrl = `${baseUrl}?${params.toString()}`;
+    const finalUrl = `${result.url}?${params.toString()}`;
     logger.info(`Arriendo.com URL: ${finalUrl}`);
     return finalUrl;
   }
@@ -188,7 +175,7 @@ export class ArriendoScraper extends BaseScraper {
 
         // Extract location
         const location = $card.find('.location, .ubicacion, [class*="location"], [class*="ubicacion"]').first().text().trim() ||
-                        $card.find('.address, .direccion').first().text().trim() || 'Bogotá';
+                        $card.find('.address, .direccion').first().text().trim();
 
         // Extract URL
         const relativeUrl = $card.find('a').first().attr('href') || '';
@@ -217,7 +204,7 @@ export class ArriendoScraper extends BaseScraper {
           location: {
             address: location,
             neighborhood: this.extractNeighborhood(location),
-            city: 'Bogotá' // Will be enhanced by LocationDetector
+            city: 'Dynamic',
           },
           images: imageUrl ? [this.normalizeUrl(imageUrl)] : [],
           url: url,

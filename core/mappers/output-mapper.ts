@@ -1,5 +1,6 @@
 import { StandardProperty, ProviderSchema } from '../schemas/base-provider-schema';
 import { InputMapper } from './input-mapper';
+import { LocationDetector } from '../utils/LocationDetector';
 
 /**
  * Universal Output Mapper
@@ -239,28 +240,14 @@ export class OutputMapper {
   }
 
   /**
-   * Extract city from address string
+   * Extract city from address string - USAR LOCATIONDETECTOR
    */
   private static extractCity(address: string): string {
     if (!address) return '';
 
-    const addressLower = address.toLowerCase();
-
-    // Common Colombian cities
-    const cities = [
-      'bogotá', 'bogota', 'medellín', 'medellin', 'cali', 'barranquilla',
-      'cartagena', 'bucaramanga', 'pereira', 'ibagué', 'ibague', 'manizales',
-      'villavicencio', 'pasto', 'montería', 'monteria', 'valledupar',
-      'neiva', 'soledad', 'armenia', 'soacha', 'popayán', 'popayan'
-    ];
-
-    for (const city of cities) {
-      if (addressLower.includes(city)) {
-        return city.charAt(0).toUpperCase() + city.slice(1);
-      }
-    }
-
-    return '';
+    // USAR MÉTODO CENTRALIZADO - ELIMINA HARDCODEOS
+    const extracted = LocationDetector.extractLocationFromText(address);
+    return extracted?.city || '';
   }
 
   /**

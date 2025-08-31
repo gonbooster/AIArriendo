@@ -90,80 +90,23 @@ export class MetrocuadradoScraper extends BaseScraper {
   }
 
   /**
-   * Build Metrocuadrado search URL - DINÁMICO
+   * Build Metrocuadrado search URL - UNIFICADO
    */
   private buildMetrocuadradoUrl(criteria: SearchCriteria): string {
-    // Detectar ubicación usando el sistema inteligente
-    let locationInfo = null;
-    if (criteria.hardRequirements.location?.neighborhoods?.length) {
-      const searchText = criteria.hardRequirements.location.neighborhoods[0];
-      locationInfo = LocationDetector.detectLocation(searchText);
-      logger.info(`🎯 Metrocuadrado - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
+    const result = LocationDetector.buildScraperUrl('metrocuadrado', criteria);
+
+    if (result.locationInfo) {
+      logger.info(`🎯 Metrocuadrado - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
-    const city = locationInfo?.city || 'bogotá';
-    const neighborhood = locationInfo?.neighborhood;
-
-    const operation = 'arriendo';
-
-    // Mapeo de ciudades para Metrocuadrado
-    const cityUrlMap: Record<string, string> = {
-      'bogotá': 'bogota',
-      'bogota': 'bogota',
-      'medellín': 'medellin',
-      'medellin': 'medellin',
-      'cali': 'cali',
-      'barranquilla': 'barranquilla',
-      'cartagena': 'cartagena',
-      'bucaramanga': 'bucaramanga',
-      'pereira': 'pereira',
-      'ibagué': 'ibague',
-      'ibague': 'ibague'
-    };
-
-    const cityUrl = cityUrlMap[city] || 'bogota';
-    let baseUrl = `https://www.metrocuadrado.com/inmuebles/${operation}/apartamento/${cityUrl}/`;
-
-    // Agregar barrio si está disponible
-    if (neighborhood) {
-      const neighborhoodMap: Record<string, string> = {
-        'usaquén': 'usaquen',
-        'usaquen': 'usaquen',
-        'chapinero': 'chapinero',
-        'zona rosa': 'zona-rosa',
-        'chico': 'chico',
-        'rosales': 'rosales',
-        'cedritos': 'cedritos',
-        'santa barbara': 'santa-barbara',
-        'santa bárbara': 'santa-barbara',
-        'suba': 'suba',
-        'kennedy': 'kennedy',
-        'engativá': 'engativa',
-        'engativa': 'engativa',
-        'fontibón': 'fontibon',
-        'fontibon': 'fontibon',
-        'centro': 'centro',
-        'la candelaria': 'la-candelaria',
-        // Barrios de otras ciudades
-        'el poblado': 'el-poblado',
-        'poblado': 'el-poblado',
-        'laureles': 'laureles',
-        'granada': 'granada'
-      };
-
-      const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
-      if (mappedNeighborhood) {
-        baseUrl += `${mappedNeighborhood}/`;
-      }
-    }
-
+    // Agregar parámetros específicos de Metrocuadrado
     const params = new URLSearchParams({
       'search': 'form',
       'orden': 'relevancia'
     });
 
-    const finalUrl = `${baseUrl}?${params}`;
+    const finalUrl = `${result.url}?${params}`;
     logger.info(`Metrocuadrado URL dinámico: ${finalUrl}`);
     return finalUrl;
   }
@@ -477,17 +420,11 @@ export class MetrocuadradoScraper extends BaseScraper {
             }
           }
 
-          // Extraer ubicación del texto si no se encontró en elementos específicos
+          // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA HARDCODEOS
           if (!loc) {
-            const locationMatches = [
-              fullText.match(/en\s+([^,]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i),
-              fullText.match(/(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)[,\s]+([^,\n]+)/i)
-            ];
-            for (const match of locationMatches) {
-              if (match) {
-                loc = match[1].trim();
-                break;
-              }
+            const extractedLocation = LocationDetector.extractLocationFromText(fullText);
+            if (extractedLocation?.neighborhood) {
+              loc = extractedLocation.neighborhood;
             }
           }
 
@@ -528,9 +465,9 @@ export class MetrocuadradoScraper extends BaseScraper {
         let neighborhood = it.loc || '';
         let address = it.loc || '';
 
-        // Si tenemos información en la URL, extraer barrio (dinámico)
+        // Si tenemos información en la URL, extraer barrio usando patrón centralizado
         if (it.url && !neighborhood) {
-          const urlMatch = it.url.match(/(?:bogota|medellin|cali|barranquilla|cartagena|bucaramanga|pereira|ibague)-([^-]+)/);
+          const urlMatch = it.url.match(LocationDetector.CITY_URL_PATTERN);
           if (urlMatch) {
             neighborhood = urlMatch[1].replace(/-/g, ' ');
           }
