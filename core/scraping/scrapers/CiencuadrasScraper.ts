@@ -1,5 +1,5 @@
-import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
+import { PropertyParser } from '../PropertyParser';
 import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
@@ -7,9 +7,43 @@ import * as cheerio from 'cheerio';
 import axios from 'axios';
 import puppeteer from 'puppeteer';
 
-export class CiencuadrasScraper extends BaseScraper {
-  constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
-    super(source, rateLimiter);
+export class CiencuadrasScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
+  private parser: PropertyParser;
+
+  constructor() {
+    this.source = {
+      id: 'ciencuadras',
+      name: 'Ciencuadras',
+      baseUrl: 'https://www.ciencuadras.com',
+      isActive: true,
+      priority: 1,
+      rateLimit: {
+        requestsPerMinute: 30,
+        delayBetweenRequests: 2000,
+        maxConcurrentRequests: 2
+      },
+      selectors: {
+        propertyCard: '.property-card, .listing-item',
+        title: '.property-title, .listing-title',
+        price: '.price, .rental-price',
+        area: '.area, .size',
+        rooms: '.bedrooms, .rooms',
+        bathrooms: '.bathrooms, .baños',
+        location: '.location, .address',
+        amenities: '.amenities, .features',
+        images: '.property-image img',
+        link: 'a, .property-link',
+        nextPage: '.pagination .next'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
+    this.parser = new PropertyParser(this.source);
   }
 
   /**
@@ -100,14 +134,16 @@ export class CiencuadrasScraper extends BaseScraper {
    * Build Ciencuadras search URL - UNIFICADO
    */
   private buildCiencuadrasUrl(criteria: SearchCriteria): string {
-    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('ciencuadras', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 Ciencuadras - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
-    }
+    const baseUrl = 'https://www.ciencuadras.com/apartamentos/arriendo';
+    const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'standard');
 
-    return result.url;
+    logger.info(`🎯 Ciencuadras - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+
+    return url;
   }
 
   /**
@@ -221,9 +257,9 @@ export class CiencuadrasScraper extends BaseScraper {
         // IMPROVED: Extract location using LocationDetector for dynamic city support
         let location = 'Dynamic'; // Will be enhanced by LocationDetector
 
-        // Usar extracción centralizada de ubicación - ELIMINA DUPLICACIÓN
-        const extractedLocation = LocationDetector.extractLocationFromText(fullText);
-        if (extractedLocation) {
+        // Usar extracción centralizada de ubicación - NUEVO LOCATIONDETECTOR
+        const extractedLocation = LocationDetector.detectLocation(fullText);
+        if (extractedLocation && extractedLocation.city) {
           const neighborhood = extractedLocation.neighborhood || '';
           const city = extractedLocation.city || 'dynamic';
           location = neighborhood ? `${neighborhood}, ${city}` : city;

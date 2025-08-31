@@ -1,4 +1,3 @@
-import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
@@ -7,9 +6,41 @@ import * as cheerio from 'cheerio';
 import axios from 'axios';
 import puppeteer, { Browser, Page } from 'puppeteer';
 
-export class ProperatiScraper extends BaseScraper {
-  constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
-    super(source, rateLimiter);
+export class ProperatiScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
+
+  constructor() {
+    this.source = {
+      id: 'properati',
+      name: 'Properati',
+      baseUrl: 'https://www.properati.com.co',
+      isActive: true,
+      priority: 5,
+      rateLimit: {
+        requestsPerMinute: 25,
+        delayBetweenRequests: 2500,
+        maxConcurrentRequests: 2
+      },
+      selectors: {
+        propertyCard: '.property-card, .listing-item',
+        title: '.property-title, .listing-title',
+        price: '.price, .rental-price',
+        area: '.area, .size',
+        rooms: '.bedrooms, .rooms',
+        bathrooms: '.bathrooms, .baños',
+        location: '.location, .address',
+        amenities: '.amenities, .features',
+        images: '.property-image img',
+        link: 'a, .property-link',
+        nextPage: '.pagination .next'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
   }
 
   /**
@@ -250,14 +281,16 @@ export class ProperatiScraper extends BaseScraper {
    * Build Properati search URL - UNIFICADO
    */
   private buildProperatiUrl(criteria: SearchCriteria): string {
-    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('properati', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 Properati - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
-    }
+    const baseUrl = 'https://www.properati.com.co/s/apartamento/arriendo';
+    const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'properati');
 
-    return result.url;
+    logger.info(`🎯 Properati - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+
+    return url;
   }
 
   /**
@@ -435,8 +468,8 @@ export class ProperatiScraper extends BaseScraper {
   private extractNeighborhood(locationText: string): string {
     if (!locationText) return '';
 
-    // USAR MÉTODO CENTRALIZADO - ELIMINA HARDCODEOS
-    return LocationDetector.cleanLocationText(locationText);
+    // LIMPIAR TEXTO DE UBICACIÓN - FUNCIÓN SIMPLE
+    return locationText.trim().toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ');
   }
 
   /**

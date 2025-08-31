@@ -7,7 +7,6 @@ import { Box } from '@mui/material';
 import Navbar from './components/Layout/Navbar';
 import SearchPage from './pages/SearchPage';
 import ResultsPage from './pages/ResultsPage';
-import ModernResultsPage from './pages/ModernResultsPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import { SearchProvider } from './contexts/SearchContext';
 import theme from './theme/theme';
@@ -42,7 +41,6 @@ function App() {
                 <Route path="/" element={<SearchPage />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/results" element={<ResultsPage />} />
-                <Route path="/results-modern" element={<ModernResultsPage />} />
                 <Route path="/property/:id" element={<PropertyDetailPage />} />
               </Routes>
             </Box>

@@ -1,4 +1,3 @@
-import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
@@ -6,9 +5,41 @@ import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
-export class RentolaScraper extends BaseScraper {
-  constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
-    super(source, rateLimiter);
+export class RentolaScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
+
+  constructor() {
+    this.source = {
+      id: 'rentola',
+      name: 'Rentola',
+      baseUrl: 'https://www.rentola.com.co',
+      isActive: true,
+      priority: 10,
+      rateLimit: {
+        requestsPerMinute: 20,
+        delayBetweenRequests: 3000,
+        maxConcurrentRequests: 1
+      },
+      selectors: {
+        propertyCard: '.property-card, .listing-item',
+        title: '.property-title, .listing-title',
+        price: '.price, .rental-price',
+        area: '.area, .size',
+        rooms: '.bedrooms, .rooms',
+        bathrooms: '.bathrooms, .baños',
+        location: '.location, .address',
+        amenities: '.amenities, .features',
+        images: '.property-image img',
+        link: 'a, .property-link',
+        nextPage: '.pagination .next'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
   }
 
   /**
@@ -91,14 +122,24 @@ export class RentolaScraper extends BaseScraper {
    * Build Rentola search URL - UNIFICADO
    */
   private buildRentolaUrl(criteria: SearchCriteria): string {
-    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('rentola', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 Rentola - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
+    const baseUrl = 'https://www.rentola.com.co/apartamentos/arriendo';
+
+    logger.info(`🎯 Rentola - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+
+    // Rentola usa formato específico para barrios
+    let finalUrl = baseUrl;
+    if (locationInfo?.neighborhood) {
+      const rentolaMapping = LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'rentola');
+      if (rentolaMapping) {
+        finalUrl = `https://www.rentola.com.co/${rentolaMapping}`;
+      }
     }
 
-    return result.url;
+    return finalUrl;
   }
 
   /**
@@ -240,8 +281,8 @@ export class RentolaScraper extends BaseScraper {
   private extractNeighborhood(locationText: string): string {
     if (!locationText) return '';
 
-    // USAR MÉTODO CENTRALIZADO - ELIMINA HARDCODEOS
-    return LocationDetector.cleanLocationText(locationText);
+    // LIMPIAR TEXTO DE UBICACIÓN - FUNCIÓN SIMPLE
+    return locationText.trim().toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ');
   }
 
   /**

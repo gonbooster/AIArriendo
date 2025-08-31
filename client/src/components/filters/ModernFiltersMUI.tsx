@@ -22,7 +22,7 @@ import {
 import { Property } from '../../types';
 import { PROPERTY_DEFAULTS } from '../../config/constants';
 
-interface ModernFiltersMUIProps {
+interface PropertyFiltersProps {
   properties: Property[];
   onFiltersChange: (filteredProperties: Property[]) => void;
 }
@@ -44,7 +44,7 @@ interface FilterState {
   propertyTypes: string[]; // tipos de propiedad: apartamento, casa, etc.
 }
 
-const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
+const PropertyFilters: React.FC<PropertyFiltersProps> = ({
   properties,
   onFiltersChange
 }) => {
@@ -279,7 +279,7 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
       sources: [],
       amenities: [],
       pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
-      removeDuplicates: false, // ❌ Desactivado - ya se hace en el backend
+      removeDuplicates: true,
       hasParking: null,
       hideCorrupt: true, // ✅ Mantener marcado por defecto
       propertyTypes: [],
@@ -562,4 +562,4 @@ const ModernFiltersMUI: React.FC<ModernFiltersMUIProps> = ({
   );
 };
 
-export default ModernFiltersMUI;
+export default PropertyFilters;

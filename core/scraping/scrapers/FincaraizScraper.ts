@@ -1,4 +1,3 @@
-import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
@@ -6,9 +5,41 @@ import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
-export class FincaraizScraper extends BaseScraper {
-  constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
-    super(source, rateLimiter);
+export class FincaraizScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
+
+  constructor() {
+    this.source = {
+      id: 'fincaraiz',
+      name: 'Fincaraiz',
+      baseUrl: 'https://www.fincaraiz.com.co',
+      isActive: true,
+      priority: 2,
+      rateLimit: {
+        requestsPerMinute: 30,
+        delayBetweenRequests: 2000,
+        maxConcurrentRequests: 2
+      },
+      selectors: {
+        propertyCard: '.property-card, .listing-item',
+        title: '.property-title, .listing-title',
+        price: '.price, .rental-price',
+        area: '.area, .size',
+        rooms: '.bedrooms, .rooms',
+        bathrooms: '.bathrooms, .baños',
+        location: '.location, .address',
+        amenities: '.amenities, .features',
+        images: '.property-image img',
+        link: 'a, .property-link',
+        nextPage: '.pagination .next'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
   }
 
   /**
@@ -91,15 +122,16 @@ export class FincaraizScraper extends BaseScraper {
    * Build Fincaraiz search URL - UNIFICADO
    */
   private buildFincaraizUrl(criteria: SearchCriteria): string {
-    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('fincaraiz', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 Fincaraiz - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
-    }
+    const baseUrl = 'https://www.fincaraiz.com.co/apartamentos/arriendo';
+
+    logger.info(`🎯 Fincaraiz - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     // Fincaraiz usa parámetros específicos
-    const cityCode = result.locationInfo?.cityCode || '11001';
+    const cityCode = locationInfo.cityCode || '11001';
     const params = new URLSearchParams({
       'ad_type': '2', // arriendo
       'property_type': '1', // apartamento
@@ -108,7 +140,7 @@ export class FincaraizScraper extends BaseScraper {
       'sort': 'relevance'
     });
 
-    return `${result.url}?${params}`;
+    return `${baseUrl}?${params}`;
   }
 
 
@@ -390,8 +422,8 @@ export class FincaraizScraper extends BaseScraper {
         const titleText = data.title || '';
         const extractedData = this.extractDataFromText(titleText);
 
-        // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA HARDCODEOS
-        const extractedLocation = LocationDetector.extractLocationFromText(titleText);
+        // USAR EXTRACCIÓN CENTRALIZADA - NUEVO LOCATIONDETECTOR
+        const extractedLocation = LocationDetector.detectLocation(titleText);
         const neighborhood = extractedLocation?.neighborhood || 'Sin especificar';
 
         const property: Property = {
@@ -952,8 +984,8 @@ export class FincaraizScraper extends BaseScraper {
       }
     }
 
-    // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA HARDCODEOS MASIVOS
-    const extractedLocation = LocationDetector.extractLocationFromText(fullText);
+    // USAR EXTRACCIÓN CENTRALIZADA - NUEVO LOCATIONDETECTOR
+    const extractedLocation = LocationDetector.detectLocation(fullText);
     if (extractedLocation?.neighborhood) {
       result.location = extractedLocation.neighborhood;
       result.hasUsefulData = true;

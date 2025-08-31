@@ -5,21 +5,15 @@ import { PropertyScorer } from '../scoring/PropertyScorer';
 import { SCRAPING_SOURCES } from '../../config/scraping-sources';
 import { logger } from '../../utils/logger';
 // ELIMINADO: import { searchResultsExporter } from './SearchResultsExporter';
-import { RateLimiter } from '../scraping/RateLimiter';
-import { BaseScraper } from '../scraping/BaseScraper';
-import { ProperatiScraper } from '../scraping/scrapers/ProperatiScraper';
+// BaseScraper eliminado - usar scrapers específicos
+// ProperatiScraper importado dinámicamente
+import { LocationDetector } from '../utils/LocationDetector';
 import { SEARCH, SCRAPING } from '../../config/constants';
-
-import { PropertyValidator } from '../scraping/PropertyValidator';
 export class SearchService {
   private scorer: PropertyScorer;
-  private validator: PropertyValidator;
-  // private scrapingEngine: ScrapingEngine;
 
   constructor() {
     this.scorer = new PropertyScorer();
-    this.validator = new PropertyValidator();
-    // this.scrapingEngine = new ScrapingEngine();
   }
 
   /**
@@ -59,13 +53,6 @@ export class SearchService {
 
       const executionTime = Date.now() - startTime;
       logger.info(`Search completed in ${executionTime}ms. Returning ${paginatedProperties.length} of ${total} properties`);
-
-      // ELIMINADO: Export results to TXT files - no generar archivos
-      // try {
-      //   await searchResultsExporter.exportSearchResults(paginatedProperties, criteria, `${startTime}`);
-      // } catch (exportError) {
-      //   logger.error('Failed to export search results:', exportError);
-      // }
 
       return {
         properties: paginatedProperties,
@@ -159,32 +146,31 @@ export class SearchService {
         });
       };
 
-      // Ejecutar scrapers reales en paralelo con rate limiters
-      const scrapers: BaseScraper[] = activeSources.map((source) => {
-        const limiter = new RateLimiter(source.rateLimit);
+      // Ejecutar scrapers reales en paralelo
+      const scrapers = activeSources.map((source) => {
         switch (source.id) {
           case 'ciencuadras':
-            return new (require('../scraping/scrapers/CiencuadrasScraper').CiencuadrasScraper)(source, limiter);
+            return new (require('../scraping/scrapers/CiencuadrasScraper').CiencuadrasScraper)();
           case 'metrocuadrado':
-            return new (require('../scraping/scrapers/MetrocuadradoScraper').MetrocuadradoScraper)(source, limiter);
+            return new (require('../scraping/scrapers/MetrocuadradoScraper').MetrocuadradoScraper)();
           case 'fincaraiz':
-            return new (require('../scraping/scrapers/FincaraizScraper').FincaraizScraper)(source, limiter);
+            return new (require('../scraping/scrapers/FincaraizScraper').FincaraizScraper)();
           case 'mercadolibre':
-            return new (require('../scraping/scrapers/MercadoLibreScraper').MercadoLibreScraper)(source, limiter);
+            return new (require('../scraping/scrapers/MercadoLibreScraper').MercadoLibreScraper)();
           case 'properati':
-            return new ProperatiScraper(source, limiter);
+            return new (require('../scraping/scrapers/ProperatiScraper').ProperatiScraper)();
           case 'pads':
-            return new (require('../scraping/scrapers/PadsScraper').PadsScraper)(source, limiter);
+            return new (require('../scraping/scrapers/PadsScraper').PadsScraper)();
           case 'trovit':
-            return new (require('../scraping/scrapers/TrovitScraper').TrovitScraper)(source, limiter);
+            return new (require('../scraping/scrapers/TrovitScraper').TrovitScraper)();
           case 'rentola':
-            return new (require('../scraping/scrapers/RentolaScraper').RentolaScraper)(source, limiter);
+            return new (require('../scraping/scrapers/RentolaScraper').RentolaScraper)();
           case 'arriendo':
-            return new (require('../scraping/scrapers/ArriendoScraper').ArriendoScraper)(source, limiter);
+            return new (require('../scraping/scrapers/ArriendoScraper').ArriendoScraper)();
           default:
-            return new BaseScraper(source, limiter);
+            return null; // Skip unknown scrapers
         }
-      });
+      }).filter(Boolean); // Remove null values
 
       // Correr cada scraper con páginas limitadas y timeout individual
       const results = await Promise.allSettled(
@@ -213,16 +199,9 @@ export class SearchService {
 
     logger.info(`🔍 Applying hard filters to ${filtered.length} properties`);
 
-    // 🚫 DETECTAR CARACTERES ESPECIALES PARA SALTARSE TODOS LOS FILTROS
+    // 🚫 DETECTAR CARACTERES ESPECIALES PARA SALTARSE TODOS LOS FILTROS - USAR LOCATIONDETECTOR
     if (hardReq.location?.neighborhoods && hardReq.location.neighborhoods.length > 0) {
-      const hasSpecialChars = hardReq.location.neighborhoods.some(n => {
-        const cleaned = n.trim();
-        return cleaned.length <= 1 ||
-               SEARCH.SPECIAL_CHARS.includes(cleaned as any) ||
-               /^[^\w\s]+$/.test(cleaned);
-      });
-
-      if (hasSpecialChars) {
+      if (LocationDetector.hasSpecialSearchChars(hardReq.location.neighborhoods)) {
         logger.info(`🚫🚫🚫 SPECIAL CHARACTERS DETECTED - SKIPPING ALL FILTERS 🚫🚫🚫`);
         logger.info(`📍 Returning ALL properties without any filters: ${filtered.length} properties`);
         return filtered; // DEVOLVER TODAS LAS PROPIEDADES SIN FILTROS
@@ -300,71 +279,6 @@ export class SearchService {
 
     logger.info(`✅ Hard filters applied: ${properties.length} -> ${filtered.length} properties`);
     return filtered;
-
-    /* FILTROS DESACTIVADOS:
-    return properties.filter(property => {
-      const { hardRequirements } = criteria;
-
-      // Filter by rooms
-      if (hardRequirements.minRooms && property.rooms < hardRequirements.minRooms) {
-        return false;
-      }
-      if (hardRequirements.maxRooms && property.rooms > hardRequirements.maxRooms) {
-        return false;
-      }
-
-      // Filter by bathrooms (using any type for now to avoid TypeScript errors)
-      const anyRequirements = hardRequirements as any;
-      if (anyRequirements.minBathrooms && property.bathrooms && property.bathrooms < anyRequirements.minBathrooms) {
-        return false;
-      }
-      if (anyRequirements.maxBathrooms && property.bathrooms && property.bathrooms > anyRequirements.maxBathrooms) {
-        return false;
-      }
-
-      // Filter by area
-      if (hardRequirements.minArea && property.area < hardRequirements.minArea) {
-        return false;
-      }
-      if (hardRequirements.maxArea && property.area > hardRequirements.maxArea) {
-        return false;
-      }
-
-      // Filter by price
-      if (hardRequirements.maxTotalPrice && property.totalPrice > hardRequirements.maxTotalPrice) {
-        return false;
-      }
-
-      // Filter by parking (using any type for now to avoid TypeScript errors)
-      if (anyRequirements.minParking !== undefined && property.parking !== undefined && property.parking < anyRequirements.minParking) {
-        return false;
-      }
-      if (anyRequirements.maxParking !== undefined && property.parking !== undefined && property.parking > anyRequirements.maxParking) {
-        return false;
-      }
-
-      // Filter by location/neighborhoods
-      if (hardRequirements.location?.neighborhoods?.length) {
-        const requestedNeighborhoods = hardRequirements.location.neighborhoods;
-        const addr = (property.location.address || '').toLowerCase();
-        const neigh = (property.location.neighborhood || '').toLowerCase();
-
-        const match = requestedNeighborhoods.some(n => {
-          const nLower = n.toLowerCase();
-          return neigh.includes(nLower) ||
-                 addr.includes(nLower) ||
-                 // Flexible matching for partial neighborhood names
-                 this.isPartialMatch(nLower, addr);
-        });
-
-        if (!match) {
-          return false;
-        }
-      }
-
-      return true; // Property passes all filters
-    });
-    */
   }
 
   /**
@@ -497,60 +411,6 @@ export class SearchService {
     logger.info(`✅ Optional filters applied: ${properties.length} -> ${filtered.length} properties`);
     return filtered;
 
-    /* FILTROS OPCIONALES DESACTIVADOS:
-    let filtered = [...properties];
-
-    const optionalFilters = criteria.optionalFilters;
-    if (!optionalFilters) return filtered;
-
-    // Source filter
-    if (optionalFilters.sources && optionalFilters.sources.length > 0) {
-      filtered = filtered.filter(p => optionalFilters.sources!.includes(p.source));
-    }
-
-    // Neighborhoods filter (additional to hard requirements)
-    if (optionalFilters.neighborhoods && optionalFilters.neighborhoods.length > 0) {
-      filtered = filtered.filter(p =>
-        p.location.neighborhood &&
-        optionalFilters.neighborhoods!.some(n =>
-          p.location.neighborhood!.toLowerCase().includes(n.toLowerCase())
-        )
-      );
-    }
-
-    // Price range filter (additional to hard requirements)
-    if (optionalFilters.priceRange) {
-      if (optionalFilters.priceRange.min) {
-        filtered = filtered.filter(p => p.totalPrice >= optionalFilters.priceRange!.min!);
-      }
-      if (optionalFilters.priceRange.max) {
-        filtered = filtered.filter(p => p.totalPrice <= optionalFilters.priceRange!.max!);
-      }
-    }
-
-    // Furnished filter
-    if (optionalFilters.furnished !== undefined) {
-      filtered = filtered.filter(p =>
-        Boolean(p.metadata?.furnished) === optionalFilters.furnished
-      );
-    }
-
-    // Parking filter
-    if (optionalFilters.parking !== undefined) {
-      filtered = filtered.filter(p =>
-        Boolean(p.metadata?.parking) === optionalFilters.parking
-      );
-    }
-
-    // Pets filter
-    if (optionalFilters.pets !== undefined) {
-      filtered = filtered.filter(p =>
-        Boolean(p.metadata?.pets) === optionalFilters.pets
-      );
-    }
-
-    return filtered;
-    */
   }
 
   /**
@@ -682,16 +542,6 @@ export class SearchService {
     return searchResult.properties.filter(p => p.id !== referenceProperty.id).slice(0, limit);
   }
 
-  /**
-   * Get fallback properties when real-time search fails
-   * Implements the search strategy: base search + incremental searches with each priority amenity
-   */
-  // REMOVED: getFallbackProperties - mocks eliminated
-  // (intentionally blank)
-
-  /**
-   * Check if a neighborhood name partially matches the address
-   */
   private isPartialMatch(requestedNeighborhood: string, address: string): boolean {
     // Very flexible partial matching
     const words = requestedNeighborhood.split(' ');
@@ -701,41 +551,13 @@ export class SearchService {
       word.length >= 3 && address.includes(word.toLowerCase())
     );
 
-    // Also check for similar sounding neighborhoods or common variations
-    const variations = this.getNeighborhoodVariations(requestedNeighborhood);
-    const variationMatch = variations.some(variation =>
+    // Also check for similar sounding neighborhoods or common variations - USAR LOCATIONDETECTOR
+    const variations = LocationDetector.getNeighborhoodVariations(requestedNeighborhood);
+    const variationMatch = variations.some((variation: string) =>
       address.includes(variation.toLowerCase())
     );
 
     return wordMatch || variationMatch;
   }
-
-  /**
-   * Get common variations and similar neighborhoods
-   */
-  private getNeighborhoodVariations(neighborhood: string): string[] {
-    const variations: Record<string, string[]> = {
-      'suba': [
-        'ciudad jardin norte', 'bosque calderon', 'mazuren', 'cerros de suba',
-        'guaymaral', 'la conejera', 'tibabuyes', 'rincón', 'prado veraniego',
-        'niza', 'alhambra', 'san josé de bavaria', 'lisboa', 'santa cecilia',
-        'bilbao', 'casa blanca suba', 'compartir', 'el prado', 'la gaitana',
-        'san pedro', 'tuna alta', 'tuna baja', 'verbenal', 'villa cindy',
-        'britalia', 'garcés navas', 'engativá', 'fontibón'
-      ],
-      'usaquen': ['usaquén', 'santa barbara', 'cedritos', 'country', 'santa ana'],
-      'cedritos': ['usaquen', 'usaquén', 'santa barbara', 'country club'],
-      'chapinero': ['zona rosa', 'rosales', 'chico', 'nogal', 'chicó'],
-      'el poblado': ['poblado', 'zona rosa'],
-      'laureles': ['estadio', 'carlos e restrepo'],
-      'zona rosa': ['chapinero', 'rosales'],
-      'chico': ['chapinero', 'chicó', 'chico navarra'],
-      'rosales': ['chapinero', 'zona rosa'],
-      'santa barbara': ['usaquen', 'cedritos', 'country club']
-    };
-
-    return variations[neighborhood.toLowerCase()] || [];
-  }
-
 
 }

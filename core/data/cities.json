@@ -1,0 +1,146 @@
+{
+  "cities": [
+    {
+      "name": "bogotá",
+      "code": "11001",
+      "aliases": ["bogota", "santafe de bogota", "distrito capital"],
+      "urls": {
+        "standard": "bogota",
+        "properati": "bogota-d-c-colombia"
+      }
+    },
+    {
+      "name": "medellín",
+      "code": "05001",
+      "aliases": ["medellin"],
+      "urls": {
+        "standard": "medellin",
+        "mercadolibre": "antioquia/medellin",
+        "properati": "medellin-antioquia-colombia"
+      }
+    },
+    {
+      "name": "cali",
+      "code": "76001",
+      "aliases": ["santiago de cali"],
+      "urls": {
+        "standard": "cali",
+        "mercadolibre": "valle-del-cauca/cali",
+        "properati": "cali-valle-del-cauca-colombia"
+      }
+    },
+    {
+      "name": "barranquilla",
+      "code": "08001",
+      "aliases": ["curramba"],
+      "urls": {
+        "standard": "barranquilla",
+        "mercadolibre": "atlantico/barranquilla",
+        "properati": "barranquilla-atlantico-colombia"
+      }
+    },
+    {
+      "name": "cartagena",
+      "code": "13001",
+      "aliases": ["cartagena de indias"],
+      "urls": {
+        "standard": "cartagena",
+        "mercadolibre": "bolivar/cartagena"
+      }
+    },
+    {
+      "name": "bucaramanga",
+      "code": "68001",
+      "aliases": ["ciudad bonita"],
+      "urls": {
+        "standard": "bucaramanga",
+        "mercadolibre": "santander/bucaramanga",
+        "properati": "bucaramanga-santander-colombia"
+      }
+    },
+    {
+      "name": "pereira",
+      "code": "66001",
+      "aliases": ["perla del otún"],
+      "urls": {
+        "standard": "pereira",
+        "mercadolibre": "risaralda/pereira",
+        "properati": "pereira-risaralda-colombia"
+      }
+    },
+    {
+      "name": "ibagué",
+      "code": "73001",
+      "aliases": ["ibague"],
+      "urls": {
+        "standard": "ibague",
+        "mercadolibre": "tolima/ibague",
+        "properati": "ibague-tolima-colombia"
+      }
+    },
+    {
+      "name": "manizales",
+      "code": "17001",
+      "aliases": ["ciudad de las puertas abiertas"],
+      "urls": {
+        "standard": "manizales"
+      }
+    },
+    {
+      "name": "villavicencio",
+      "code": "50001",
+      "aliases": ["villavo", "puerta del llano"],
+      "urls": {
+        "standard": "villavicencio"
+      }
+    },
+    {
+      "name": "pasto",
+      "code": "52001",
+      "aliases": ["ciudad sorpresa"],
+      "urls": {
+        "standard": "pasto"
+      }
+    },
+    {
+      "name": "montería",
+      "code": "23001",
+      "aliases": ["monteria", "perla del sinú"],
+      "urls": {
+        "standard": "monteria"
+      }
+    },
+    {
+      "name": "valledupar",
+      "code": "20001",
+      "aliases": ["ciudad de los santos reyes"],
+      "urls": {
+        "standard": "valledupar"
+      }
+    },
+    {
+      "name": "neiva",
+      "code": "41001",
+      "aliases": ["capital del huila"],
+      "urls": {
+        "standard": "neiva"
+      }
+    },
+    {
+      "name": "armenia",
+      "code": "63001",
+      "aliases": ["ciudad milagro"],
+      "urls": {
+        "standard": "armenia"
+      }
+    },
+    {
+      "name": "popayán",
+      "code": "19001",
+      "aliases": ["popayan", "ciudad blanca"],
+      "urls": {
+        "standard": "popayan"
+      }
+    }
+  ]
+}

@@ -6,9 +6,11 @@ import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
 
-export class TrovitScraper extends BaseScraper {
+export class TrovitScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
   constructor() {
-    const trovitSource = {
+    this.source = {
       id: 'trovit',
       name: 'Trovit',
       baseUrl: 'https://casas.trovit.com.co',
@@ -39,8 +41,7 @@ export class TrovitScraper extends BaseScraper {
       }
     };
 
-    const rateLimiter = new RateLimiter(trovitSource.rateLimit);
-    super(trovitSource, rateLimiter);
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
   }
 
   /**
@@ -178,19 +179,20 @@ export class TrovitScraper extends BaseScraper {
    * Build Trovit search URL with specific parameters - DINÁMICO
    */
   private buildTrovitSearchUrl(criteria: SearchCriteria, page: number): string {
-    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('trovit', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 Trovit - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
-    }
+    const baseUrl = 'https://www.trovit.com.co/apartamentos/arriendo';
+
+    logger.info(`🎯 Trovit - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     // Extraer where parameter para Trovit
-    const cityUrl = LocationDetector.getCityUrlMapping(result.locationInfo?.city);
+    const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'standard');
     let where = cityUrl;
 
-    if (result.locationInfo?.neighborhood) {
-      const neighborhoodUrl = LocationDetector.getTrovitNeighborhoodMapping(result.locationInfo.neighborhood, cityUrl);
+    if (locationInfo?.neighborhood) {
+      const neighborhoodUrl = LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'standard');
       if (neighborhoodUrl) {
         where = neighborhoodUrl;
       }
@@ -207,7 +209,7 @@ export class TrovitScraper extends BaseScraper {
       params.set('page', page.toString());
     }
 
-    return `${result.url}?${params.toString()}`;
+    return `${baseUrl}?${params.toString()}`;
   }
 
   /**
@@ -377,16 +379,16 @@ export class TrovitScraper extends BaseScraper {
           let enhancedLocation = location || '';
 
           if (!enhancedLocation) {
-            // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA DUPLICACIÓN TOTAL
-            const extractedFromTitle = LocationDetector.extractLocationFromText(title || '');
+            // USAR EXTRACCIÓN CENTRALIZADA - NUEVO LOCATIONDETECTOR
+            const extractedFromTitle = LocationDetector.detectLocation(title || '');
             if (extractedFromTitle?.neighborhood) {
               enhancedLocation = extractedFromTitle.neighborhood;
             }
           }
 
           if (!enhancedLocation) {
-            // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA DUPLICACIÓN TOTAL
-            const extractedFromText = LocationDetector.extractLocationFromText(fullText);
+            // USAR EXTRACCIÓN CENTRALIZADA - NUEVO LOCATIONDETECTOR
+            const extractedFromText = LocationDetector.detectLocation(fullText);
             if (extractedFromText?.neighborhood) {
               enhancedLocation = extractedFromText.neighborhood;
             }

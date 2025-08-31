@@ -1,17 +1,48 @@
-import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
-import { RateLimiter } from '../../scraping/RateLimiter';
+import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
-import { SmartExtractor } from '../utils/SmartExtractor';
+// SmartExtractor eliminado - usar PropertyParser
 
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import puppeteer from 'puppeteer';
 
-export class MercadoLibreScraper extends BaseScraper {
-  constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
-    super(source, rateLimiter);
+export class MercadoLibreScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
+
+  constructor() {
+    this.source = {
+      id: 'mercadolibre',
+      name: 'MercadoLibre',
+      baseUrl: 'https://inmuebles.mercadolibre.com.co',
+      isActive: true,
+      priority: 4,
+      rateLimit: {
+        requestsPerMinute: 25,
+        delayBetweenRequests: 2500,
+        maxConcurrentRequests: 2
+      },
+      selectors: {
+        propertyCard: '.ui-search-result',
+        title: '.ui-search-item__title',
+        price: '.price-tag-fraction',
+        area: '.ui-search-item__group__element',
+        rooms: '.ui-search-item__group__element',
+        bathrooms: '.ui-search-item__group__element',
+        location: '.ui-search-item__location',
+        amenities: '.ui-search-item__attributes',
+        images: '.ui-search-result-image__element',
+        link: '.ui-search-link',
+        nextPage: '.andes-pagination__button--next'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
   }
 
   /**
@@ -95,14 +126,16 @@ export class MercadoLibreScraper extends BaseScraper {
    * Build MercadoLibre search URL - UNIFICADO
    */
   private buildMercadoLibreUrl(criteria: SearchCriteria): string {
-    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('mercadolibre', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 MercadoLibre - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
-    }
+    const baseUrl = 'https://inmuebles.mercadolibre.com.co/apartamentos/arriendo';
+    const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'mercadolibre');
 
-    return result.url;
+    logger.info(`🎯 MercadoLibre - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+
+    return url;
   }
 
   /**
@@ -145,16 +178,16 @@ export class MercadoLibreScraper extends BaseScraper {
       try {
         const $card = $(card);
 
-        // Use SmartExtractor for better title extraction
-        const title = SmartExtractor.extractTitle($, $card);
+        // Extract title - SmartExtractor eliminado
+        const title = this.extractText($card, ['.ui-search-item__title', '.ui-search-item__title-label']);
 
         // Ignore room rentals and duplicates cues in title
         if (/habitaci[oó]n/i.test(title)) {
           return; // skip room listings
         }
 
-        // Use SmartExtractor for better price extraction
-        const priceText = SmartExtractor.extractPrice($, $card);
+        // Extract price - SmartExtractor eliminado
+        const priceText = this.extractText($card, ['.price-tag-fraction', '.price-tag-amount', '.ui-search-price__part']);
 
         // Extract location with more selectors
         let location = this.extractText($card, [
@@ -408,8 +441,8 @@ export class MercadoLibreScraper extends BaseScraper {
   private extractNeighborhood(locationText: string): string {
     if (!locationText) return '';
 
-    // USAR MÉTODO CENTRALIZADO - ELIMINA HARDCODEOS
-    return LocationDetector.cleanLocationText(locationText);
+    // LIMPIAR TEXTO DE UBICACIÓN - FUNCIÓN SIMPLE
+    return locationText.trim().toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ');
   }
 
   private async scrapeMercadoLibreHeadless(pageUrl: string, criteria: SearchCriteria): Promise<Property[]> {

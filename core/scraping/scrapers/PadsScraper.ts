@@ -1,4 +1,3 @@
-import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
@@ -6,9 +5,41 @@ import { logger } from '../../../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
-export class PadsScraper extends BaseScraper {
-  constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
-    super(source, rateLimiter);
+export class PadsScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
+
+  constructor() {
+    this.source = {
+      id: 'pads',
+      name: 'PADS',
+      baseUrl: 'https://www.pads.com.co',
+      isActive: true,
+      priority: 11,
+      rateLimit: {
+        requestsPerMinute: 20,
+        delayBetweenRequests: 3000,
+        maxConcurrentRequests: 1
+      },
+      selectors: {
+        propertyCard: '.property-card, .listing-item',
+        title: '.property-title, .listing-title',
+        price: '.price, .rental-price',
+        area: '.area, .size',
+        rooms: '.bedrooms, .rooms',
+        bathrooms: '.bathrooms, .baños',
+        location: '.location, .address',
+        amenities: '.amenities, .features',
+        images: '.property-image img',
+        link: 'a, .property-link',
+        nextPage: '.pagination .next'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
   }
 
   /**
@@ -16,13 +47,16 @@ export class PadsScraper extends BaseScraper {
    */
   private buildPadsUrl(criteria: SearchCriteria): string {
     // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('pads', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 PADS - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
-    }
+    const baseUrl = 'https://www.pads.com.co/apartamentos/arriendo';
+    const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'pads');
 
-    return result.url;
+    logger.info(`🎯 PADS - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+
+    return url;
   }
 
   /**

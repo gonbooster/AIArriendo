@@ -1,0 +1,471 @@
+{
+  "neighborhoods": [
+    {
+      "name": "usaquén",
+      "aliases": ["usaquen"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "usaquen",
+        "rentola": "bogota-localidad-usaquen"
+      }
+    },
+    {
+      "name": "chapinero",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "chapinero",
+        "rentola": "bogota-localidad-chapinero"
+      }
+    },
+    {
+      "name": "zona rosa",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "zona-rosa",
+        "pads": "chapinero/zona-rosa"
+      }
+    },
+    {
+      "name": "chico",
+      "aliases": ["chicó"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "chico",
+        "pads": "chapinero/chico"
+      }
+    },
+    {
+      "name": "rosales",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "rosales",
+        "pads": "chapinero/rosales"
+      }
+    },
+    {
+      "name": "cedritos",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "cedritos"
+      }
+    },
+    {
+      "name": "santa barbara",
+      "aliases": ["santa bárbara"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "santa-barbara"
+      }
+    },
+    {
+      "name": "suba",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "suba",
+        "rentola": "bogota-localidad-suba"
+      }
+    },
+    {
+      "name": "kennedy",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "kennedy",
+        "rentola": "bogota-localidad-kennedy"
+      }
+    },
+    {
+      "name": "engativá",
+      "aliases": ["engativa"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "engativa",
+        "rentola": "bogota-localidad-engativa"
+      }
+    },
+    {
+      "name": "fontibón",
+      "aliases": ["fontibon"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "fontibon",
+        "rentola": "bogota-localidad-fontibon"
+      }
+    },
+    {
+      "name": "centro",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "centro"
+      }
+    },
+    {
+      "name": "la candelaria",
+      "aliases": ["candelaria"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-candelaria",
+        "pads": "centro/la-candelaria",
+        "mercadolibre": "candelaria"
+      }
+    },
+    {
+      "name": "niza",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "niza"
+      }
+    },
+    {
+      "name": "alhambra",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "alhambra"
+      }
+    },
+    {
+      "name": "lisboa",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "lisboa"
+      }
+    },
+    {
+      "name": "santa cecilia",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "santa-cecilia"
+      }
+    },
+    {
+      "name": "bilbao",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "bilbao"
+      }
+    },
+    {
+      "name": "casa blanca suba",
+      "aliases": ["casa blanca"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "casa-blanca-suba"
+      }
+    },
+    {
+      "name": "compartir",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "compartir"
+      }
+    },
+    {
+      "name": "el prado",
+      "aliases": ["prado"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "el-prado"
+      }
+    },
+    {
+      "name": "la gaitana",
+      "aliases": ["gaitana"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-gaitana"
+      }
+    },
+    {
+      "name": "san pedro",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "san-pedro"
+      }
+    },
+    {
+      "name": "tuna alta",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "tuna-alta"
+      }
+    },
+    {
+      "name": "tuna baja",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "tuna-baja"
+      }
+    },
+    {
+      "name": "verbenal",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "verbenal"
+      }
+    },
+    {
+      "name": "villa cindy",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "villa-cindy"
+      }
+    },
+    {
+      "name": "britalia",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "britalia"
+      }
+    },
+    {
+      "name": "garcés navas",
+      "aliases": ["garces navas"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "garces-navas"
+      }
+    },
+    {
+      "name": "ciudad jardín norte",
+      "aliases": ["ciudad jardin norte"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "ciudad-jardin-norte"
+      }
+    },
+    {
+      "name": "bosque calderón",
+      "aliases": ["bosque calderon"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "bosque-calderon"
+      }
+    },
+    {
+      "name": "mazurén",
+      "aliases": ["mazuren"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "mazuren"
+      }
+    },
+    {
+      "name": "cerros de suba",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "cerros-de-suba"
+      }
+    },
+    {
+      "name": "guaymaral",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "guaymaral"
+      }
+    },
+    {
+      "name": "la conejera",
+      "aliases": ["conejera"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-conejera"
+      }
+    },
+    {
+      "name": "tibabuyes",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "tibabuyes"
+      }
+    },
+    {
+      "name": "rincón",
+      "aliases": ["rincon"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "rincon"
+      }
+    },
+    {
+      "name": "prado veraniego",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "prado-veraniego"
+      }
+    },
+    {
+      "name": "san josé de bavaria",
+      "aliases": ["san jose de bavaria", "bavaria"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "san-jose-de-bavaria"
+      }
+    },
+    {
+      "name": "el virrey",
+      "aliases": ["virrey"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "el-virrey"
+      }
+    },
+    {
+      "name": "la cabrera",
+      "aliases": ["cabrera"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-cabrera"
+      }
+    },
+    {
+      "name": "el retiro",
+      "aliases": ["retiro"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "el-retiro"
+      }
+    },
+    {
+      "name": "las aguas",
+      "aliases": ["aguas"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "las-aguas"
+      }
+    },
+    {
+      "name": "egipto",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "egipto"
+      }
+    },
+    {
+      "name": "san felipe",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "san-felipe"
+      }
+    },
+    {
+      "name": "la macarena",
+      "aliases": ["macarena"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-macarena"
+      }
+    },
+    {
+      "name": "nogal",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "nogal"
+      }
+    },
+    {
+      "name": "gratamira",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "gratamira"
+      }
+    },
+    {
+      "name": "san patricio",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "san-patricio"
+      }
+    },
+    {
+      "name": "cedro narváez",
+      "aliases": ["cedro narvaez"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "cedro-narvaez"
+      }
+    },
+    {
+      "name": "el poblado",
+      "aliases": ["poblado"],
+      "city": "medellín",
+      "urls": {
+        "standard": "el-poblado"
+      }
+    },
+    {
+      "name": "laureles",
+      "aliases": [],
+      "city": "medellín",
+      "urls": {
+        "standard": "laureles"
+      }
+    },
+    {
+      "name": "granada",
+      "aliases": [],
+      "city": "medellín",
+      "urls": {
+        "standard": "granada"
+      }
+    },
+    {
+      "name": "estadio",
+      "aliases": [],
+      "city": "medellín",
+      "urls": {
+        "standard": "estadio"
+      }
+    },
+    {
+      "name": "granada",
+      "aliases": [],
+      "city": "cali",
+      "urls": {
+        "standard": "granada"
+      }
+    },
+    {
+      "name": "san fernando",
+      "aliases": [],
+      "city": "cali",
+      "urls": {
+        "standard": "san-fernando"
+      }
+    },
+    {
+      "name": "ciudad jardín",
+      "aliases": ["ciudad jardin"],
+      "city": "cali",
+      "urls": {
+        "standard": "ciudad-jardin"
+      }
+    }
+  ]
+}

@@ -1,4 +1,3 @@
-import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
@@ -7,9 +6,41 @@ import * as cheerio from 'cheerio';
 import axios from 'axios';
 import puppeteer from 'puppeteer';
 
-export class MetrocuadradoScraper extends BaseScraper {
-  constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
-    super(source, rateLimiter);
+export class MetrocuadradoScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
+
+  constructor() {
+    this.source = {
+      id: 'metrocuadrado',
+      name: 'Metrocuadrado',
+      baseUrl: 'https://www.metrocuadrado.com',
+      isActive: true,
+      priority: 3,
+      rateLimit: {
+        requestsPerMinute: 25,
+        delayBetweenRequests: 2500,
+        maxConcurrentRequests: 2
+      },
+      selectors: {
+        propertyCard: '.property-card, .listing-item',
+        title: '.property-title, .listing-title',
+        price: '.price, .rental-price',
+        area: '.area, .size',
+        rooms: '.bedrooms, .rooms',
+        bathrooms: '.bathrooms, .baños',
+        location: '.location, .address',
+        amenities: '.amenities, .features',
+        images: '.property-image img',
+        link: 'a, .property-link',
+        nextPage: '.pagination .next'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
   }
 
   /**
@@ -93,12 +124,14 @@ export class MetrocuadradoScraper extends BaseScraper {
    * Build Metrocuadrado search URL - UNIFICADO
    */
   private buildMetrocuadradoUrl(criteria: SearchCriteria): string {
-    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('metrocuadrado', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 Metrocuadrado - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
-    }
+    const baseUrl = 'https://www.metrocuadrado.com/apartamentos/arriendo';
+    const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'standard');
+
+    logger.info(`🎯 Metrocuadrado - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     // Agregar parámetros específicos de Metrocuadrado
     const params = new URLSearchParams({
@@ -106,7 +139,7 @@ export class MetrocuadradoScraper extends BaseScraper {
       'orden': 'relevancia'
     });
 
-    const finalUrl = `${result.url}?${params}`;
+    const finalUrl = `${url}?${params}`;
     logger.info(`Metrocuadrado URL dinámico: ${finalUrl}`);
     return finalUrl;
   }
@@ -422,7 +455,7 @@ export class MetrocuadradoScraper extends BaseScraper {
 
           // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA HARDCODEOS
           if (!loc) {
-            const extractedLocation = LocationDetector.extractLocationFromText(fullText);
+            const extractedLocation = LocationDetector.detectLocation(fullText);
             if (extractedLocation?.neighborhood) {
               loc = extractedLocation.neighborhood;
             }
@@ -467,7 +500,7 @@ export class MetrocuadradoScraper extends BaseScraper {
 
         // Si tenemos información en la URL, extraer barrio usando patrón centralizado
         if (it.url && !neighborhood) {
-          const urlMatch = it.url.match(LocationDetector.CITY_URL_PATTERN);
+          const urlMatch = it.url.match(/\/([^\/]+)\/apartamento/); // Patrón simple
           if (urlMatch) {
             neighborhood = urlMatch[1].replace(/-/g, ' ');
           }

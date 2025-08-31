@@ -1,4 +1,3 @@
-import { BaseScraper } from '../BaseScraper';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
 import { RateLimiter } from '../RateLimiter';
 import { logger } from '../../../utils/logger';
@@ -6,9 +5,41 @@ import { LocationDetector } from '../../utils/LocationDetector';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
-export class ArriendoScraper extends BaseScraper {
-  constructor(source: ScrapingSource, rateLimiter: RateLimiter) {
-    super(source, rateLimiter);
+export class ArriendoScraper {
+  public source: ScrapingSource;
+  private rateLimiter: RateLimiter;
+
+  constructor() {
+    this.source = {
+      id: 'arriendo',
+      name: 'Arriendo.com',
+      baseUrl: 'https://www.arriendo.com',
+      isActive: true,
+      priority: 12,
+      rateLimit: {
+        requestsPerMinute: 25,
+        delayBetweenRequests: 2500,
+        maxConcurrentRequests: 2
+      },
+      selectors: {
+        propertyCard: '.property-card, .listing-item',
+        title: '.property-title, .listing-title',
+        price: '.price, .rental-price',
+        area: '.area, .size',
+        rooms: '.bedrooms, .rooms',
+        bathrooms: '.bathrooms, .baños',
+        location: '.location, .address',
+        amenities: '.amenities, .features',
+        images: '.property-image img',
+        link: 'a, .property-link',
+        nextPage: '.pagination .next'
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    this.rateLimiter = new RateLimiter(this.source.rateLimit);
   }
 
   /**
@@ -94,19 +125,20 @@ export class ArriendoScraper extends BaseScraper {
    * Build Arriendo.com search URL - UNIFICADO
    */
   private buildArriendoUrl(criteria: SearchCriteria): string {
-    // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    const result = LocationDetector.buildScraperUrl('arriendo', criteria);
+    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    const locationInfo = LocationDetector.detectLocation(locationText);
 
-    if (result.locationInfo) {
-      logger.info(`🎯 Arriendo - Ubicación detectada: ${result.locationInfo.city} ${result.locationInfo.neighborhood || ''} (confianza: ${result.locationInfo.confidence})`);
-    }
+    const baseUrl = 'https://www.arriendo.com';
+    const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'standard');
+
+    logger.info(`🎯 Arriendo - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     // Arriendo.com usa parámetros específicos
     const params = new URLSearchParams();
     params.append('tipo', 'arriendo');
 
     // Usar mapeo centralizado para ciudad
-    const cityUrl = LocationDetector.getCityUrlMapping(result.locationInfo?.city);
     params.append('ciudad', cityUrl);
 
     // Location
@@ -119,7 +151,7 @@ export class ArriendoScraper extends BaseScraper {
       params.append('precio_max', criteria.hardRequirements.maxTotalPrice.toString());
     }
 
-    const finalUrl = `${result.url}?${params.toString()}`;
+    const finalUrl = `${baseUrl}?${params.toString()}`;
     logger.info(`Arriendo.com URL: ${finalUrl}`);
     return finalUrl;
   }
