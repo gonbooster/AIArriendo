@@ -242,7 +242,7 @@ export class ProperatiScraper {
 
         const prop: Property = {
           id: `properati_headless_${Date.now()}_${index}`,
-          title: it.title || 'Apartamento en arriendo',
+          title: it.title || 'Apartamento',
           price,
           adminFee: 0,
           totalPrice: price,
@@ -281,16 +281,38 @@ export class ProperatiScraper {
    * Build Properati search URL - UNIFICADO
    */
   private buildProperatiUrl(criteria: SearchCriteria): string {
-    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
-    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    // 🔥 USAR LOCATIONDETECTOR SIN HARDCODING
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || '';
     const locationInfo = LocationDetector.detectLocation(locationText);
 
-    const baseUrl = 'https://www.properati.com.co/s/apartamento/arriendo';
-    const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'properati');
+    // 🔥 DINÁMICO: Determinar tipo de transacción
+    const transactionType = this.getTransactionType(criteria);
+    const propertyType = 'apartamento'; // Por ahora apartamentos, se puede hacer dinámico después
+
+    // Properati usa formato: /s/barrio-ciudad-d-c/tipo/transaccion
+    const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'standard');
+    const neighborhoodUrl = locationInfo.neighborhood ? LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'standard') : '';
+
+    let url = `https://www.properati.com.co/s`;
+    if (neighborhoodUrl) {
+      url += `/${neighborhoodUrl}-${cityUrl}-d-c`;
+    } else {
+      url += `/${cityUrl}-d-c-colombia`;
+    }
+    url += `/${propertyType}/${transactionType}`;
 
     logger.info(`🎯 Properati - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     return url;
+  }
+
+  /**
+   * Determinar tipo de transacción dinámicamente
+   */
+  private getTransactionType(criteria: SearchCriteria): string {
+    // TODO: Implementar cuando tengamos el campo en SearchCriteria
+    // Por ahora defaultear a arriendo
+    return 'arriendo';
   }
 
   /**

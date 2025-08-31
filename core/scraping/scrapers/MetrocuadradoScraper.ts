@@ -124,11 +124,15 @@ export class MetrocuadradoScraper {
    * Build Metrocuadrado search URL - UNIFICADO
    */
   private buildMetrocuadradoUrl(criteria: SearchCriteria): string {
-    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
-    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    // 🔥 USAR LOCATIONDETECTOR SIN HARDCODING
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || '';
     const locationInfo = LocationDetector.detectLocation(locationText);
 
-    const baseUrl = 'https://www.metrocuadrado.com/apartamentos/arriendo';
+    // 🔥 DINÁMICO: Determinar tipo de transacción
+    const transactionType = this.getTransactionType(criteria);
+    const propertyType = 'apartamentos'; // Por ahora apartamentos, se puede hacer dinámico después
+
+    const baseUrl = `https://www.metrocuadrado.com/${propertyType}/${transactionType}`;
     const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'standard');
 
     logger.info(`🎯 Metrocuadrado - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
@@ -142,6 +146,15 @@ export class MetrocuadradoScraper {
     const finalUrl = `${url}?${params}`;
     logger.info(`Metrocuadrado URL dinámico: ${finalUrl}`);
     return finalUrl;
+  }
+
+  /**
+   * Determinar tipo de transacción dinámicamente
+   */
+  private getTransactionType(criteria: SearchCriteria): string {
+    // TODO: Implementar cuando tengamos el campo en SearchCriteria
+    // Por ahora defaultear a arriendo
+    return 'arriendo';
   }
 
   /**
@@ -453,17 +466,28 @@ export class MetrocuadradoScraper {
             }
           }
 
-          // USAR EXTRACCIÓN CENTRALIZADA - ELIMINA HARDCODEOS
+          // EXTRACCIÓN SIMPLE DE UBICACIÓN - SIN DEPENDENCIAS EXTERNAS
           if (!loc) {
-            const extractedLocation = LocationDetector.detectLocation(fullText);
-            if (extractedLocation?.neighborhood) {
-              loc = extractedLocation.neighborhood;
+            // 🔥 DINÁMICO: Buscar patrones comunes de barrios en el texto
+            const locationPatterns = [
+              /en\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ\s]+),?\s*(?:bogotá|medellín|cali|barranquilla)/i,
+              /ubicado\s+en\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ\s]+)/i,
+              /barrio\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ\s]+)/i,
+              /sector\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ\s]+)/i
+            ];
+
+            for (const pattern of locationPatterns) {
+              const match = fullText.match(pattern);
+              if (match && match[1]) {
+                loc = match[1].trim();
+                break;
+              }
             }
           }
 
           if ((title || priceText) && link) {
             out.push({
-              title: title || 'Apartamento en arriendo',
+              title: title || 'Apartamento',
               priceText,
               url: link,
               img,
@@ -525,7 +549,7 @@ export class MetrocuadradoScraper {
 
         const p: Property = {
           id: `m2_headless_${Date.now()}_${idx}`,
-          title: it.title || 'Apartamento en arriendo',
+          title: it.title || 'Apartamento',
           price,
           adminFee: 0,
           totalPrice: price,

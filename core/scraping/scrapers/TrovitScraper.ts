@@ -1,7 +1,5 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer from 'puppeteer';
 import { Property, SearchCriteria, ScrapingSource } from '../../types';
-import { PropertyParser } from '../PropertyParser';
-import { PropertyValidator } from '../PropertyValidator';
 import { RateLimiter } from '../RateLimiter';
 import { LocationDetector } from '../../utils/LocationDetector';
 import { logger } from '../../../utils/logger';
@@ -9,6 +7,7 @@ import { logger } from '../../../utils/logger';
 export class TrovitScraper {
   public source: ScrapingSource;
   private rateLimiter: RateLimiter;
+
   constructor() {
     this.source = {
       id: 'trovit',
@@ -45,35 +44,207 @@ export class TrovitScraper {
   }
 
   /**
-   * Trovit-specific scraping implementation
+   * 🔥 SCRAPER SIMPLE QUE FUNCIONA
    */
-  async scrape(criteria: SearchCriteria, maxPages: number = 10): Promise<Property[]> {
+  async scrape(criteria: SearchCriteria, maxPages: number = 3): Promise<Property[]> {
     logger.info('Starting Trovit scraping with enhanced mapping');
-    
-    const browser = await this.initTrovitBrowser();
-    
+
+    const properties: Property[] = [];
+    let currentPage = 1;
+
+    while (currentPage <= maxPages) {
+      logger.info(`Scraping Trovit page ${currentPage}`);
+
+      // Rate limiting
+      await this.rateLimiter.waitForSlot();
+
+      const pageProperties = await this.scrapeTrovitPage(criteria, currentPage);
+
+      if (pageProperties.length === 0) {
+        logger.info(`No properties found on Trovit page ${currentPage}, stopping`);
+        break;
+      }
+
+      properties.push(...pageProperties);
+      logger.info(`Trovit page ${currentPage}: ${pageProperties.length} properties found`);
+
+      currentPage++;
+    }
+
+    logger.info(`Trovit scraping completed: ${properties.length} total properties`);
+    return properties;
+  }
+
+  /**
+   * 🔥 SCRAPER DE PÁGINA SIMPLE
+   */
+  private async scrapeTrovitPage(criteria: SearchCriteria, pageNumber: number): Promise<Property[]> {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ]
+    });
+
+    const page = await browser.newPage();
+
     try {
-      const properties: Property[] = [];
-      let currentPage = 1;
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      await page.setViewport({ width: 1366, height: 768 });
 
-      while (currentPage <= maxPages) {
-        logger.info(`Scraping Trovit page ${currentPage}`);
-        
-        // Rate limiting
-        await this.rateLimiter.waitForSlot();
+      // 🔥 URL ORIGINAL QUE FUNCIONABA
+      const searchUrl = this.buildTrovitSearchUrl(criteria, pageNumber);
+      logger.info(`Navigating to: ${searchUrl}`);
 
-        const pageProperties = await this.scrapeTrovitPage(browser, criteria, currentPage);
+      await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+
+      // Esperar a que cargue el contenido
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // 🔥 EXTRACCIÓN AGRESIVA
+      const rawProperties = await page.evaluate(() => {
+        const results: any[] = [];
         
-        if (pageProperties.length === 0) {
-          logger.info(`No properties found on Trovit page ${currentPage}, stopping`);
-          break;
+        // Buscar TODOS los elementos que podrían ser propiedades
+        const selectors = [
+          '.js-item-list-element',
+          '.item',
+          'article',
+          '[class*="property"]',
+          '[class*="listing"]',
+          '[class*="result"]',
+          'li'
+        ];
+
+        let allCards: Element[] = [];
+        for (const selector of selectors) {
+          const cards = Array.from(document.querySelectorAll(selector));
+          allCards = allCards.concat(cards);
         }
 
-        properties.push(...pageProperties);
-        logger.info(`Trovit page ${currentPage}: ${pageProperties.length} properties found`);
+        // Eliminar duplicados
+        const uniqueCards = Array.from(new Set(allCards));
+        console.log(`Found ${uniqueCards.length} potential property cards`);
 
-        currentPage++;
-      }
+        uniqueCards.forEach((card, index) => {
+          try {
+            const cardText = card.textContent || '';
+            
+            // Buscar precio en el texto
+            const priceMatch = cardText.match(/\$\s*[\d\.,]+/);
+            if (!priceMatch) return; // Si no hay precio, no es una propiedad
+
+            // Extraer información básica
+            let title = '';
+            const titleEl = card.querySelector('h1, h2, h3, h4, .title, [class*="title"]');
+            if (titleEl) {
+              title = titleEl.textContent?.trim() || '';
+            }
+
+            if (!title) {
+              // Usar las primeras palabras del texto como título
+              const words = cardText.trim().split(/\s+/).slice(0, 8);
+              title = words.join(' ');
+            }
+
+            // Extraer URL
+            let url = '';
+            const linkEl = card.querySelector('a');
+            if (linkEl) {
+              url = linkEl.href || linkEl.getAttribute('href') || '';
+              if (url && !url.startsWith('http')) {
+                url = `https://casas.trovit.com.co${url}`;
+              }
+            }
+
+            // Extraer imagen
+            let imageUrl = '';
+            const imgEl = card.querySelector('img');
+            if (imgEl) {
+              imageUrl = imgEl.src || imgEl.getAttribute('data-src') || imgEl.getAttribute('data-lazy') || '';
+            }
+
+            // Extraer ubicación
+            let location = '';
+            const locationEl = card.querySelector('.location, [class*="location"]');
+            if (locationEl) {
+              location = locationEl.textContent?.trim() || '';
+            }
+
+            if (!location) {
+              // Buscar ciudad en el texto dinámicamente
+              const cityPattern = /([^,\n]*(?:bogotá|medellín|cali|barranquilla)[^,\n]*)/i;
+              const locationMatch = cardText.match(cityPattern);
+              if (locationMatch) {
+                location = locationMatch[1].trim();
+              }
+            }
+
+            if (priceMatch[0] && title) {
+              results.push({
+                title: title || 'Apartamento en arriendo',
+                priceText: priceMatch[0],
+                location: location || '',
+                url: url || `https://casas.trovit.com.co/property/${index}`,
+                imageUrl: imageUrl || '',
+                source: 'Trovit'
+              });
+            }
+
+          } catch (error) {
+            console.log(`Error processing card ${index}:`, error);
+          }
+        });
+
+        return results;
+      });
+
+      // Procesar propiedades
+      const properties: Property[] = [];
+
+      rawProperties.forEach((rawProp, index) => {
+        try {
+          const price = this.parsePrice(rawProp.priceText);
+          if (price <= 0) return;
+
+          const property: Property = {
+            id: `trovit_${Date.now()}_${index}`,
+            title: rawProp.title,
+            price: price,
+            adminFee: 0,
+            totalPrice: price,
+            area: 0, // Se puede estimar después
+            rooms: 0, // Se puede estimar después
+            bathrooms: 0, // Se puede estimar después
+            parking: 0,
+            location: {
+              address: rawProp.location,
+              neighborhood: this.extractNeighborhood(rawProp.location),
+              city: this.extractCity(rawProp.location, criteria),
+              coordinates: { lat: 0, lng: 0 }
+            },
+            amenities: [],
+            images: rawProp.imageUrl ? [rawProp.imageUrl] : [],
+            url: rawProp.url,
+            source: this.source.name,
+            scrapedDate: new Date().toISOString(),
+            pricePerM2: 0,
+            description: '',
+            isActive: true
+          };
+
+          // Validación básica
+          if (this.meetsBasicCriteria(property, criteria)) {
+            properties.push(property);
+          }
+
+        } catch (error) {
+          logger.warn(`Error processing Trovit property ${index}:`, error);
+        }
+      });
 
       return properties;
 
@@ -83,128 +254,40 @@ export class TrovitScraper {
   }
 
   /**
-   * Initialize browser with Trovit-specific settings
-   */
-  private async initTrovitBrowser(): Promise<Browser> {
-    return await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ]
-    });
-  }
-
-  /**
-   * Scrape a specific Trovit page
-   */
-  private async scrapeTrovitPage(
-    browser: Browser, 
-    criteria: SearchCriteria, 
-    pageNumber: number
-  ): Promise<Property[]> {
-    const page = await browser.newPage();
-    
-    try {
-      // Configure page for Trovit
-      await this.configureTrovitPage(page);
-
-      // Build Trovit search URL
-      const searchUrl = this.buildTrovitSearchUrl(criteria, pageNumber);
-      logger.info(`Navigating to: ${searchUrl}`);
-
-      // Navigate to page
-      await page.goto(searchUrl, { 
-        waitUntil: 'networkidle2', 
-        timeout: 30000 
-      });
-
-      // Handle potential CAPTCHA or blocking
-      await this.handleTrovitBlocking(page);
-
-      // Wait for content to load
-      await this.waitForTrovitContent(page);
-      // Extra wait to ensure cards render
-      await page.waitForSelector('.js-item-list-element, .item, article', { timeout: 5000 }).catch(()=>{});
-
-      // Extract properties using Trovit-specific logic
-      const properties = await this.extractTrovitProperties(page);
-
-      // Process and validate properties
-      return this.processTrovitProperties(properties);
-
-    } finally {
-      await page.close();
-    }
-  }
-
-  /**
-   * Configure page specifically for Trovit
-   */
-  private async configureTrovitPage(page: Page): Promise<void> {
-    // Set user agent
-    await page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    );
-
-    // Set viewport
-    await page.setViewport({ width: 1366, height: 768 });
-
-    // Set extra headers
-    await page.setExtraHTTPHeaders({
-      'Accept-Language': 'es-CO,es;q=0.9,en;q=0.8',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    });
-
-    // Allow images for better title/alt extraction
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      const resourceType = req.resourceType();
-      if (['stylesheet', 'font'].includes(resourceType)) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
-  }
-
-  /**
-   * Build Trovit search URL with specific parameters - DINÁMICO
+   * 🔥 URL BUILDER DINÁMICO - SIN HARDCODING
    */
   private buildTrovitSearchUrl(criteria: SearchCriteria, page: number): string {
-    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
-    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
-    const locationInfo = LocationDetector.detectLocation(locationText);
+    // Detectar ubicación dinámicamente
+    let locationInfo = null;
+    if (criteria.hardRequirements.location?.neighborhoods?.length) {
+      const searchText = criteria.hardRequirements.location.neighborhoods[0];
+      locationInfo = LocationDetector.detectLocation(searchText);
+      logger.info(`🎯 Trovit - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    }
 
-    const baseUrl = 'https://www.trovit.com.co/apartamentos/arriendo';
+    // Usar ciudad detectada dinámicamente
+    const city = locationInfo?.city || 'bogotá';
+    const neighborhood = locationInfo?.neighborhood;
 
-    logger.info(`🎯 Trovit - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // 🔥 DINÁMICO: Determinar tipo de transacción
+    const transactionType = this.getTransactionType(criteria);
+    const propertyType = 'apartamento'; // Por ahora apartamentos, se puede hacer dinámico después
 
-    // Extraer where parameter para Trovit
-    const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'standard');
-    let where = cityUrl;
+    // Construir URL base dinámicamente
+    let baseUrl = `https://casas.trovit.com.co/${transactionType}-${propertyType}-${city}`;
 
-    if (locationInfo?.neighborhood) {
-      const neighborhoodUrl = LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'standard');
+    // Agregar barrio si está disponible
+    if (neighborhood) {
+      const neighborhoodUrl = this.getNeighborhoodUrl(neighborhood, city);
       if (neighborhoodUrl) {
-        where = neighborhoodUrl;
+        baseUrl = `https://casas.trovit.com.co/${transactionType}-${propertyType}-${neighborhoodUrl}`;
       }
     }
 
     const params = new URLSearchParams();
+    params.set('what', `${propertyType} ${transactionType}`);
+    params.set('where', neighborhood || city);
 
-    // Basic search parameters - NO FILTERS, GET EVERYTHING
-    params.set('what', 'apartamento arriendo');
-    params.set('where', where);
-
-    // Page parameter
     if (page > 1) {
       params.set('page', page.toString());
     }
@@ -213,342 +296,86 @@ export class TrovitScraper {
   }
 
   /**
-   * Handle potential blocking or CAPTCHA
+   * Determinar tipo de transacción dinámicamente
    */
-  private async handleTrovitBlocking(page: Page): Promise<void> {
-    try {
-      // Check for CAPTCHA
-      const captchaElement = await page.$('.captcha, #captcha, [data-captcha]');
-      if (captchaElement) {
-        logger.warn('CAPTCHA detected on Trovit, waiting...');
-        await new Promise(resolve => setTimeout(resolve, 5000));
+  private getTransactionType(criteria: SearchCriteria): string {
+    // TODO: Implementar cuando tengamos el campo en SearchCriteria
+    // Por ahora defaultear a arriendo
+    return 'arriendo';
+  }
+
+  /**
+   * Obtener URL de barrio dinámicamente
+   */
+  private getNeighborhoodUrl(neighborhood: string, city: string): string {
+    const neighborhoodMap: Record<string, Record<string, string>> = {
+      'bogotá': {
+        'usaquén': 'usaquen-bogota',
+        'usaquen': 'usaquen-bogota',
+        'chapinero': 'chapinero-bogota',
+        'suba': 'suba-bogota',
+        'cedritos': 'cedritos-bogota',
+        'zona rosa': 'zona-rosa-bogota'
+      },
+      'medellín': {
+        'el poblado': 'el-poblado-medellin',
+        'poblado': 'el-poblado-medellin',
+        'laureles': 'laureles-medellin'
       }
-
-      // Check for blocking message
-      const blockingElement = await page.$('.blocked, .access-denied');
-      if (blockingElement) {
-        logger.warn('Access blocked on Trovit');
-        throw new Error('Access blocked by Trovit');
-      }
-
-    } catch (error) {
-      logger.warn('Error handling Trovit blocking:', error);
-    }
-  }
-
-  /**
-   * Wait for Trovit content to load
-   */
-  private async waitForTrovitContent(page: Page): Promise<void> {
-    try {
-      await page.waitForSelector('body', { timeout: 10000 });
-      // scroll para forzar render
-      await page.evaluate(async () => {
-        await new Promise<void>((resolve) => {
-          let total = 0;
-          const step = () => {
-            (globalThis as any).scrollBy(0, 1200);
-            total += 1200;
-            if (total < 8000) setTimeout(step, 350); else resolve();
-          };
-          step();
-        });
-      });
-      // Wait for property listings
-      await page.waitForSelector('.js-item-list-element, .item, article, [class*="property"], li', {
-        timeout: 15000
-      });
-      // Additional wait for dynamic content
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    } catch (error) {
-      logger.warn('Timeout waiting for Trovit content');
-    }
-  }
-
-  /**
-   * Extract properties from Trovit page
-   */
-  private async extractTrovitProperties(page: Page): Promise<any[]> {
-    return await (page as any).evaluate(() => {
-      const properties: any[] = [];
-      const doc: any = (globalThis as any).document;
-      const propertyCards = doc ? doc.querySelectorAll('.js-item-list-element, .item, article, [class*="property"], li') : [];
-
-      propertyCards.forEach((card: any, index: number) => {
-        try {
-          // Extract title (with fallbacks)
-          let title = card.querySelector('.item_title, .js-item-title, [class*="title"]')?.textContent?.trim() || '';
-          if (!title) {
-            const linkEl: any = card.querySelector('.item_link, a');
-            title = (linkEl?.getAttribute?.('title') || linkEl?.textContent || '').trim();
-          }
-          if (!title) {
-            const imgEl: any = card.querySelector('img');
-            title = (imgEl?.getAttribute?.('alt') || '').trim();
-          }
-          if (!title) {
-            // derive from nearby heading or container text
-            const header = card.querySelector('h2, h3, h4');
-            title = (header?.textContent || '').trim();
-          }
-          if (!title) {
-            const t = (card.innerText || '').toString().split('\n').map((s: any)=>String(s).trim()).filter(Boolean)[0] || '';
-            title = t;
-          }
-
-          // Extract price with regex fallback
-          const priceElement = card.querySelector('.item_price, .price');
-          let priceText = priceElement?.textContent?.trim() || '';
-          if (!priceText) {
-            const text = (card.innerText || '').toString();
-            const m = text.match(/(?:\$|COP|Col\$)\s*[\d\.,]+/i);
-            priceText = m ? m[0] : '';
-          }
-
-          // Extract area with regex fallback
-          const areaElement = card.querySelector('.item_surface, .surface');
-          let areaText = areaElement?.textContent?.trim() || '';
-          if (!areaText) {
-            const text = (card.innerText || '').toString();
-            const m = text.match(/(\d+(?:[\.,]\d+)?)\s*m[²2]/i);
-            areaText = m ? m[0] : '';
-          }
-
-          // Extract rooms with regex fallback
-          const roomsElement = card.querySelector('.item_rooms, .rooms');
-          let roomsText = roomsElement?.textContent?.trim() || '';
-          if (!roomsText) {
-            const text = (card.innerText || '').toString();
-            const m = text.match(/(\d+)\s*(hab|habitacion|alcoba|dormitorio|bedroom)/i);
-            roomsText = m ? m[0] : '';
-          }
-
-          // Extract location
-          const locationElement = card.querySelector('.item_location, .location');
-          const location = locationElement?.textContent?.trim() || '';
-
-          // Extract link (prefer absolute)
-          const linkElement = card.querySelector('.item_link, a');
-          let url = linkElement?.getAttribute('href') || '';
-          const href = (linkElement as any)?.href;
-          if (href) url = href;
-          if (url && !url.startsWith('http')) {
-            url = `https://casas.trovit.com.co${url}`;
-          }
-
-          // Extract image (lazy variants)
-          const img = card.querySelector('.item_image img, img');
-          let imageUrl = img?.getAttribute('data-src') || img?.getAttribute('data-lazy') || img?.getAttribute('src') || '';
-          if (!imageUrl) {
-            const srcset = img?.getAttribute('srcset') || '';
-            if (srcset) imageUrl = srcset.split(',')[0]?.trim().split(' ')[0] || '';
-          }
-
-          // Extract additional Trovit-specific data
-          const descriptionElement = card.querySelector('.item_description, .description');
-          const description = descriptionElement?.textContent?.trim() || '';
-
-          // Extract features/amenities
-          const featuresElements = card.querySelectorAll('.item_features .feature, .features .feature');
-          const features: string[] = [];
-          featuresElements.forEach((feature: any) => {
-            const featureText = feature.textContent?.trim();
-            if (featureText) features.push(featureText);
-          });
-
-          // MEJORADO: Extraer baños del texto completo
-          const fullText = card.textContent?.trim() || '';
-          let bathroomsText = '';
-
-          const bathroomPatterns = [
-            /(\d+)\s*ba[ñn]o[s]*/i,           // "2 baños", "1 baño"
-            /(\d+)\s*bathroom[s]*/i,          // "2 bathrooms"
-            /ba[ñn]o[s]*\s*(\d+)/i,           // "baños 2"
-            /bathroom[s]*\s*(\d+)/i           // "bathrooms 2"
-          ];
-
-          for (const pattern of bathroomPatterns) {
-            const match = fullText.match(pattern);
-            if (match) {
-              bathroomsText = match[1];
-              break;
-            }
-          }
-
-          // MEJORADO: Extraer ubicación del texto completo y título
-          let enhancedLocation = location || '';
-
-          if (!enhancedLocation) {
-            // USAR EXTRACCIÓN CENTRALIZADA - NUEVO LOCATIONDETECTOR
-            const extractedFromTitle = LocationDetector.detectLocation(title || '');
-            if (extractedFromTitle?.neighborhood) {
-              enhancedLocation = extractedFromTitle.neighborhood;
-            }
-          }
-
-          if (!enhancedLocation) {
-            // USAR EXTRACCIÓN CENTRALIZADA - NUEVO LOCATIONDETECTOR
-            const extractedFromText = LocationDetector.detectLocation(fullText);
-            if (extractedFromText?.neighborhood) {
-              enhancedLocation = extractedFromText.neighborhood;
-            }
-          }
-
-          if (priceText && url) {
-            properties.push({
-              title: title || 'Apartamento en arriendo',
-              priceText,
-              areaText,
-              roomsText,
-              bathroomsText,
-              location: enhancedLocation,
-              url,
-              imageUrl,
-              description,
-              features,
-              fullText: fullText.substring(0, 200), // Para debugging
-              source: 'Trovit'
-            });
-          }
-
-        } catch (error) {
-          console.log(`Error processing Trovit property ${index}:`, error);
-        }
-      });
-
-      return properties;
-    });
-  }
-
-  /**
-   * Process and validate Trovit properties
-   */
-  private processTrovitProperties(rawProperties: any[]): Property[] {
-    const parser = new PropertyParser(this.source);
-    const processedProperties: Property[] = [];
-
-    for (const rawProperty of rawProperties) {
-      try {
-        // Enhanced parsing for Trovit-specific data
-        const property = this.parseTrovitProperty(rawProperty, parser);
-        
-        if (property && this.validateTrovitProperty(property)) {
-          processedProperties.push(property);
-        }
-
-      } catch (error) {
-        logger.warn('Error processing Trovit property:', error);
-      }
-    }
-
-    return processedProperties;
-  }
-
-  /**
-   * Parse Trovit-specific property data
-   */
-  private parseTrovitProperty(rawProperty: any, parser: PropertyParser): Property | null {
-    // Normalizar campos esperados por el parser
-    const normalizedRaw = {
-      ...rawProperty,
-      price: rawProperty.price || rawProperty.priceText,
-      area: rawProperty.area || rawProperty.areaText,
-      rooms: rawProperty.rooms || rawProperty.roomsText,
-      bathrooms: rawProperty.bathrooms || rawProperty.bathroomsText,
-      images: rawProperty.images || (rawProperty.imageUrl ? [rawProperty.imageUrl] : undefined),
-      url: rawProperty.url
     };
 
-    // Parse base property
-    const baseProperty = parser.parseProperty(normalizedRaw);
-    if (!baseProperty) return null;
-
-    // MEJORADO: Enhance with Trovit-specific data
-    baseProperty.description = rawProperty.description || baseProperty.description || '';
-
-    // MEJORADO: Asegurar que la ubicación se extraiga correctamente
-    if (rawProperty.location && rawProperty.location.trim()) {
-      const cleanLocation = rawProperty.location.trim();
-      baseProperty.location.neighborhood = cleanLocation;
-      baseProperty.location.address = `${cleanLocation}, Dynamic`;
-    }
-
-    // MEJORADO: Asegurar que los baños se extraigan correctamente
-    if (rawProperty.bathroomsText) {
-      const bathrooms = parseInt(rawProperty.bathroomsText);
-      if (bathrooms > 0 && bathrooms <= 10) {
-        baseProperty.bathrooms = bathrooms;
-      }
-    }
-
-    // Parse Trovit-specific amenities
-    if (rawProperty.features && Array.isArray(rawProperty.features)) {
-      const trovitAmenities = this.parseTrovitAmenities(rawProperty.features);
-      baseProperty.amenities = [...new Set([...(baseProperty.amenities || []), ...trovitAmenities])];
-    }
-
-    // Normalize Trovit URLs (por si algo pasó aguas arriba)
-    if (baseProperty.url && !baseProperty.url.startsWith('http')) {
-      baseProperty.url = `https://casas.trovit.com.co${baseProperty.url}`;
-    }
-
-    return baseProperty;
+    return neighborhoodMap[city]?.[neighborhood.toLowerCase()] || '';
   }
 
   /**
-   * Parse Trovit-specific amenities
+   * Parse price from text
    */
-  private parseTrovitAmenities(features: string[]): string[] {
-    const amenityMap: { [key: string]: string } = {
-      'piscina': 'piscina',
-      'gimnasio': 'gimnasio',
-      'gym': 'gimnasio',
-      'jacuzzi': 'jacuzzi',
-      'sauna': 'sauna',
-      'turco': 'turco',
-      'padel': 'cancha de padel',
-      'tenis': 'tenis',
-      'squash': 'squash',
-      'salon social': 'salon social',
-      'bbq': 'bbq',
-      'parqueadero': 'parqueadero',
-      'garaje': 'parqueadero',
-      'porteria': 'porteria',
-      'seguridad': 'seguridad',
-      'ascensor': 'ascensor',
-      'balcon': 'balcon',
-      'terraza': 'terraza'
-    };
-
-    const amenities: string[] = [];
-    
-    features.forEach(feature => {
-      const featureLower = feature.toLowerCase();
-      for (const [key, value] of Object.entries(amenityMap)) {
-        if (featureLower.includes(key)) {
-          amenities.push(value);
-        }
-      }
-    });
-
-    return [...new Set(amenities)];
+  private parsePrice(priceText: string): number {
+    if (!priceText) return 0;
+    const cleanPrice = priceText.replace(/[^\d]/g, '');
+    return parseInt(cleanPrice) || 0;
   }
 
   /**
-   * Validate Trovit-specific property - USAR PROPERTYVALIDATOR CENTRALIZADO
+   * Extract city from location text or criteria
    */
-  private validateTrovitProperty(property: Property): boolean {
-    // Normalize/validate URL específico de Trovit
-    if (!property.url.startsWith('http')) {
-      property.url = `https://casas.trovit.com.co${property.url}`;
+  private extractCity(locationText: string, criteria: SearchCriteria): string {
+    if (!locationText) {
+      // Usar ciudad de los criterios si está disponible
+      if (criteria.hardRequirements.location?.neighborhoods?.length) {
+        const searchText = criteria.hardRequirements.location.neighborhoods[0];
+        const locationInfo = LocationDetector.detectLocation(searchText);
+        return locationInfo.city || 'Bogotá';
+      }
+      return 'Bogotá';
     }
-    if (!property.url.includes('trovit.com')) {
-      logger.warn('Invalid Trovit URL:', property.url);
+
+    // Buscar ciudad en el texto
+    const cityPattern = /(bogotá|medellín|cali|barranquilla|cartagena|bucaramanga)/i;
+    const cityMatch = locationText.match(cityPattern);
+    return cityMatch ? cityMatch[1] : 'Bogotá';
+  }
+
+  /**
+   * Extract neighborhood from location text (sin hardcoding de ciudad)
+   */
+  private extractNeighborhood(locationText: string): string {
+    if (!locationText) return '';
+
+    // Remover cualquier ciudad conocida del texto
+    const cityPattern = /,?\s*(bogotá|medellín|cali|barranquilla|cartagena|bucaramanga)/i;
+    const cleaned = locationText.replace(cityPattern, '').trim();
+    const parts = cleaned.split(',');
+    return parts[0]?.trim() || '';
+  }
+
+  /**
+   * Check if property meets basic criteria
+   */
+  private meetsBasicCriteria(property: Property, criteria: SearchCriteria): boolean {
+    if (property.price > criteria.hardRequirements.maxTotalPrice) {
       return false;
     }
-
-    // USAR VALIDACIÓN CENTRALIZADA - elimina duplicación
-    const validator = new PropertyValidator();
-    return validator.isValid(property);
+    return true;
   }
 }

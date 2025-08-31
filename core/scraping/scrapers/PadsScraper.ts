@@ -47,16 +47,39 @@ export class PadsScraper {
    */
   private buildPadsUrl(criteria: SearchCriteria): string {
     // USAR URL BUILDER UNIFICADO - ELIMINA TODA LA DUPLICACIÓN
-    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
-    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    // 🔥 USAR LOCATIONDETECTOR SIN HARDCODING
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || '';
     const locationInfo = LocationDetector.detectLocation(locationText);
 
-    const baseUrl = 'https://www.pads.com.co/apartamentos/arriendo';
-    const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'pads');
+    // 🔥 DINÁMICO: Determinar tipo de transacción
+    const transactionType = this.getTransactionType(criteria);
+
+    // PADS usa formato: /inmuebles-en-{transaccion} con filtros por query params
+    const baseUrl = `https://www.pads.com.co/inmuebles-en-${transactionType}`;
+
+    // PADS usa query params para filtros
+    const params = new URLSearchParams();
+    if (locationInfo.neighborhood) {
+      params.append('location', locationInfo.neighborhood);
+    } else if (locationInfo.city) {
+      params.append('location', locationInfo.city);
+    }
+    params.append('type', 'apartamento');
+
+    const url = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
 
     logger.info(`🎯 PADS - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     return url;
+  }
+
+  /**
+   * Determinar tipo de transacción dinámicamente
+   */
+  private getTransactionType(criteria: SearchCriteria): string {
+    // TODO: Implementar cuando tengamos el campo en SearchCriteria
+    // Por ahora defaultear a arriendo
+    return 'arriendo';
   }
 
   /**

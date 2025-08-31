@@ -134,17 +134,36 @@ export class CiencuadrasScraper {
    * Build Ciencuadras search URL - UNIFICADO
    */
   private buildCiencuadrasUrl(criteria: SearchCriteria): string {
-    // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
-    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
+    // 🔥 USAR LOCATIONDETECTOR SIN HARDCODING
+    const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || '';
     const locationInfo = LocationDetector.detectLocation(locationText);
 
-    // Ciencuadras usa formato específico: /ciudad/apartamento/arriendo
+    // 🔥 DINÁMICO: Determinar tipo de transacción
+    const transactionType = this.getTransactionType(criteria);
+    const propertyType = 'apartamento'; // Por ahora apartamentos, se puede hacer dinámico después
+
+    // Ciencuadras usa formato: /transaccion/ciudad/barrio/tipo
     const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'standard');
-    const url = `https://www.ciencuadras.com/${cityUrl}/apartamento/arriendo`;
+    const neighborhoodUrl = locationInfo.neighborhood ? LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'standard') : '';
+
+    let url = `https://www.ciencuadras.com/${transactionType}/${cityUrl}`;
+    if (neighborhoodUrl) {
+      url += `/${neighborhoodUrl}`;
+    }
+    url += `/${propertyType}`;
 
     logger.info(`🎯 Ciencuadras - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     return url;
+  }
+
+  /**
+   * Determinar tipo de transacción dinámicamente
+   */
+  private getTransactionType(criteria: SearchCriteria): string {
+    // TODO: Implementar cuando tengamos el campo en SearchCriteria
+    // Por ahora defaultear a arriendo
+    return 'arriendo';
   }
 
   /**
@@ -179,9 +198,9 @@ export class CiencuadrasScraper {
         // Extract basic information using text analysis (Ciencuadras has data in text)
         const fullText = $card.text().trim();
 
-        // IMPROVED: Extract title - look for "Apartamento en arriendo"
+        // 🔥 DINÁMICO: Extract title - buscar apartamento en cualquier transacción
         let title = '';
-        const titleMatch = fullText.match(/(Apartamento en arriendo[^$]*)/i);
+        const titleMatch = fullText.match(/(Apartamento en (?:arriendo|venta)[^$]*)/i);
         if (titleMatch) {
           title = titleMatch[1].trim();
         } else {
@@ -487,7 +506,7 @@ export class CiencuadrasScraper {
       const id = data.id || data.propertyCode || '';
       const title = data.realEstateType && data.typeTransaction && data.neighborhood
         ? `${data.realEstateType} en ${data.typeTransaction} en ${data.neighborhood}`
-        : data.title || 'Apartamento en arriendo';
+        : data.title || 'Apartamento';
 
       const price = data.rentPrice || data.leaseFee || data.price || 0;
       const area = data.areaPrivate || data.area || data.privateArea || 0;
@@ -610,7 +629,7 @@ export class CiencuadrasScraper {
       items.forEach((it, idx) => {
         // Construir raw y delegar parseo al PropertyParser
         const raw = {
-          title: it.title || 'Apartamento en arriendo',
+          title: it.title || 'Apartamento',
           price: it.priceText || (it.text.match(/\$\s*[\d\.,]+/)||[''])[0] || '',
           adminFee: 0,
           totalPrice: undefined,
