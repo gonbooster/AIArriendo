@@ -42,7 +42,7 @@ const FUNNY_MESSAGES = [
   '🎪 El circo de los arriendos está en función...',
   '🔮 Consultando la bola de cristal inmobiliaria...',
   '🎲 Tirando los dados del destino...',
-  '🚁 Sobrevolando Bogotá en busca de tesoros...',
+  '🚁 Sobrevolando el planeta en busca de tesoros...',
   '🕸️ Tejiendo la red de propiedades perfectas...',
   '⚡ Cargando poderes inmobiliarios...',
   '🎭 El teatro de los arriendos presenta...',

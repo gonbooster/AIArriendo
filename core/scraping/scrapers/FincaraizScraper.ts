@@ -99,7 +99,7 @@ export class FincaraizScraper extends BaseScraper {
       logger.info(`🎯 Fincaraiz - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
+    // Usar ubicación detectada o fallback dinámico
     const city = locationInfo?.city || 'bogotá';
     const cityCode = locationInfo?.cityCode || '11001';
     const neighborhood = locationInfo?.neighborhood;
@@ -113,8 +113,8 @@ export class FincaraizScraper extends BaseScraper {
     });
 
     // Construir URL dinámica basada en ciudad y barrio
-    if (neighborhood && city === 'bogotá') {
-      // Para Bogotá, usar estructura con barrio si está disponible
+    if (neighborhood && (city === 'bogotá' || city === 'medellín')) {
+      // Para ciudades principales, usar estructura con barrio si está disponible
       const neighborhoodMap: Record<string, string> = {
         'usaquén': 'usaquen',
         'usaquen': 'usaquen',
@@ -135,7 +135,7 @@ export class FincaraizScraper extends BaseScraper {
 
       const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
       if (mappedNeighborhood) {
-        return `https://www.fincaraiz.com.co/arriendo/apartamentos/bogota/${mappedNeighborhood}?${params}`;
+        return `https://www.fincaraiz.com.co/arriendo/apartamentos/${cityUrl}/${mappedNeighborhood}?${params}`;
       }
     }
 
@@ -224,9 +224,9 @@ export class FincaraizScraper extends BaseScraper {
             stratum: characteristics.stratum || 4,
             isActive: true,
             location: {
-              address: location || 'Usaquén, Bogotá',
-              neighborhood: location?.split(',')[0] || 'Usaquén',
-              city: 'Bogotá',
+              address: location || `${locationInfo?.neighborhood || 'Centro'}, ${locationInfo?.city || 'Dynamic'}`,
+              neighborhood: location?.split(',')[0] || locationInfo?.neighborhood || 'Centro',
+              city: locationInfo?.city || 'Dynamic',
               coordinates: { lat: 0, lng: 0 }
             },
             amenities: [],
@@ -438,7 +438,7 @@ export class FincaraizScraper extends BaseScraper {
         const extractedData = this.extractDataFromText(titleText);
 
         // Extraer ubicación del título
-        const locationMatch = titleText.match(/en\s+([^,]+),?\s*bogotá/i);
+        const locationMatch = titleText.match(/en\s+([^,]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i);
         const neighborhood = locationMatch ? locationMatch[1].trim() : 'Sin especificar';
 
         const property: Property = {
@@ -454,9 +454,9 @@ export class FincaraizScraper extends BaseScraper {
           stratum: extractedData.stratum || 0,
           isActive: true,
           location: {
-            address: neighborhood + ', Bogotá',
+            address: neighborhood + ', ' + (locationInfo?.city || 'Dynamic'),
             neighborhood: neighborhood,
-            city: 'Bogotá',
+            city: locationInfo?.city || 'Dynamic',
             coordinates: { lat: 0, lng: 0 }
           },
           amenities: [],
@@ -606,7 +606,7 @@ export class FincaraizScraper extends BaseScraper {
                   location: {
                     address: propertyData.address || '',
                     neighborhood: propertyData.locations?.location_main?.name || '',
-                    city: propertyData.locations?.city?.[0]?.name || 'Bogotá',
+                    city: propertyData.locations?.city?.[0]?.name || locationInfo?.city || 'Dynamic',
                     coordinates: {
                       lat: propertyData.latitude || 0,
                       lng: propertyData.longitude || 0
@@ -1001,7 +1001,7 @@ export class FincaraizScraper extends BaseScraper {
 
     // Location patterns - EXPANDED FOR SUBA
     const locationPatterns = [
-      /Bogotá[,\s]+([^,\n]+)/gi,
+      /(Bogotá|Medellín|Cali|Barranquilla|Bucaramanga|Cartagena)[,\s]+([^,\n]+)/gi,
       /(Chapinero|Zona Rosa|Chico|Usaquén|Rosales|La Candelaria|Centro|Norte|Sur|Suba|Ciudad Jardín Norte|Bosque Calderón|Mazurén|Guaymaral|La Conejera|Tibabuyes|Niza|Alhambra|Lisboa|Santa Cecilia|Bilbao|Casa Blanca Suba|Compartir|El Prado|La Gaitana|San Pedro|Tuna Alta|Tuna Baja|Verbenal|Villa Cindy)/gi,
       /Calle\s+\d+/gi,
       /Carrera\s+\d+/gi

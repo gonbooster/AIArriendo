@@ -99,7 +99,7 @@ export class RentolaScraper extends BaseScraper {
       logger.info(`🎯 Rentola - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
     }
 
-    // Usar ubicación detectada o fallback a Bogotá
+    // Usar ubicación detectada o fallback dinámico
     const city = locationInfo?.city || 'bogotá';
     const neighborhood = locationInfo?.neighborhood;
 
@@ -119,8 +119,9 @@ export class RentolaScraper extends BaseScraper {
     let baseUrl = `https://rentola.com/for-rent/co/${cityUrl}`;
 
     // Agregar barrio específico si está disponible (Rentola tiene URLs específicas para algunos barrios)
-    if (neighborhood && city === 'bogotá') {
+    if (neighborhood && (city === 'bogotá' || city === 'medellín')) {
       const neighborhoodMap: Record<string, string> = {
+        // Bogotá
         'suba': 'bogota-localidad-suba',
         'usaquén': 'bogota-localidad-usaquen',
         'usaquen': 'bogota-localidad-usaquen',
@@ -129,7 +130,11 @@ export class RentolaScraper extends BaseScraper {
         'engativá': 'bogota-localidad-engativa',
         'engativa': 'bogota-localidad-engativa',
         'fontibón': 'bogota-localidad-fontibon',
-        'fontibon': 'bogota-localidad-fontibon'
+        'fontibon': 'bogota-localidad-fontibon',
+        // Medellín
+        'poblado': 'medellin-el-poblado',
+        'laureles': 'medellin-laureles',
+        'envigado': 'medellin-envigado'
       };
 
       const mappedNeighborhood = neighborhoodMap[neighborhood.toLowerCase()];
@@ -249,7 +254,7 @@ export class RentolaScraper extends BaseScraper {
             location: {
               address: location,
               neighborhood: this.extractNeighborhood(location),
-              city: 'Bogotá',
+              city: 'Dynamic', // Will be enhanced by LocationDetector
               coordinates: { lat: 0, lng: 0 }
             },
             amenities: [], // Would need to extract from detail page
@@ -280,8 +285,8 @@ export class RentolaScraper extends BaseScraper {
   private extractNeighborhood(locationText: string): string {
     if (!locationText) return '';
     
-    // Remove "Bogotá" and get neighborhood
-    const cleaned = locationText.replace(/,?\s*bogotá/i, '').trim();
+    // Remove city name and get neighborhood
+    const cleaned = locationText.replace(/,?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i, '').trim();
     const parts = cleaned.split(',');
     
     return parts[0]?.trim() || '';
@@ -421,10 +426,10 @@ export class RentolaScraper extends BaseScraper {
 
         // Multiple patterns to try based on the actual Rentola format
         const patterns = [
-          // Pattern 1: "3 rooms apartment of 43m²Carrera 32, Puente Aranda, 111611 Bogota, Colombia730,000 $ / month"
+          // Pattern 1: "3 rooms apartment of 43m²Carrera 32, Puente Aranda, 111611 [City], Colombia730,000 $ / month"
           /(\d+)\s+rooms?\s+(\w+)\s+of\s+(\d+)m²([^$]*?)([\d,]+)\s*\$\s*\/\s*month/gi,
 
-          // Pattern 2: "1 room studio of 40m²Calle 63B, Engativá, 111071 Bogota, Colombia800,000 $ / month"
+          // Pattern 2: "1 room studio of 40m²Calle 63B, Engativá, 111071 [City], Colombia800,000 $ / month"
           /(\d+)\s+room\s+(\w+)\s+of\s+(\d+)m²([^$]*?)([\d,]+)\s*\$\s*\/\s*month/gi,
 
           // Pattern 3: More flexible - any number + rooms/room + type + area + location + price
@@ -447,17 +452,17 @@ export class RentolaScraper extends BaseScraper {
                 // Simplified pattern
                 [, rooms, area, price] = match;
                 propertyType = 'apartment';
-                locationPart = 'Bogotá';
+                locationPart = 'Dynamic';
               } else {
                 // Most basic pattern
                 [, area, price] = match;
                 rooms = '1';
                 propertyType = 'apartment';
-                locationPart = 'Bogotá';
+                locationPart = 'Dynamic';
               }
 
               // Clean up location
-              let location = (locationPart || 'Bogotá').trim()
+              let location = (locationPart || 'Dynamic').trim()
                 .replace(/\s+/g, ' ')
                 .replace(/\d{6}/g, '') // Remove postal codes
                 .replace(/,\s*Colombia\s*$/, '') // Remove country
@@ -468,7 +473,7 @@ export class RentolaScraper extends BaseScraper {
               }
 
               if (!location || location.length < 3) {
-                location = 'Bogotá';
+                location = 'Dynamic';
               }
 
               // Create title
@@ -529,9 +534,9 @@ export class RentolaScraper extends BaseScraper {
             parking: 0,
             stratum: 0,
             location: {
-              address: item.location || 'Bogotá',
+              address: item.location || 'Dynamic',
               neighborhood: this.extractNeighborhood(item.location),
-              city: 'Bogotá'
+              city: 'Dynamic' // Will be enhanced by LocationDetector
             },
             images: item.imageUrl ? [item.imageUrl] : [],
             url: item.url.startsWith('http') ? item.url : `https://rentola.com${item.url}`,

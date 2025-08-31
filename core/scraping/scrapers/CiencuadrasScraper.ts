@@ -270,7 +270,7 @@ export class CiencuadrasScraper extends BaseScraper {
         }
 
         // IMPROVED: Extract location using LocationDetector for dynamic city support
-        let location = locationInfo?.city || 'Bogotá'; // Use detected city as default
+        let location = 'Dynamic'; // Will be enhanced by LocationDetector
 
         // Enhanced location patterns for multiple cities
         const locationPatterns = [
@@ -380,7 +380,7 @@ export class CiencuadrasScraper extends BaseScraper {
             roomsText: roomsText || '',
             bathrooms: bathroomsNumber > 0 ? bathroomsNumber : bathroomsText,
             bathroomsText: bathroomsText || '',
-            location: typeof location === 'string' ? location : (locationInfo?.city || 'Bogotá'),
+            location: typeof location === 'string' ? location : (locationInfo?.city || 'Dynamic'),
             imageUrl: imageUrl || '',
             images: imageUrl ? [imageUrl] : [],
             url: propertyUrl || 'https://www.ciencuadras.com',
@@ -536,7 +536,7 @@ export class CiencuadrasScraper extends BaseScraper {
         rooms: rooms,
         bathrooms: bathrooms,
         parking: parking,
-        location: location || locationInfo?.city || 'Bogotá',
+        location: location || locationInfo?.city || 'Dynamic',
         address: address,
         amenities: [],
         images: imageUrl ? [imageUrl] : [],
@@ -642,7 +642,7 @@ export class CiencuadrasScraper extends BaseScraper {
           area: '',
           rooms: '',
           bathrooms: '',
-          location: locationInfo?.city || 'Bogotá',
+          location: locationInfo?.city || 'Dynamic',
           amenities: [],
           images: it.imageUrl ? [it.imageUrl] : [],
           url: it.url.startsWith('http') ? it.url : `https://www.ciencuadras.com${it.url}`,

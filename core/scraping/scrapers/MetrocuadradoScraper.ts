@@ -273,7 +273,7 @@ export class MetrocuadradoScraper extends BaseScraper {
         area,
         rooms,
         bathrooms,
-        location: { address: loc, neighborhood: '', city: 'Bogotá' },
+        location: { address: loc, neighborhood: '', city: 'Dynamic' },
         images: img ? [img] : [],
         url: url.startsWith('http') ? url : `https://www.metrocuadrado.com${url}`,
         source: 'Metrocuadrado',
@@ -480,8 +480,8 @@ export class MetrocuadradoScraper extends BaseScraper {
           // Extraer ubicación del texto si no se encontró en elementos específicos
           if (!loc) {
             const locationMatches = [
-              fullText.match(/en\s+([^,]+),?\s*bogotá/i),
-              fullText.match(/bogotá[,\s]+([^,\n]+)/i)
+              fullText.match(/en\s+([^,]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i),
+              fullText.match(/(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)[,\s]+([^,\n]+)/i)
             ];
             for (const match of locationMatches) {
               if (match) {
@@ -565,9 +565,9 @@ export class MetrocuadradoScraper extends BaseScraper {
           parking,
           stratum,
           location: {
-            address: address || neighborhood || 'Bogotá',
+            address: address || neighborhood || 'Centro',
             neighborhood: neighborhood || 'Sin especificar',
-            city: 'Bogotá',
+            city: 'Dynamic',
             coordinates: { lat: 0, lng: 0 }
           },
           images: it.img ? [it.img] : [],

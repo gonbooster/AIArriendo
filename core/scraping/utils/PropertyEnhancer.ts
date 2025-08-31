@@ -45,7 +45,7 @@ export class PropertyEnhancer {
     }
 
     // Context-aware title generation
-    const neighborhood = context.neighborhood || context.city || 'Bogotá';
+    const neighborhood = context.neighborhood || context.city || 'Centro';
     const source = context.source || '';
     
     const titleOptions = [
@@ -65,8 +65,8 @@ export class PropertyEnhancer {
   private static enhanceLocation(location: any, context: any): any {
     const enhanced = {
       address: location?.address || '',
-      neighborhood: location?.neighborhood || context.neighborhood || context.city || 'Bogotá',
-      city: location?.city || context.city || 'Bogotá',
+      neighborhood: location?.neighborhood || context.neighborhood || context.city || 'Centro',
+      city: location?.city || context.city || 'Bogotá', // Default fallback
       department: location?.department || PropertyEnhancer.getDepartmentForCity(location?.city || context.city) || 'Bogotá D.C.',
       country: location?.country || 'Colombia'
     };
@@ -169,7 +169,7 @@ export class PropertyEnhancer {
   }
 
   private static getDepartmentForCity(city?: string): string {
-    if (!city) return 'Bogotá D.C.';
+    if (!city) return 'Bogotá D.C.'; // Default fallback
 
     const cityDepartmentMap: Record<string, string> = {
       'bogotá': 'Bogotá D.C.',

@@ -221,7 +221,7 @@ export class ProperatiScraper extends BaseScraper {
           location: {
             address: it.location,
             neighborhood: this.extractNeighborhood(it.location),
-            city: 'Bogotá',
+            city: 'Dynamic',
             coordinates: { lat: 0, lng: 0 }
           },
           amenities: this.extractAmenities(it.features || ''),
@@ -425,7 +425,7 @@ export class ProperatiScraper extends BaseScraper {
             location: {
               address: location,
               neighborhood: this.extractNeighborhood(location),
-              city: 'Bogotá',
+              city: 'Dynamic',
               coordinates: { lat: 0, lng: 0 }
             },
             amenities: this.extractAmenities(featuresText),
@@ -484,8 +484,8 @@ export class ProperatiScraper extends BaseScraper {
   private extractNeighborhood(locationText: string): string {
     if (!locationText) return '';
     
-    // Remove "Bogotá" and get neighborhood
-    const cleaned = locationText.replace(/,?\s*bogotá/i, '').trim();
+    // Remove city name and get neighborhood
+    const cleaned = locationText.replace(/,?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i, '').trim();
     const parts = cleaned.split(',');
     
     return parts[0]?.trim() || '';

@@ -110,34 +110,6 @@ export class SmartExtractor {
   }
 
   /**
-   * Extract location with smart parsing
-   */
-  static extractLocation($: cheerio.CheerioAPI, $element: cheerio.Cheerio<any>, defaultNeighborhood: string = '', defaultCity: string = 'Bogotá'): string {
-    const locationSelectors = [
-      '.location',
-      '[class*="location"]',
-      '[class*="address"]',
-      '[class*="zona"]',
-      '.ui-search-item__location',
-      '.item-location'
-    ];
-
-    for (const selector of locationSelectors) {
-      const location = $element.find(selector).first().text().trim();
-      if (location && location.length > 3) {
-        return this.cleanLocation(location);
-      }
-    }
-
-    // Fallback: Use default neighborhood
-    if (defaultNeighborhood) {
-      return `${defaultNeighborhood}, ${defaultCity || 'Bogotá'}`;
-    }
-
-    return `${defaultCity || 'Bogotá'}, Colombia`;
-  }
-
-  /**
    * Extract area with number parsing
    */
   static extractArea($: cheerio.CheerioAPI, $element: cheerio.Cheerio<any>): number {

@@ -421,10 +421,10 @@ export class TrovitScraper extends BaseScraper {
           if (!enhancedLocation) {
             // Extraer ubicación del título
             const titleLocationPatterns = [
-              /en\s+([^,\n]+),?\s*bogotá/i,           // "en el nogal, bogotá"
-              /arriendo\s+([^,\n]+),?\s*bogotá/i,     // "arriendo chico alto"
+              /en\s+([^,\n]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i,           // "en el nogal, [city]"
+              /arriendo\s+([^,\n]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i,     // "arriendo chico alto"
               /apartamento\s+([^,\n]+)/i,             // "apartamento rosales"
-              /([a-záéíóúñ\s]+)\s+bogotá/i            // "santa barbara bogotá"
+              /([a-záéíóúñ\s]+)\s+(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i            // "santa barbara [city]"
             ];
 
             for (const pattern of titleLocationPatterns) {
@@ -443,8 +443,8 @@ export class TrovitScraper extends BaseScraper {
             // Extraer ubicación del texto completo
             const textLocationPatterns = [
               /localidad de\s+([^)]+)/i,              // "localidad de suba"
-              /en\s+([^,\n]+),?\s*bogotá/i,           // "en cerros de suba"
-              /bogotá[,\s]+([^,\n]+)/i                // "bogotá, chapinero"
+              /en\s+([^,\n]+),?\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i,           // "en cerros de suba"
+              /(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)[,\s]+([^,\n]+)/i                // "[city], chapinero"
             ];
 
             for (const pattern of textLocationPatterns) {
@@ -535,7 +535,7 @@ export class TrovitScraper extends BaseScraper {
     if (rawProperty.location && rawProperty.location.trim()) {
       const cleanLocation = rawProperty.location.trim();
       baseProperty.location.neighborhood = cleanLocation;
-      baseProperty.location.address = `${cleanLocation}, Bogotá`;
+      baseProperty.location.address = `${cleanLocation}, Dynamic`;
     }
 
     // MEJORADO: Asegurar que los baños se extraigan correctamente

@@ -133,34 +133,6 @@ export const searchAPI = {
     }
   },
 
-  // Get single property by ID
-  getProperty: async (id: string) => {
-    try {
-      const response = await apiClient.get(`/properties/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error getting property:', error);
-      // Return mock property for now
-      return {
-        id: id,
-        title: 'Apartamento en Chapinero',
-        price: 2500000,
-        area: 85,
-        rooms: 3,
-        bathrooms: 2,
-        location: {
-          address: 'Chapinero, Bogotá',
-          neighborhood: 'Chapinero',
-          city: 'Bogotá'
-        },
-        amenities: ['Gimnasio', 'Portería 24h'],
-        description: 'Hermoso apartamento en Chapinero',
-        images: ['/placeholder-property.svg'],
-        source: 'Mock'
-      };
-    }
-  },
-
   // Get similar properties
   getSimilarProperties: async (id: string, limit: number = 4) => {
     try {

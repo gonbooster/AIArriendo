@@ -121,7 +121,7 @@ export class PropertyParser {
       return {
         address: '',
         neighborhood: '',
-        city: context?.city || 'Bogotá',
+        city: context?.city, // Default fallback
         coordinates: { lat: 0, lng: 0 }
       };
     }
@@ -130,7 +130,7 @@ export class PropertyParser {
       return {
         address: location,
         neighborhood: this.extractNeighborhood(location),
-        city: context?.city || 'Bogotá',
+        city: context?.city, // Default fallback
         coordinates: { lat: 0, lng: 0 }
       };
     }
@@ -138,7 +138,7 @@ export class PropertyParser {
     return {
       address: location.address || '',
       neighborhood: location.neighborhood || this.extractNeighborhood(location.address || ''),
-      city: location.city || context?.city || 'Bogotá',
+      city: location.city || context?.city, // Default fallback
       coordinates: location.coordinates || { lat: 0, lng: 0 }
     };
   }

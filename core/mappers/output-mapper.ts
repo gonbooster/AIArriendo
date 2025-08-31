@@ -225,7 +225,6 @@ export class OutputMapper {
     // Common neighborhood patterns in Colombian addresses
     const patterns = [
       /(?:barrio|sector|zona)\s+([^,]+)/i,
-      /([^,]+),\s*bogot[aá]/i,
       /([^,]+),\s*[^,]*$/
     ];
     

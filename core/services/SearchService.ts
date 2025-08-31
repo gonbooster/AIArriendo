@@ -737,5 +737,5 @@ export class SearchService {
     return variations[neighborhood.toLowerCase()] || [];
   }
 
-  // REMOVED: getRealPropertyUrl - function was not being used and contained hardcoded Bogotá URLs
+
 }

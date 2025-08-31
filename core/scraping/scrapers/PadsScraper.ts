@@ -219,7 +219,7 @@ export class PadsScraper extends BaseScraper {
         location: {
           address: data.location,
           neighborhood: data.location.split(',')[0]?.trim() || '',
-          city: 'Bogotá',
+          city: 'Dynamic',
           coordinates: { lat: 0, lng: 0 }
         },
         amenities: [],
