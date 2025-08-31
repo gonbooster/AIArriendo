@@ -2,7 +2,7 @@ import { ProviderSchema, WebSearchCriteria, StandardProperty } from './base-prov
 
 /**
  * Fincaraiz Provider Schema
- * URL: https://www.fincaraiz.com.co/arriendo/apartamento/bogota
+ * URL: https://www.fincaraiz.com.co/arriendo/apartamento/{city} (dynamic)
  */
 export const FincaraizSchema: ProviderSchema = {
   id: 'fincaraiz',
@@ -132,8 +132,9 @@ export const FincaraizSchema: ProviderSchema = {
         /garajes[:\s]*(\d+)/gi
       ],
       location: [
-        /en\s+([^,]+),\s*bogotá/gi,
-        /([a-záéíóúñü\s]+),?\s*bogotá/gi
+        // DEPRECATED: Use LocationDetector for dynamic city detection
+        /en\s+([^,]+),\s*([a-záéíóúñü\s]+)/gi,
+        /([a-záéíóúñü\s]+),?\s*([a-záéíóúñü\s]+)/gi
       ]
     }
   },
@@ -198,7 +199,7 @@ export const FincaraizSchema: ProviderSchema = {
       propertyType: 'Apartamento',
       source: 'Fincaraiz',
       location: {
-        city: 'Bogotá',
+        city: 'Dynamic', // Will be set by LocationDetector
         address: '',
         neighborhood: '',
         coordinates: { lat: 0, lng: 0 }

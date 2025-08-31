@@ -269,23 +269,23 @@ export class CiencuadrasScraper extends BaseScraper {
           }
         }
 
-        // IMPROVED: Extract location using better regex - matches Ciencuadras format
-        let location = 'Bogotá'; // Default value
+        // IMPROVED: Extract location using LocationDetector for dynamic city support
+        let location = locationInfo?.city || 'Bogotá'; // Use detected city as default
 
-        // From the analysis, we see format like: "bogotá, chapinero, chapinero central"
-        // But we need to stop before numbers/measurements
+        // Enhanced location patterns for multiple cities
         const locationPatterns = [
-          /bogotá,\s*([a-záéíóúñ\s,]+?)(?:\d+\.?\d*\s*m[²2]|habit\.|baños|garaje|$)/i,
-          /apartamento en arriendo\s*bogotá,\s*([a-záéíóúñ\s,]+?)(?:\d+\.?\d*\s*m[²2]|habit\.|baños|garaje|$)/i,
-          /([a-záéíóúñ\s]+),\s*bogotá/i
+          /([a-záéíóúñ\s]+),\s*([a-záéíóúñ\s,]+?)(?:\d+\.?\d*\s*m[²2]|habit\.|baños|garaje|$)/i,
+          /apartamento en arriendo\s*([a-záéíóúñ\s]+),\s*([a-záéíóúñ\s,]+?)(?:\d+\.?\d*\s*m[²2]|habit\.|baños|garaje|$)/i,
+          /([a-záéíóúñ\s]+),\s*(bogotá|medellín|cali|barranquilla|bucaramanga|cartagena)/i
         ];
 
         for (const pattern of locationPatterns) {
           const match = fullText.match(pattern);
           if (match && match[1]) {
             const neighborhood = match[1].trim();
+            const detectedCity = match[2]?.trim() || locationInfo?.city || 'Bogotá';
             if (neighborhood && typeof neighborhood === 'string') {
-              location = `${neighborhood}, Bogotá`;
+              location = `${neighborhood}, ${detectedCity}`;
               break;
             }
           }
@@ -293,7 +293,7 @@ export class CiencuadrasScraper extends BaseScraper {
 
         // Ensure location is always a string
         if (typeof location !== 'string' || !location) {
-          location = 'Bogotá';
+          location = locationInfo?.city || 'Bogotá';
         }
 
         // IMPROVED: Extract image with better selectors and fallbacks
@@ -380,7 +380,7 @@ export class CiencuadrasScraper extends BaseScraper {
             roomsText: roomsText || '',
             bathrooms: bathroomsNumber > 0 ? bathroomsNumber : bathroomsText,
             bathroomsText: bathroomsText || '',
-            location: typeof location === 'string' ? location : 'Bogotá',
+            location: typeof location === 'string' ? location : (locationInfo?.city || 'Bogotá'),
             imageUrl: imageUrl || '',
             images: imageUrl ? [imageUrl] : [],
             url: propertyUrl || 'https://www.ciencuadras.com',
@@ -536,7 +536,7 @@ export class CiencuadrasScraper extends BaseScraper {
         rooms: rooms,
         bathrooms: bathrooms,
         parking: parking,
-        location: location || 'Bogotá',
+        location: location || locationInfo?.city || 'Bogotá',
         address: address,
         amenities: [],
         images: imageUrl ? [imageUrl] : [],
@@ -642,7 +642,7 @@ export class CiencuadrasScraper extends BaseScraper {
           area: '',
           rooms: '',
           bathrooms: '',
-          location: 'Bogotá',
+          location: locationInfo?.city || 'Bogotá',
           amenities: [],
           images: it.imageUrl ? [it.imageUrl] : [],
           url: it.url.startsWith('http') ? it.url : `https://www.ciencuadras.com${it.url}`,
