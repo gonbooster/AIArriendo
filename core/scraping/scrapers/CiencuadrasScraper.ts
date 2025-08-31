@@ -138,8 +138,9 @@ export class CiencuadrasScraper {
     const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
     const locationInfo = LocationDetector.detectLocation(locationText);
 
-    const baseUrl = 'https://www.ciencuadras.com/apartamentos/arriendo';
-    const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'standard');
+    // Ciencuadras usa formato específico: /ciudad/apartamento/arriendo
+    const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'standard');
+    const url = `https://www.ciencuadras.com/${cityUrl}/apartamento/arriendo`;
 
     logger.info(`🎯 Ciencuadras - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 

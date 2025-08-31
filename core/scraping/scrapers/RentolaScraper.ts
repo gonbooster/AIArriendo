@@ -130,14 +130,9 @@ export class RentolaScraper {
 
     logger.info(`🎯 Rentola - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
-    // Rentola usa formato específico para barrios
-    let finalUrl = baseUrl;
-    if (locationInfo?.neighborhood) {
-      const rentolaMapping = LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'rentola');
-      if (rentolaMapping) {
-        finalUrl = `https://www.rentola.com.co/${rentolaMapping}`;
-      }
-    }
+    // Rentola usa formato específico: /apartamentos-en-arriendo/ciudad
+    const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'standard');
+    const finalUrl = `https://www.rentola.com.co/apartamentos-en-arriendo/${cityUrl}`;
 
     return finalUrl;
   }

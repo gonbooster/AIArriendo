@@ -212,7 +212,6 @@ export class LocationDetector {
     };
   }
 
-  // FUNCIONES DUPLICADAS ELIMINADAS - USAR LAS DE ARRIBA
 
   /**
    * Obtener todos los barrios de una ciudad
@@ -271,5 +270,4 @@ export class LocationDetector {
     return null;
   }
 
-  // FUNCIÓN DUPLICADA ELIMINADA - USAR LA DE ARRIBA
 }
