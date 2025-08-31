@@ -124,8 +124,11 @@ export const useSearchProgress = () => {
         // Calcular fuentes completadas
         const sourcesCompleted = Math.floor((newProgress / 100) * SOURCES.length);
 
-        // Simular propiedades encontradas
-        const propertiesFound = Math.floor(newProgress * 7.5); // ~750 propiedades al 100%
+        // 🚀 DINÁMICO: Calcular propiedades basado en progreso real
+        // Usar una función más realista que simule el crecimiento de propiedades
+        const baseProperties = 50; // Propiedades iniciales
+        const maxProperties = 1500; // Máximo realista
+        const propertiesFound = Math.floor(baseProperties + (newProgress / 100) * (maxProperties - baseProperties));
 
         // Estimar tiempo restante
         const estimatedTotal = elapsed > 0 ? (elapsed / newProgress) * 100 : 60;

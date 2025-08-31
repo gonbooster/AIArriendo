@@ -70,14 +70,11 @@ const SimpleSearchPage: React.FC = () => {
     setError(null);
 
     try {
-      // Crear criterios de búsqueda MÍNIMOS - solo operación y ubicación
-      // Crear criterios de búsqueda flexibles
+      // 🚀 CRITERIOS DE BÚSQUEDA INTELIGENTE - Solo operación y texto libre
       const searchCriteria = {
         operation: data.operation,
-        location: {
-          // Usar el texto como búsqueda libre - puede ser ciudad, barrio, zona, etc.
-          neighborhoods: [data.location.trim()]
-        }
+        // 🎯 Enviar texto libre directamente (no como objeto)
+        location: data.location.trim()
       };
 
       console.log('📋 Criterios de búsqueda completos:', searchCriteria);

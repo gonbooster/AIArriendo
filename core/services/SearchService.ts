@@ -496,6 +496,23 @@ export class SearchService {
   }
 
   /**
+   * Get single property by ID
+   */
+  async getPropertyById(propertyId: string): Promise<Property | null> {
+    try {
+      const property = await PropertyModel.findOne({
+        $or: [{ _id: propertyId }, { id: propertyId }],
+        isActive: true
+      });
+
+      return property ? property.toObject() as Property : null;
+    } catch (error) {
+      logger.error('Error getting property by ID:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get similar properties to a given property
    */
   async getSimilarProperties(propertyId: string, limit: number = 5): Promise<Property[]> {

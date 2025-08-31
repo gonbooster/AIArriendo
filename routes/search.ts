@@ -7,14 +7,7 @@ const searchController = new SearchController();
 // Search properties
 router.post('/', searchController.search);
 
-// Start scraping
-router.post('/scrape/start', searchController.startScraping);
 
-// Get scraping status
-router.get('/scrape/status', searchController.getScrapingStatus);
-
-// Stop scraping job
-router.post('/scrape/stop/:jobId', searchController.stopScraping);
 
 // Get available sources
 router.get('/sources', searchController.getSources);
@@ -22,8 +15,14 @@ router.get('/sources', searchController.getSources);
 // Get recommendations
 router.post('/recommendations', searchController.getRecommendations);
 
+// Get single property by ID
+router.get('/property/:id', searchController.getProperty);
+
 // Get similar properties
 router.get('/similar/:propertyId', searchController.getSimilarProperties);
+
+// 🚀 Smart location search
+router.get('/location/search', searchController.smartLocationSearch);
 
 // Get search suggestions (for autocomplete)
 router.get('/suggestions', searchController.getSearchSuggestions);

@@ -234,6 +234,117 @@ export class LocationDetector {
   }
 
   /**
+   * 🚀 BÚSQUEDA INTELIGENTE DE UBICACIÓN
+   * Busca ciudades, barrios y zonas desde texto libre
+   */
+  static smartLocationSearch(searchText: string): {
+    cities: Array<{name: string, code: string, confidence: number}>;
+    neighborhoods: Array<{name: string, city: string, confidence: number}>;
+    zones: Array<{name: string, city: string, confidence: number}>;
+    bestMatch: {type: 'city' | 'neighborhood' | 'zone', name: string, city?: string, confidence: number} | null;
+  } {
+    if (!searchText || typeof searchText !== 'string') {
+      return { cities: [], neighborhoods: [], zones: [], bestMatch: null };
+    }
+
+    const normalizedSearch = this.normalizeText(searchText);
+    const results = {
+      cities: [] as Array<{name: string, code: string, confidence: number}>,
+      neighborhoods: [] as Array<{name: string, city: string, confidence: number}>,
+      zones: [] as Array<{name: string, city: string, confidence: number}>,
+      bestMatch: null as any
+    };
+
+    let bestConfidence = 0;
+
+    // 🔍 BUSCAR CIUDADES
+    this.CITIES_CONFIG.forEach(city => {
+      const cityNames = [city.name, ...city.aliases];
+      cityNames.forEach(name => {
+        const confidence = this.calculateSimilarity(normalizedSearch, this.normalizeText(name));
+        if (confidence > 0.6) { // Umbral de similitud
+          results.cities.push({ name: city.name, code: city.code, confidence });
+          if (confidence > bestConfidence) {
+            bestConfidence = confidence;
+            results.bestMatch = { type: 'city', name: city.name, confidence };
+          }
+        }
+      });
+    });
+
+    // 🔍 BUSCAR BARRIOS
+    this.NEIGHBORHOODS_CONFIG.forEach(neighborhood => {
+      const neighborhoodNames = [neighborhood.name, ...neighborhood.aliases];
+      neighborhoodNames.forEach(name => {
+        const confidence = this.calculateSimilarity(normalizedSearch, this.normalizeText(name));
+        if (confidence > 0.6) {
+          results.neighborhoods.push({
+            name: neighborhood.name,
+            city: neighborhood.city,
+            confidence
+          });
+          if (confidence > bestConfidence) {
+            bestConfidence = confidence;
+            results.bestMatch = {
+              type: 'neighborhood',
+              name: neighborhood.name,
+              city: neighborhood.city,
+              confidence
+            };
+          }
+        }
+      });
+    });
+
+    // Ordenar por confianza
+    results.cities.sort((a, b) => b.confidence - a.confidence);
+    results.neighborhoods.sort((a, b) => b.confidence - a.confidence);
+
+    return results;
+  }
+
+  /**
+   * 🧠 NORMALIZAR TEXTO para comparación inteligente
+   */
+  private static normalizeText(text: string): string {
+    return text
+      .toLowerCase()
+      .normalize('NFD') // Descomponer caracteres acentuados
+      .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+      .replace(/[^\w\s]/g, '') // Eliminar caracteres especiales
+      .replace(/\s+/g, ' ') // Normalizar espacios
+      .trim();
+  }
+
+  /**
+   * 🎯 CALCULAR SIMILITUD entre dos textos
+   */
+  private static calculateSimilarity(text1: string, text2: string): number {
+    // Coincidencia exacta
+    if (text1 === text2) return 1.0;
+
+    // Contiene la búsqueda completa
+    if (text2.includes(text1) || text1.includes(text2)) return 0.9;
+
+    // Similitud por palabras
+    const words1 = text1.split(' ').filter(w => w.length > 2);
+    const words2 = text2.split(' ').filter(w => w.length > 2);
+
+    if (words1.length === 0 || words2.length === 0) return 0;
+
+    let matches = 0;
+    words1.forEach(word1 => {
+      words2.forEach(word2 => {
+        if (word1 === word2 || word1.includes(word2) || word2.includes(word1)) {
+          matches++;
+        }
+      });
+    });
+
+    return matches / Math.max(words1.length, words2.length);
+  }
+
+  /**
    * Obtener variaciones de barrios
    */
   static getNeighborhoodVariations(neighborhood: string): string[] {

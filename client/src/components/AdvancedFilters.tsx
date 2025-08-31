@@ -11,8 +11,7 @@ import {
   Chip,
   Grid,
   Button,
-  Divider,
-  SelectChangeEvent
+  Divider
 } from '@mui/material';
 import {
   FilterList as FilterIcon,
@@ -33,7 +32,7 @@ interface FilterState {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   minScore: number;
-  removeDuplicates: boolean;
+
 }
 
 interface AdvancedFiltersProps {
@@ -81,8 +80,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     pricePerM2Range: initialRanges.pricePerM2Range,
     sortBy: 'price',
     sortOrder: 'asc',
-    minScore: 0,
-    removeDuplicates: true
+    minScore: 0
   });
 
   // Get unique values for filter options
@@ -98,57 +96,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
   const { sources, neighborhoods, roomOptions, bathroomOptions, parkingOptions } = getUniqueValues();
 
-  // Función para eliminar duplicados inteligentemente
-  const removeDuplicates = (properties: Property[]): Property[] => {
-    const duplicateGroups = new Map<string, Property[]>();
 
-    // Agrupar propiedades similares
-    properties.forEach(property => {
-      // Crear clave de similitud basada en título, precio y área (con tolerancia)
-      const normalizedTitle = property.title.toLowerCase()
-        .replace(/[^\w\s]/g, '') // Eliminar caracteres especiales
-        .replace(/\s+/g, ' ')    // Normalizar espacios
-        .trim();
-
-      const priceRange = Math.floor(property.price / 50000) * 50000; // Agrupar por rangos de 50k
-      const areaRange = Math.floor(property.area / 5) * 5; // Agrupar por rangos de 5m²
-
-      const key = `${normalizedTitle}_${priceRange}_${areaRange}`;
-
-      if (!duplicateGroups.has(key)) {
-        duplicateGroups.set(key, []);
-      }
-      duplicateGroups.get(key)!.push(property);
-    });
-
-    // Seleccionar la mejor propiedad de cada grupo
-    const uniqueProperties: Property[] = [];
-
-    duplicateGroups.forEach(group => {
-      if (group.length === 1) {
-        uniqueProperties.push(group[0]);
-      } else {
-        // Seleccionar la propiedad con mejor score, o la más reciente
-        const best = group.reduce((best, current) => {
-          // Priorizar por score si existe
-          if (best.score && current.score) {
-            return current.score > best.score ? current : best;
-          }
-          // Si no hay score, priorizar por fecha de scraping más reciente
-          if (best.scrapedDate && current.scrapedDate) {
-            return new Date(current.scrapedDate) > new Date(best.scrapedDate) ? current : best;
-          }
-          // Por defecto, mantener el primero
-          return best;
-        });
-
-        uniqueProperties.push(best);
-        console.log(`🔄 Duplicate group of ${group.length} properties, selected best from ${best.source}`);
-      }
-    });
-
-    return uniqueProperties;
-  };
 
   // Apply filters - FILTROS DEL FRONTEND REACTIVADOS
   const applyFilters = () => {
@@ -156,11 +104,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
     console.log(`🔍 Applying frontend filters to ${filtered.length} properties`);
 
-    // ✅ FILTRO DE DUPLICADOS ACTIVO (PRIMERO)
-    if (filters.removeDuplicates) {
-      filtered = removeDuplicates(filtered);
-      console.log(`🗑️ Duplicates removed: ${properties.length} -> ${filtered.length} properties`);
-    }
+    // 🚫 FILTRO DE DUPLICADOS ELIMINADO - Solo datos reales
 
     // ✅ FILTROS DEL FRONTEND REACTIVADOS:
 
@@ -271,8 +215,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
   const handleMultiSelectChange = (
     field: keyof FilterState,
-    value: any,
-    event: SelectChangeEvent<any>
+    value: any
   ) => {
     setFilters(prev => ({
       ...prev,
@@ -292,8 +235,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
       pricePerM2Range: initialRanges.pricePerM2Range,
       sortBy: 'price',
       sortOrder: 'asc',
-      minScore: 0,
-      removeDuplicates: true
+      minScore: 0
     });
   };
 
@@ -366,7 +308,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <Select
               multiple
               value={filters.rooms}
-              onChange={(e) => handleMultiSelectChange('rooms', e.target.value, e)}
+              onChange={(e) => handleMultiSelectChange('rooms', e.target.value)}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {(selected as number[]).map((value) => (
@@ -391,7 +333,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <Select
               multiple
               value={filters.bathrooms}
-              onChange={(e) => handleMultiSelectChange('bathrooms', e.target.value, e)}
+              onChange={(e) => handleMultiSelectChange('bathrooms', e.target.value)}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {(selected as number[]).map((value) => (
@@ -416,7 +358,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <Select
               multiple
               value={filters.parking}
-              onChange={(e) => handleMultiSelectChange('parking', e.target.value, e)}
+              onChange={(e) => handleMultiSelectChange('parking', e.target.value)}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {(selected as number[]).map((value) => (
@@ -446,7 +388,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <Select
               multiple
               value={filters.sources}
-              onChange={(e) => handleMultiSelectChange('sources', e.target.value, e)}
+              onChange={(e) => handleMultiSelectChange('sources', e.target.value)}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {(selected as string[]).map((value) => (
@@ -471,7 +413,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <Select
               multiple
               value={filters.neighborhoods}
-              onChange={(e) => handleMultiSelectChange('neighborhoods', e.target.value, e)}
+              onChange={(e) => handleMultiSelectChange('neighborhoods', e.target.value)}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {(selected as string[]).map((value) => (
@@ -518,28 +460,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           </FormControl>
         </Grid>
 
-        {/* Remove Duplicates Toggle */}
-        <Grid item xs={12}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              🗑️ Eliminar Duplicados
-            </Typography>
-            <FormControl>
-              <Select
-                value={filters.removeDuplicates ? 'enabled' : 'disabled'}
-                onChange={(e) => setFilters(prev => ({ ...prev, removeDuplicates: e.target.value === 'enabled' }))}
-                size="small"
-                sx={{ minWidth: 120 }}
-              >
-                <MenuItem value="enabled">✅ Activado</MenuItem>
-                <MenuItem value="disabled">❌ Desactivado</MenuItem>
-              </Select>
-            </FormControl>
-            <Typography variant="caption" color="text.secondary">
-              Detecta y elimina propiedades similares automáticamente
-            </Typography>
-          </Box>
-        </Grid>
+
       </Grid>
     </Paper>
   );

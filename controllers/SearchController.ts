@@ -5,7 +5,7 @@ import { SCRAPING_SOURCES } from '../config/scraping-sources';
 import { SearchCriteria, ApiResponse } from '../core/types';
 import { asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
-import { SEARCH, PROPERTY_DEFAULTS, LOCATION, SCORING } from '../config/constants';
+import { SEARCH } from '../config/constants';
 
 export class SearchController {
   private searchService: SearchService;
@@ -79,95 +79,15 @@ export class SearchController {
       res.json(response);
 
     } catch (error) {
-      logger.error('Search failed:', error);
-      throw error;
-    }
-  });
-
-  /**
-   * Start scraping process
-   */
-  startScraping = asyncHandler(async (req: Request, res: Response) => {
-    const { sources, criteria } = req.body;
-
-    // Default to all active sources if none specified
-    const sourcesToScrape = sources 
-      ? SCRAPING_SOURCES.filter(s => sources.includes(s.id) && s.isActive)
-      : SCRAPING_SOURCES.filter(s => s.isActive);
-
-    if (sourcesToScrape.length === 0) {
-      return res.status(400).json({
+      logger.error('🚨 Real search failed:', error);
+      res.status(500).json({
         success: false,
-        error: 'No valid sources specified'
+        error: 'Real scraping failed - no fallback data available'
       });
     }
-
-    logger.info(`Starting scraping for ${sourcesToScrape.length} sources`);
-
-    try {
-      // Use default criteria if none provided
-      const scrapingCriteria = criteria || this.getDefaultScrapingCriteria();
-      
-      // const jobs = await this.scrapingEngine.startScraping(sourcesToScrape, scrapingCriteria);
-      const jobs: any[] = []; // Placeholder
-
-      const response: ApiResponse = {
-        success: true,
-        data: jobs,
-        message: `Started scraping for ${sourcesToScrape.length} sources`
-      };
-
-      res.json(response);
-
-    } catch (error) {
-      logger.error('Failed to start scraping:', error);
-      throw error;
-    }
   });
 
-  /**
-   * Get scraping status
-   */
-  getScrapingStatus = asyncHandler(async (req: Request, res: Response) => {
-    // const jobs = this.scrapingEngine.getActiveJobs();
-    // const statistics = this.scrapingEngine.getStatistics();
-    const jobs: any[] = [];
-    const statistics = {};
 
-    const response: ApiResponse = {
-      success: true,
-      data: {
-        activeJobs: jobs,
-        statistics
-      }
-    };
-
-    res.json(response);
-  });
-
-  /**
-   * Stop scraping job
-   */
-  stopScraping = asyncHandler(async (req: Request, res: Response) => {
-    const { jobId } = req.params;
-
-    // const success = await this.scrapingEngine.stopJob(jobId);
-    const success = false; // Placeholder
-
-    if (!success) {
-      return res.status(404).json({
-        success: false,
-        error: 'Job not found or cannot be stopped'
-      });
-    }
-
-    const response: ApiResponse = {
-      success: true,
-      message: 'Scraping job stopped successfully'
-    };
-
-    res.json(response);
-  });
 
   /**
    * Get available sources
@@ -206,6 +126,37 @@ export class SearchController {
   });
 
   /**
+   * Get single property by ID
+   */
+  getProperty = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+      const property = await this.searchService.getPropertyById(id);
+
+      if (!property) {
+        return res.status(404).json({
+          success: false,
+          error: 'Property not found'
+        });
+      }
+
+      const response: ApiResponse = {
+        success: true,
+        data: property
+      };
+
+      res.json(response);
+    } catch (error) {
+      logger.error('Error getting property:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  });
+
+  /**
    * Get similar properties
    */
   getSimilarProperties = asyncHandler(async (req: Request, res: Response) => {
@@ -220,6 +171,34 @@ export class SearchController {
     };
 
     res.json(response);
+  });
+
+  /**
+   * 🚀 BÚSQUEDA INTELIGENTE DE UBICACIONES
+   */
+  smartLocationSearch = asyncHandler(async (req: Request, res: Response) => {
+    const { q } = req.query;
+
+    if (!q || typeof q !== 'string') {
+      return res.json({
+        success: true,
+        data: { cities: [], neighborhoods: [], zones: [], bestMatch: null }
+      });
+    }
+
+    const LocationDetector = require('../core/utils/LocationDetector').LocationDetector;
+    const results = LocationDetector.smartLocationSearch(q);
+
+    logger.info(`🔍 Búsqueda inteligente para "${q}":`, {
+      cities: results.cities.length,
+      neighborhoods: results.neighborhoods.length,
+      bestMatch: results.bestMatch
+    });
+
+    res.json({
+      success: true,
+      data: results
+    });
   });
 
   /**
@@ -308,16 +287,19 @@ export class SearchController {
         propertyTypes: frontendCriteria.propertyTypes || ['Apartamento'],
         operation: frontendCriteria.operation || 'arriendo',
 
-        // Ubicación - Dinámico basado en texto de búsqueda
-        location: {
-          city: '', // No hardcodear ciudad
-          minStreet: frontendCriteria.location?.minStreet,
-          maxStreet: frontendCriteria.location?.maxStreet,
-          minCarrera: frontendCriteria.location?.minCarrera,
-          maxCarrera: frontendCriteria.location?.maxCarrera,
-          neighborhoods: frontendCriteria.location?.neighborhoods || frontendCriteria.neighborhoods || [],
-          zones: frontendCriteria.location?.zones || []
-        }
+        // 🚀 Ubicación - Detección inteligente automática
+        location: (() => {
+          const detectedLocation = this.detectLocationFromCriteria(frontendCriteria);
+          return {
+            city: detectedLocation.city,
+            minStreet: frontendCriteria.location?.minStreet,
+            maxStreet: frontendCriteria.location?.maxStreet,
+            minCarrera: frontendCriteria.location?.minCarrera,
+            maxCarrera: frontendCriteria.location?.maxCarrera,
+            neighborhoods: detectedLocation.neighborhoods,
+            zones: detectedLocation.zones
+          };
+        })()
       },
       preferences: {
         wetAreas: frontendCriteria.preferences?.wetAreas || [],
@@ -382,32 +364,70 @@ export class SearchController {
   }
 
   /**
-   * Get default scraping criteria
+   * 🚀 DETECTAR UBICACIÓN INTELIGENTE desde texto libre
    */
-  private getDefaultScrapingCriteria(): SearchCriteria {
-    return {
-      hardRequirements: {
-        minRooms: 1,
-        minArea: 30,
-        maxTotalPrice: 10000000,
-        allowAdminOverage: true,
-        location: {
-          city: '', // Dinámico
-          zones: []
+  private detectLocationFromCriteria(frontendCriteria: any): {
+    city: string;
+    neighborhoods: string[];
+    zones: string[];
+  } {
+    const LocationDetector = require('../core/utils/LocationDetector').LocationDetector;
+
+    // 1. Si viene texto libre de ubicación (STRING DIRECTO)
+    const locationText = typeof frontendCriteria.location === 'string'
+                        ? frontendCriteria.location
+                        : frontendCriteria.location?.text ||
+                          frontendCriteria.location?.neighborhoods?.[0] ||
+                          frontendCriteria.neighborhoods?.[0] ||
+                          frontendCriteria.city || '';
+
+    if (locationText && typeof locationText === 'string') {
+      logger.info(`🔍 Búsqueda inteligente de ubicación: "${locationText}"`);
+
+      const searchResults = LocationDetector.smartLocationSearch(locationText);
+
+      if (searchResults.bestMatch && searchResults.bestMatch.confidence >= 0.7) {
+        const match = searchResults.bestMatch;
+        logger.info(`🎯 Mejor coincidencia: ${match.type} "${match.name}" (confianza: ${match.confidence.toFixed(2)})`);
+
+        if (match.type === 'city') {
+          return {
+            city: match.name,
+            neighborhoods: [],
+            zones: []
+          };
+        } else if (match.type === 'neighborhood') {
+          return {
+            city: match.city,
+            neighborhoods: [match.name],
+            zones: []
+          };
         }
-      },
-      preferences: {
-        wetAreas: ['jacuzzi', 'sauna', 'turco'],
-        sports: ['padel', 'tenis'],
-        amenities: ['gimnasio', 'piscina', 'salon social'],
-        weights: {
-          wetAreas: 1.0,
-          sports: 1.0,
-          amenities: 0.5,
-          location: 0.3,
-          pricePerM2: 0.4
-        }
+      } else {
+        // 🚫 NO SE ENCONTRÓ UBICACIÓN VÁLIDA - NO BUSCAR
+        logger.warn(`🚫 No se encontró ubicación válida para: "${locationText}"`);
+        throw new Error(`No se encontró la ubicación "${locationText}". Por favor verifica el nombre de la ciudad o barrio.`);
       }
-    };
+    }
+
+    // 2. Fallback: Detectar desde neighborhoods array (compatibilidad)
+    const neighborhoods = frontendCriteria.location?.neighborhoods || frontendCriteria.neighborhoods || [];
+    if (neighborhoods.length > 0) {
+      const locationInfo = LocationDetector.detectLocation(neighborhoods[0]);
+      if (locationInfo.city) {
+        logger.info(`🎯 Ciudad detectada desde barrio "${neighborhoods[0]}": ${locationInfo.city}`);
+        return {
+          city: locationInfo.city,
+          neighborhoods: neighborhoods,
+          zones: []
+        };
+      }
+    }
+
+    // 🚫 NO HAY UBICACIÓN VÁLIDA - NO BUSCAR
+    logger.warn('🚫 No se pudo detectar ubicación válida');
+    throw new Error('No se especificó una ubicación válida. Por favor ingresa una ciudad o barrio.');
   }
+
+
 }

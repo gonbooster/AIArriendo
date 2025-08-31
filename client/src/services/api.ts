@@ -63,22 +63,12 @@ export const searchAPI = {
       console.log('🚀🚀🚀 USANDO BACKEND REPARADO - VERSIÓN NUEVA 🚀🚀🚀');
       console.log('📋 CRITERIOS EXACTOS RECIBIDOS:', JSON.stringify(criteria, null, 2));
 
-      // Try main search endpoint first, fallback to static data
-      let response;
-      try {
-        response = await apiClient.post('/search', {
-          criteria: criteria,
-          page: page,
-          limit: limit
-        });
-      } catch (mainError) {
-        console.warn('⚠️ Main search failed, trying static data fallback...');
-        response = await apiClient.post('/search/static', {
-          criteria: criteria,
-          page: page,
-          limit: limit
-        });
-      }
+      // 🚀 SOLO SCRAPERS REALES - SIN FALLBACK
+      const response = await apiClient.post('/search', {
+        criteria: criteria,
+        page: page,
+        limit: limit
+      });
       
       console.log(`📊 Backend response:`, response.data);
       
@@ -130,6 +120,42 @@ export const searchAPI = {
     } catch (error) {
       console.error('Error getting sources:', error);
       return { success: false, data: [] };
+    }
+  },
+
+  // Get single property by ID
+  getProperty: async (id: string) => {
+    try {
+      const response = await apiClient.get(`/properties/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting property:', error);
+      // Return mock property for now
+      return {
+        id,
+        title: 'Propiedad no encontrada',
+        price: 0,
+        adminFee: 0,
+        totalPrice: 0,
+        area: 0,
+        rooms: 0,
+        bathrooms: 0,
+        parking: 0,
+        location: {
+          address: '',
+          neighborhood: '',
+          city: 'Bogotá',
+          coordinates: { lat: 0, lng: 0 }
+        },
+        amenities: [],
+        images: [],
+        url: '',
+        source: 'Unknown',
+        scrapedDate: new Date().toISOString(),
+        pricePerM2: 0,
+        description: 'Propiedad no disponible',
+        isActive: false
+      };
     }
   },
 

@@ -150,6 +150,11 @@ app.get('/api/dashboard/stats', (req, res) => {
 // Use search routes
 app.use('/api/search', searchRoutes);
 
+// Property routes (direct access)
+const searchController = new (require('./controllers/SearchController').SearchController)();
+app.get('/api/properties/:id', searchController.getProperty);
+app.get('/api/properties/:id/similar', searchController.getSimilarProperties);
+
 // Serve static files from React build
 const staticPath = path.join(__dirname, '../client/build');
 logger.info(`🔧 Static files path: ${staticPath}`);
@@ -166,102 +171,7 @@ if (fs.existsSync(staticPath)) {
 
 app.use(express.static(staticPath));
 
-// Quick fix: Serve static data for immediate functionality
-app.post('/api/search/static', (req, res) => {
-  try {
-    const fs = require('fs');
-    const path = require('path');
-
-    // Read the latest raw data file
-    const dataPath = path.join(__dirname, '../search-results/RAW_DATA_0.txt');
-
-    if (!fs.existsSync(dataPath)) {
-      return res.status(404).json({
-        success: false,
-        error: 'No static data available'
-      });
-    }
-
-    const rawData = fs.readFileSync(dataPath, 'utf8');
-    const lines = rawData.split('\n').filter((line: string) => line.trim());
-
-    const properties = lines.map((line: string, index: number) => {
-      try {
-        const property = JSON.parse(line);
-
-        // Fix corrupted data from PADS scraper
-        let price = property.price || 0;
-        let area = property.area || 0;
-        let totalPrice = property.totalPrice || 0;
-
-        // Extract price from title if price is 0
-        if (price === 0 && property.title) {
-          const priceMatch = property.title.match(/COP\s*([\d.,]+)/);
-          if (priceMatch) {
-            price = parseInt(priceMatch[1].replace(/[.,]/g, ''));
-            totalPrice = price;
-          }
-        }
-
-        // Extract area from title if area is 0
-        if (area === 0 && property.title) {
-          const areaMatch = property.title.match(/(\d+)\s*m2/);
-          if (areaMatch) {
-            area = parseInt(areaMatch[1]);
-          }
-        }
-
-        // Generate realistic fallback data if still missing
-        if (price === 0) price = Math.floor(Math.random() * 5000000) + 1000000;
-        if (area === 0) area = Math.floor(Math.random() * 200) + 50;
-        if (totalPrice === 0) totalPrice = price;
-
-        const pricePerM2 = Math.floor(totalPrice / area);
-
-        // Return fixed property
-        return {
-          ...property,
-          price: price,
-          totalPrice: totalPrice,
-          area: area,
-          pricePerM2: pricePerM2,
-          stratum: property.stratum || Math.floor(Math.random() * 6) + 1,
-          propertyType: property.propertyType || (Math.random() > 0.7 ? 'Casa' : 'Apartamento'),
-          amenities: property.amenities || ['Parqueadero', 'Piscina']
-        };
-      } catch (e) {
-        return null;
-      }
-    }).filter(Boolean);
-
-    logger.info(`📊 Serving ${properties.length} static properties`);
-
-    res.json({
-      success: true,
-      data: {
-        properties: properties.slice(0, 1000), // Limit to 1000 for performance
-        total: properties.length
-      },
-      pagination: {
-        page: 1,
-        limit: 1000,
-        total: properties.length,
-        pages: 1
-      },
-      metadata: {
-        source: 'static',
-        version: '3.0.0'
-      }
-    });
-
-  } catch (error) {
-    logger.error('Error serving static data:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to load static data'
-    });
-  }
-});
+// 🚀 DATOS ESTÁTICOS ELIMINADOS - SOLO SCRAPERS REALES
 
 app.get('/api/search/sources', (req, res) => {
   res.json({
