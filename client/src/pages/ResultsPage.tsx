@@ -29,6 +29,7 @@ import PropertyFilters from '../components/filters/Filters';
 import PropertyStatsMUI from '../components/stats/PropertyStatsMUI';
 import PropertyCard from '../components/PropertyCard';
 import SearchProgress from '../components/SearchProgressNew';
+import CacheInfoBanner from '../components/CacheInfoBanner';
 import { Property } from '../types';
 import { searchAPI } from '../services/api';
 
@@ -48,6 +49,7 @@ const NewResultsPage: React.FC = () => {
   const [allProperties, setAllProperties] = useState<Property[]>(initialResults?.properties || []);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>(initialResults?.properties || []);
   const [propertyStats, setPropertyStats] = useState<any>(null);
+  const [cacheInfo, setCacheInfo] = useState<any>(initialResults?.cacheInfo || null);
 
   // Paginación local
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,11 +70,12 @@ const NewResultsPage: React.FC = () => {
         try {
           const result = await searchAPI.search(searchCriteria);
           console.log('✅ Búsqueda completada:', result);
-          
+
           const properties = result.properties || [];
           setAllProperties(properties);
           setFilteredProperties(properties);
-          
+          setCacheInfo(result.cacheInfo); // 🚀 Capturar información de cache
+
         } catch (err) {
           console.error('❌ Error en búsqueda:', err);
           setError('Error al buscar propiedades. Por favor intenta de nuevo.');
@@ -175,6 +178,12 @@ const NewResultsPage: React.FC = () => {
           </Typography>
         </Box>
       </Box>
+
+      {/* 🚀 Banner de información de cache */}
+      <CacheInfoBanner
+        cacheInfo={cacheInfo}
+        totalProperties={allProperties.length}
+      />
 
       {/* Estadísticas Modernas */}
       {allProperties.length > 0 && (

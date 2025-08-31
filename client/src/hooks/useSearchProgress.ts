@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { searchAPI } from '../services/api';
 
 interface SearchProgressState {
   isSearching: boolean;
@@ -10,6 +11,7 @@ interface SearchProgressState {
   propertiesFound: number;
   timeElapsed: number;
   estimatedTimeRemaining: number;
+  sources: string[]; // Fuentes dinámicas desde backend
 }
 
 const SEARCH_PHASES = [
@@ -73,14 +75,44 @@ export const useSearchProgress = () => {
     totalSources: SOURCES.length,
     propertiesFound: 0,
     timeElapsed: 0,
-    estimatedTimeRemaining: 60
+    estimatedTimeRemaining: 60,
+    sources: SOURCES // Inicializar con fuentes por defecto
   });
 
   const [startTime, setStartTime] = useState<number>(0);
 
-  const startSearch = useCallback(() => {
+  // 🚀 Cargar fuentes dinámicamente desde backend
+  const loadDynamicSources = useCallback(async () => {
+    try {
+      const response = await fetch('/api/search/sources');
+      const data = await response.json();
+      if (data.success && data.data) {
+        const sourceNames = data.data
+          .filter((source: any) => source.isActive)
+          .sort((a: any, b: any) => a.priority - b.priority)
+          .map((source: any) => source.name);
+
+        setState(prev => ({
+          ...prev,
+          sources: sourceNames,
+          totalSources: sourceNames.length
+        }));
+
+        return sourceNames;
+      }
+    } catch (error) {
+      console.warn('Failed to load dynamic sources, using fallback:', error);
+    }
+    return SOURCES; // Fallback a fuentes estáticas
+  }, []);
+
+  const startSearch = useCallback(async () => {
     const now = Date.now();
     setStartTime(now);
+
+    // 🚀 Cargar fuentes dinámicas al iniciar búsqueda
+    const dynamicSources = await loadDynamicSources();
+
     setState(prev => ({
       ...prev,
       isSearching: true,
@@ -90,9 +122,11 @@ export const useSearchProgress = () => {
       sourcesCompleted: 0,
       propertiesFound: 0,
       timeElapsed: 0,
-      estimatedTimeRemaining: 60
+      estimatedTimeRemaining: 60,
+      sources: dynamicSources,
+      totalSources: dynamicSources.length
     }));
-  }, []);
+  }, [loadDynamicSources]);
 
   const updateProgress = useCallback((updates: Partial<SearchProgressState>) => {
     setState(prev => ({ ...prev, ...updates }));
@@ -106,7 +140,7 @@ export const useSearchProgress = () => {
       progress: 100,
       currentPhase: randomCompletionMessage,
       estimatedTimeRemaining: 0,
-      sourcesCompleted: SOURCES.length // Asegurar que todas las fuentes aparezcan como completadas
+      sourcesCompleted: prev.sources.length // Usar fuentes dinámicas
     }));
   }, []);
 
@@ -130,12 +164,13 @@ export const useSearchProgress = () => {
           currentPhase = randomMessage;
         }
 
-        // Cambiar fuente basado en progreso
-        const sourceIndex = Math.floor((newProgress / 100) * SOURCES.length);
-        const currentSource = sourceIndex < SOURCES.length ? SOURCES[sourceIndex] : '';
+        // Cambiar fuente basado en progreso (usar fuentes dinámicas)
+        const currentSources = prev.sources;
+        const sourceIndex = Math.floor((newProgress / 100) * currentSources.length);
+        const currentSource = sourceIndex < currentSources.length ? currentSources[sourceIndex] : '';
 
         // Calcular fuentes completadas
-        const sourcesCompleted = Math.floor((newProgress / 100) * SOURCES.length);
+        const sourcesCompleted = Math.floor((newProgress / 100) * currentSources.length);
 
         // 🚀 DINÁMICO: Calcular propiedades basado en progreso real
         // Usar una función más realista que simule el crecimiento de propiedades
@@ -168,6 +203,6 @@ export const useSearchProgress = () => {
     startSearch,
     updateProgress,
     completeSearch,
-    SOURCES
+    SOURCES: state.sources // Usar fuentes dinámicas en lugar de estáticas
   };
 };

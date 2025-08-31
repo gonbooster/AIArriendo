@@ -12,7 +12,7 @@ export class ArriendoScraper {
   constructor() {
     this.source = {
       id: 'arriendo',
-      name: 'Arriendo.com',
+      name: 'Arriendo',
       baseUrl: 'https://www.arriendo.com',
       isActive: true,
       priority: 12,

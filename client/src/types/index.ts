@@ -39,6 +39,7 @@ export interface Property {
   preferenceMatches?: string[];
   isActive: boolean;
   ageInDays?: number;
+  isNew?: boolean; // 🆕 Marca para propiedades nuevas desde cache
 }
 
 export interface SearchCriteria {
@@ -84,6 +85,12 @@ export interface SearchResult {
     averagePricePerM2: number;
     averageArea: number;
     sourceBreakdown: { [source: string]: number };
+  };
+  cacheInfo?: {
+    wasFromCache: boolean;
+    hasNewItems: boolean;
+    totalNewItems: number;
+    cacheAge: number;
   };
 }
 

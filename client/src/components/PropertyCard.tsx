@@ -14,6 +14,7 @@ import {
   Stack,
   Divider,
 } from '@mui/material';
+import NewPropertyBadge from './NewPropertyBadge';
 import {
   Favorite as FavoriteIcon,
   FavoriteBorder as FavoriteBorderIcon,
@@ -161,6 +162,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           {/* Badges izquierda */}
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {/* 🆕 Badge de propiedad nueva */}
+            <NewPropertyBadge isNew={property.isNew} />
+
             <Chip
               icon={<StarIcon />}
               label={property.score?.toFixed(1) || '0.0'}

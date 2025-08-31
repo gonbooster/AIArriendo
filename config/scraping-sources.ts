@@ -91,7 +91,7 @@ export const SCRAPING_SOURCES: ScrapingSource[] = [
 
   {
     id: 'arriendo',
-    name: 'Arriendo.com',
+    name: 'Arriendo',
     baseUrl: 'https://www.arriendo.com',
     isActive: true,
     priority: 6,

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { SearchCriteria, SearchResult } from '../types';
 import { SERVER, FRONTEND, SEARCH } from '../config/constants';
+import CacheService from './cacheService';
 
 // Create axios instance for backend API - Dynamic detection
 const isLocalhost = SERVER.LOCALHOST_HOSTNAMES.includes(window.location.hostname as any);
@@ -57,11 +58,22 @@ apiClient.interceptors.response.use(
 );
 
 export const searchAPI = {
-  // Search properties using backend server
+  // Search properties using backend server with intelligent caching
   search: async (criteria: SearchCriteria, page: number = SEARCH.DEFAULT_PAGE, limit: number = SEARCH.DEFAULT_LIMIT): Promise<SearchResult> => {
     try {
-      console.log('🚀🚀🚀 USANDO BACKEND REPARADO - VERSIÓN NUEVA 🚀🚀🚀');
+      console.log('🚀🚀🚀 USANDO BACKEND CON CACHE INTELIGENTE 🚀🚀🚀');
       console.log('📋 CRITERIOS EXACTOS RECIBIDOS:', JSON.stringify(criteria, null, 2));
+
+      // 🚀 VERIFICAR CACHE PRIMERO
+      const cacheResult = CacheService.getCachedProperties(criteria);
+      let useCache = false;
+      let cachedProperties: any[] = [];
+
+      if (cacheResult) {
+        console.log(`📦 Cache encontrado: ${cacheResult.cached.length} propiedades (${cacheResult.cacheAge}s)`);
+        cachedProperties = cacheResult.cached;
+        useCache = true;
+      }
 
       // 🚀 NORMALIZAR CRITERIOS ANTES DE ENVIAR
       const normalizedCriteria = {
@@ -74,26 +86,58 @@ export const searchAPI = {
 
       console.log('🔧 Criterios normalizados:', normalizedCriteria);
 
-      // 🚀 SOLO SCRAPERS REALES - SIN FALLBACK
+      // 🚀 EJECUTAR BÚSQUEDA EN BACKEND
       const response = await apiClient.post('/search', {
         criteria: normalizedCriteria,
         page: page,
         limit: limit
       });
-      
+
       console.log(`📊 Backend response:`, response.data);
-      
+
       if (response.data.success) {
         const backendResult = response.data.data;
-        console.log(`📊 Loaded ${backendResult.properties?.length || 0} properties from backend`);
-        
+        const newProperties = backendResult.properties || [];
+
+        console.log(`📊 Loaded ${newProperties.length} properties from backend`);
+
+        let finalProperties = newProperties;
+        let hasNewItems = false;
+        let totalNewItems = 0;
+
+        // 🔍 COMPARAR CON CACHE SI EXISTE
+        if (useCache && cachedProperties.length > 0) {
+          const comparison = CacheService.compareWithCache(newProperties, cachedProperties);
+
+          if (comparison.totalNew > 0) {
+            console.log(`🆕 Found ${comparison.totalNew} new properties!`);
+            // Combinar: nuevos primero, luego existentes
+            finalProperties = [...comparison.newItems, ...comparison.existingItems];
+            hasNewItems = true;
+            totalNewItems = comparison.totalNew;
+          } else {
+            console.log(`♻️ No new properties found, using fresh data`);
+            finalProperties = newProperties;
+          }
+        }
+
+        // 💾 GUARDAR EN CACHE (siempre actualizar)
+        CacheService.setCachedProperties(normalizedCriteria, newProperties);
+
         return {
-          properties: backendResult.properties || [],
-          total: backendResult.total || 0,
+          properties: finalProperties,
+          total: backendResult.total || finalProperties.length,
           page: page,
           limit: limit,
           filters: criteria,
-          summary: backendResult.summary
+          summary: backendResult.summary,
+          // 🆕 Metadata de cache
+          cacheInfo: {
+            wasFromCache: useCache,
+            hasNewItems,
+            totalNewItems,
+            cacheAge: cacheResult?.cacheAge || 0
+          }
         };
       } else {
         throw new Error(response.data.error || 'Backend search failed');

@@ -180,7 +180,11 @@ app.get('/api/search/sources', (req, res) => {
       { id: 'fincaraiz', name: 'Fincaraiz', isActive: true, priority: 1 },
       { id: 'metrocuadrado', name: 'Metrocuadrado', isActive: true, priority: 2 },
       { id: 'trovit', name: 'Trovit', isActive: true, priority: 3 },
-      { id: 'facebook', name: 'Facebook Marketplace', isActive: true, priority: 4 }
+      { id: 'arriendo', name: 'Arriendo', isActive: true, priority: 4 },
+      { id: 'ciencuadras', name: 'Ciencuadras', isActive: true, priority: 5 },
+      { id: 'rentola', name: 'Rentola', isActive: true, priority: 6 },
+      { id: 'properati', name: 'Properati', isActive: true, priority: 7 },
+      { id: 'pads', name: 'PADS', isActive: true, priority: 8 }
     ]
   });
 });
