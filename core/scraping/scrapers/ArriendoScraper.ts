@@ -162,8 +162,11 @@ export class ArriendoScraper {
   private extractArriendoProperties($: cheerio.CheerioAPI, criteria: SearchCriteria): Property[] {
     const properties: Property[] = [];
 
-    // Arriendo.com specific selectors
+    // Arriendo.com specific selectors - basado en estructura real
     const selectors = [
+      '.es-listing',
+      '.es-entity',
+      'article.es-listing',
       '.property-card',
       '.listing-card',
       '.inmueble-item',
@@ -199,14 +202,14 @@ export class ArriendoScraper {
         const title = $card.find('h2, h3, .title, .property-title, [class*="title"]').first().text().trim() ||
                      $card.find('a').first().attr('title') || 'Propiedad en Arriendo.com';
 
-        // Extract price
-        const priceText = $card.find('.price, .precio, [class*="price"], [class*="precio"]').first().text().trim();
+        // Extract price - Arriendo.com usa .es-price
+        const priceText = $card.find('.es-price, .price, .precio, [class*="price"], [class*="precio"]').first().text().trim();
         const price = this.extractPriceFromText(priceText);
 
         if (!price || price <= 0) return;
 
-        // Extract location
-        const location = $card.find('.location, .ubicacion, [class*="location"], [class*="ubicacion"]').first().text().trim() ||
+        // Extract location - Arriendo.com usa estructura específica
+        const location = $card.find('.es-listing__location, .es-listing__address, .location, .ubicacion, [class*="location"], [class*="ubicacion"]').first().text().trim() ||
                         $card.find('.address, .direccion').first().text().trim();
 
         // Extract URL
