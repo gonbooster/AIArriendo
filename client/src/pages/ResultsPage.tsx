@@ -25,7 +25,7 @@ import {
 } from '@mui/icons-material';
 
 import AdvancedFilters from '../components/AdvancedFilters';
-import PropertyFilters from '../components/filters/ModernFiltersMUI';
+import PropertyFilters from '../components/filters/Filters';
 import PropertyStatsMUI from '../components/stats/PropertyStatsMUI';
 import PropertyCard from '../components/PropertyCard';
 import SearchProgress from '../components/SearchProgressNew';
