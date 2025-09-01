@@ -223,6 +223,36 @@ export class PadsScraper {
         }
       }
 
+      // 🆕 EXTRAER ESTRATO CON PATRONES MEJORADOS
+      const fullText = `${data.title} ${data.location}`.toLowerCase();
+      let stratum = 0;
+      const stratumPatterns = [
+        /(?:estrato|est)[:\s]*(\d+)/i,
+        /(\d+)\s*(?:estrato|est)/i
+      ];
+      for (const pattern of stratumPatterns) {
+        const match = fullText.match(pattern);
+        if (match) {
+          stratum = parseInt(match[1]) || 0;
+          break;
+        }
+      }
+
+      // 🆕 MEJORAR EXTRACCIÓN DE ÁREA SI NO SE ENCONTRÓ
+      if (!area) {
+        const areaPatterns = [
+          /(\d+(?:\.\d+)?)\s*(?:m2|m²|metros|mts|mt)/i,
+          /(?:area|área|superficie)[:\s]*(\d+(?:\.\d+)?)/i
+        ];
+        for (const pattern of areaPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            area = parseFloat(match[1]) || 0;
+            break;
+          }
+        }
+      }
+
       return {
         id: `pads-${Date.now()}-${Math.random()}`,
         source: 'PADS',
@@ -234,7 +264,7 @@ export class PadsScraper {
         rooms,
         bathrooms: 1,
         parking,
-        stratum: 0,
+        stratum, // 🆕 USAR ESTRATO EXTRAÍDO
         location: {
           address: data.location,
           neighborhood: data.location.split(',')[0]?.trim() || '',

@@ -523,10 +523,84 @@ export class MetrocuadradoScraper {
         const price = parseInt((it.priceText || '').replace(/[^\d]/g, '')) || 0;
         if (!price) return;
 
-        // Extraer datos mejorados de los nuevos campos
-        const area = parseInt((it as any).area || '0') || 0;
-        const rooms = parseInt((it as any).rooms || '0') || 0;
-        const bathrooms = parseInt((it as any).bathrooms || '0') || 0;
+        // 🆕 EXTRAER DATOS MEJORADOS CON PATRONES ESPECÍFICOS
+        const fullText = `${it.title} ${it.loc}`.toLowerCase();
+
+        // Extraer área con patrones mejorados
+        let area = parseInt((it as any).area || '0') || 0;
+        if (!area) {
+          const areaPatterns = [
+            /(\d+(?:\.\d+)?)\s*(?:m2|m²|metros|mts|mt)/i,
+            /(?:area|área|superficie)[:\s]*(\d+(?:\.\d+)?)/i
+          ];
+          for (const pattern of areaPatterns) {
+            const match = fullText.match(pattern);
+            if (match) {
+              area = parseFloat(match[1]) || 0;
+              break;
+            }
+          }
+        }
+
+        // Extraer habitaciones con patrones mejorados
+        let rooms = parseInt((it as any).rooms || '0') || 0;
+        if (!rooms) {
+          const roomsPatterns = [
+            /(\d+)\s*(?:hab|habitacion|habitaciones|alcoba|alcobas|dormitorio|dormitorios)/i,
+            /(?:hab|habitacion|habitaciones|alcoba|alcobas)[:\s]*(\d+)/i
+          ];
+          for (const pattern of roomsPatterns) {
+            const match = fullText.match(pattern);
+            if (match) {
+              rooms = parseInt(match[1]) || 0;
+              break;
+            }
+          }
+        }
+
+        // Extraer baños con patrones mejorados
+        let bathrooms = parseInt((it as any).bathrooms || '0') || 0;
+        if (!bathrooms) {
+          const bathroomPatterns = [
+            /(\d+)\s*(?:baño|baños|bathroom|bathrooms)/i,
+            /(?:baño|baños|bathroom|bathrooms)[:\s]*(\d+)/i
+          ];
+          for (const pattern of bathroomPatterns) {
+            const match = fullText.match(pattern);
+            if (match) {
+              bathrooms = parseInt(match[1]) || 0;
+              break;
+            }
+          }
+        }
+
+        // 🆕 EXTRAER PARQUEADEROS CON PATRONES MEJORADOS
+        let parking = 0;
+        const parkingPatterns = [
+          /(\d+)\s*(?:parq|parqueadero|parqueaderos|garage|garaje|parking)/i,
+          /(?:parq|parqueadero|parqueaderos|garage|garaje|parking)[:\s]*(\d+)/i
+        ];
+        for (const pattern of parkingPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            parking = parseInt(match[1]) || 0;
+            break;
+          }
+        }
+
+        // 🆕 EXTRAER ESTRATO CON PATRONES MEJORADOS
+        let stratum = 0;
+        const stratumPatterns = [
+          /(?:estrato|est)[:\s]*(\d+)/i,
+          /(\d+)\s*(?:estrato|est)/i
+        ];
+        for (const pattern of stratumPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            stratum = parseInt(match[1]) || 0;
+            break;
+          }
+        }
 
         // Extraer ubicación más específica
         let neighborhood = it.loc || '';
@@ -540,22 +614,7 @@ export class MetrocuadradoScraper {
           }
         }
 
-        // Extraer información adicional del texto completo
-        const fullText = (it as any).fullText || '';
-
-        // Extraer parqueaderos del texto
-        let parking = 0;
-        const parkingMatch = fullText.match(/(\d+)\s*garaje/i);
-        if (parkingMatch) {
-          parking = parseInt(parkingMatch[1]);
-        }
-
-        // Extraer estrato del texto
-        let stratum = 0;
-        const stratumMatch = fullText.match(/estrato\s*(\d+)/i);
-        if (stratumMatch) {
-          stratum = parseInt(stratumMatch[1]);
-        }
+        // ✅ Ya tenemos parking y stratum extraídos arriba con patrones mejorados
 
         const p: Property = {
           id: `m2_headless_${Date.now()}_${idx}`,

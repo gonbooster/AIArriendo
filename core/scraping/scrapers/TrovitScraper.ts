@@ -104,10 +104,10 @@ export class TrovitScraper {
       // Esperar a que cargue el contenido
       await new Promise(resolve => setTimeout(resolve, 3000));
 
-      // 🔥 EXTRACCIÓN AGRESIVA
+      // 🔥 EXTRACCIÓN AGRESIVA MEJORADA
       const rawProperties = await page.evaluate(() => {
         const results: any[] = [];
-        
+
         // Buscar TODOS los elementos que podrían ser propiedades
         const selectors = [
           '.js-item-list-element',
@@ -129,13 +129,87 @@ export class TrovitScraper {
         const uniqueCards = Array.from(new Set(allCards));
         console.log(`Found ${uniqueCards.length} potential property cards`);
 
+        // Función para extraer datos específicos mejorada
+        const extractPropertyData = (el: Element) => {
+          const text = el.textContent || '';
+
+          // Extraer habitaciones con patrones mejorados
+          const roomsPatterns = [
+            /(\d+)\s*(?:hab|habitacion|habitaciones|alcoba|alcobas|dormitorio|dormitorios|cuarto|cuartos)/i,
+            /(?:hab|habitacion|habitaciones|alcoba|alcobas|dormitorio|dormitorios|cuarto|cuartos)[:\s]*(\d+)/i,
+            /(\d+)\s*(?:bed|bedroom|bedrooms)/i
+          ];
+
+          // Extraer área con patrones mejorados
+          const areaPatterns = [
+            /(\d+(?:\.\d+)?)\s*(?:m2|m²|metros|mts|mt)/i,
+            /(?:area|área|superficie)[:\s]*(\d+(?:\.\d+)?)/i,
+            /(\d+(?:\.\d+)?)\s*(?:square|sq)/i
+          ];
+
+          // Extraer parqueaderos con patrones mejorados
+          const parkingPatterns = [
+            /(\d+)\s*(?:parq|parqueadero|parqueaderos|garage|garaje|parking)/i,
+            /(?:parq|parqueadero|parqueaderos|garage|garaje|parking)[:\s]*(\d+)/i
+          ];
+
+          // Extraer estrato con patrones mejorados
+          const stratumPatterns = [
+            /(?:estrato|est)[:\s]*(\d+)/i,
+            /(\d+)\s*(?:estrato|est)/i
+          ];
+
+          let rooms = 0, area = 0, parking = 0, stratum = 0;
+
+          // Buscar habitaciones
+          for (const pattern of roomsPatterns) {
+            const match = text.match(pattern);
+            if (match) {
+              rooms = parseInt(match[1]) || 0;
+              break;
+            }
+          }
+
+          // Buscar área
+          for (const pattern of areaPatterns) {
+            const match = text.match(pattern);
+            if (match) {
+              area = parseFloat(match[1]) || 0;
+              break;
+            }
+          }
+
+          // Buscar parqueaderos
+          for (const pattern of parkingPatterns) {
+            const match = text.match(pattern);
+            if (match) {
+              parking = parseInt(match[1]) || 0;
+              break;
+            }
+          }
+
+          // Buscar estrato
+          for (const pattern of stratumPatterns) {
+            const match = text.match(pattern);
+            if (match) {
+              stratum = parseInt(match[1]) || 0;
+              break;
+            }
+          }
+
+          return { rooms, area, parking, stratum };
+        };
+
         uniqueCards.forEach((card, index) => {
           try {
             const cardText = card.textContent || '';
-            
+
             // Buscar precio en el texto
             const priceMatch = cardText.match(/\$\s*[\d\.,]+/);
             if (!priceMatch) return; // Si no hay precio, no es una propiedad
+
+            // 🆕 USAR LA NUEVA FUNCIÓN DE EXTRACCIÓN
+            const propertyData = extractPropertyData(card);
 
             // Extraer información básica
             let title = '';
@@ -190,7 +264,12 @@ export class TrovitScraper {
                 location: location || '',
                 url: url || `https://casas.trovit.com.co/property/${index}`,
                 imageUrl: imageUrl || '',
-                source: 'Trovit'
+                source: 'Trovit',
+                // 🆕 INCLUIR LOS DATOS EXTRAÍDOS
+                rooms: propertyData.rooms,
+                area: propertyData.area,
+                parking: propertyData.parking,
+                stratum: propertyData.stratum
               });
             }
 
@@ -216,10 +295,11 @@ export class TrovitScraper {
             price: price,
             adminFee: 0,
             totalPrice: price,
-            area: 0, // Se puede estimar después
-            rooms: 0, // Se puede estimar después
-            bathrooms: 0, // Se puede estimar después
-            parking: 0,
+            area: rawProp.area || 0, // 🆕 USAR DATOS EXTRAÍDOS
+            rooms: rawProp.rooms || 0, // 🆕 USAR DATOS EXTRAÍDOS
+            bathrooms: rawProp.bathrooms || 0, // 🆕 USAR DATOS EXTRAÍDOS
+            parking: rawProp.parking || 0, // 🆕 USAR DATOS EXTRAÍDOS
+            stratum: rawProp.stratum || 0, // 🆕 USAR DATOS EXTRAÍDOS
             location: {
               address: rawProp.location,
               neighborhood: this.extractNeighborhood(rawProp.location),

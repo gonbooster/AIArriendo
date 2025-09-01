@@ -165,23 +165,21 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             {/* 🆕 Badge de propiedad nueva */}
             <NewPropertyBadge isNew={property.isNew} />
 
-            {/* Score - Solo mostrar si existe y es mayor a 0 */}
-            {property.score && property.score > 0 && (
-              <Chip
-                icon={<StarIcon />}
-                label={property.score.toFixed(1)}
-                color={getScoreColor(property.score)}
-                size="small"
-                sx={{
-                  fontWeight: 'bold',
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                  color: 'white',
-                  '& .MuiChip-icon': {
-                    color: 'white'
-                  }
-                }}
-              />
-            )}
+            {/* ⭐ SCORE - SIEMPRE MOSTRAR */}
+            <Chip
+              icon={<StarIcon />}
+              label={(property.score || 0).toFixed(1)}
+              color={getScoreColor(property.score || 0)}
+              size="small"
+              sx={{
+                fontWeight: 'bold',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                '& .MuiChip-icon': {
+                  color: 'white'
+                }
+              }}
+            />
             <Chip
               label={property.source}
               size="small"
@@ -255,16 +253,74 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           {formatPrice(property.price)}
         </Typography>
 
-        {/* Price per m² */}
-        {property.pricePerM2 && property.pricePerM2 > 0 && (
+        {/* 💰 PRECIO POR M² Y ESTRATO - EN LA MISMA LÍNEA */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ mb: 1 }}
           >
-            {formatPrice(property.pricePerM2)}/m²
+            {formatPrice(property.pricePerM2 || 0)}/m²
           </Typography>
-        )}
+
+          {/* 🏢 ESTRATO - ARRIBA A LA DERECHA */}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              px: 1,
+              py: 0.25,
+              borderRadius: 1,
+              fontSize: '0.7rem'
+            }}
+          >
+            Est. {property.stratum || 0}
+          </Typography>
+        </Box>
+
+        {/* 📊 DETALLES DE LA PROPIEDAD - ENCIMA DEL TÍTULO */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 1,
+            minHeight: '24px'
+          }}
+        >
+          {/* 🏠 HABITACIONES */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <HomeIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+            <Typography variant="caption" color="text.secondary">
+              {property.rooms || 0} hab
+            </Typography>
+          </Box>
+
+          {/* 🛁 BAÑOS */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <BathtubIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+            <Typography variant="caption" color="text.secondary">
+              {property.bathrooms || 0} baños
+            </Typography>
+          </Box>
+
+          {/* 🚗 PARQUEADEROS */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <ParkingIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+            <Typography variant="caption" color="text.secondary">
+              {property.parking || 0} parq
+            </Typography>
+          </Box>
+
+          {/* 📐 ÁREA */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <AreaIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+            <Typography variant="caption" color="text.secondary">
+              {formatArea(property.area || 0)}
+            </Typography>
+          </Box>
+        </Box>
 
         {/* Title */}
         <Typography
@@ -301,68 +357,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </Typography>
         </Box>
 
-        {/* Property Details */}
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{
-            mb: 1.5,
-            flexWrap: 'wrap',
-            gap: 1,
-            alignItems: 'center',
-            minHeight: '24px' // ✅ Altura mínima para consistencia
-          }}
-        >
-          {/* Habitaciones - Solo mostrar si es mayor a 0 */}
-          {property.rooms && property.rooms > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <HomeIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-              <Typography variant="caption" color="text.secondary">
-                {property.rooms} hab
-              </Typography>
-            </Box>
-          )}
 
-          {/* Baños - Solo mostrar si es mayor a 0 */}
-          {property.bathrooms && property.bathrooms > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <BathtubIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-              <Typography variant="caption" color="text.secondary">
-                {property.bathrooms} baños
-              </Typography>
-            </Box>
-          )}
-
-          {/* Parqueaderos - Solo mostrar si es mayor a 0 */}
-          {property.parking && property.parking > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <ParkingIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-              <Typography variant="caption" color="text.secondary">
-                {property.parking} parq
-              </Typography>
-            </Box>
-          )}
-
-          {/* Área - Solo mostrar si es mayor a 0 */}
-          {property.area && property.area > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <AreaIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-              <Typography variant="caption" color="text.secondary">
-                {formatArea(property.area)}
-              </Typography>
-            </Box>
-          )}
-
-          {/* Estrato - Solo mostrar si es mayor a 0 */}
-          {property.stratum && property.stratum > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <StratumIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-              <Typography variant="caption" color="text.secondary">
-                Estrato {property.stratum}
-              </Typography>
-            </Box>
-          )}
-        </Stack>
 
         {/* Amenities */}
         <Box sx={{ mb: 1.5, minHeight: compact ? '0px' : '32px' }}>

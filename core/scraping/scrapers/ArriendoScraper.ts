@@ -203,14 +203,45 @@ export class ArriendoScraper {
         const relativeUrl = $card.find('a').first().attr('href') || '';
         const url = relativeUrl.startsWith('http') ? relativeUrl : `https://www.arriendo.com${relativeUrl}`;
 
-        // Extract image
-        const imageUrl = $card.find('img').first().attr('src') || $card.find('img').first().attr('data-src') || '';
+        // 🆕 MEJORAR EXTRACCIÓN DE IMÁGENES
+        let imageUrl = '';
+        const imageSelectors = [
+          'img[src*="arriendo"]',
+          'img[src*="cloudfront"]',
+          'img[src*="property"]',
+          'img[src*="inmueble"]',
+          'img[data-src]',
+          'img[src]'
+        ];
 
-        // Extract area, rooms, bathrooms from text
+        for (const selector of imageSelectors) {
+          const $img = $card.find(selector).first();
+          const src = $img.attr('src') || $img.attr('data-src') || $img.attr('data-lazy');
+          if (src && !src.includes('logo') && !src.includes('icon') && !src.includes('placeholder')) {
+            imageUrl = this.normalizeUrl(src);
+            break;
+          }
+        }
+
+        // 🆕 EXTRAER DATOS CON PATRONES MEJORADOS
         const fullText = $card.text();
+
+        // Extraer área con patrones mejorados
         const area = this.extractNumber(fullText, /(\d+)\s*m[²2]/i) || 0;
-        const rooms = this.extractNumber(fullText, /(\d+)\s*hab/i) || this.extractNumber(fullText, /(\d+)\s*cuarto/i) || 0;
-        const bathrooms = this.extractNumber(fullText, /(\d+)\s*baño/i) || 0;
+
+        // Extraer habitaciones con patrones mejorados
+        const rooms = this.extractNumber(fullText, /(\d+)\s*(?:hab|habitacion|habitaciones|alcoba|alcobas|dormitorio|dormitorios)/i) ||
+                     this.extractNumber(fullText, /(\d+)\s*cuarto/i) || 0;
+
+        // Extraer baños con patrones mejorados
+        const bathrooms = this.extractNumber(fullText, /(\d+)\s*(?:baño|baños|bathroom|bathrooms)/i) || 0;
+
+        // 🆕 EXTRAER PARQUEADEROS CON PATRONES MEJORADOS
+        const parking = this.extractNumber(fullText, /(\d+)\s*(?:parq|parqueadero|parqueaderos|garage|garaje|parking)/i) || 0;
+
+        // 🆕 EXTRAER ESTRATO CON PATRONES MEJORADOS
+        const stratum = this.extractNumber(fullText, /(?:estrato|est)[:\s]*(\d+)/i) ||
+                       this.extractNumber(fullText, /(\d+)\s*(?:estrato|est)/i) || 0;
 
         const property: Property = {
           id: `arriendo_${Date.now()}_${index}`,
@@ -221,8 +252,8 @@ export class ArriendoScraper {
           area,
           rooms,
           bathrooms,
-          parking: 0,
-          stratum: 0,
+          parking, // 🆕 USAR PARKING EXTRAÍDO
+          stratum, // 🆕 USAR ESTRATO EXTRAÍDO
           location: {
             address: location,
             neighborhood: this.extractNeighborhood(location),

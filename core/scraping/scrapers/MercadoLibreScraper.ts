@@ -528,15 +528,90 @@ export class MercadoLibreScraper {
         const price = this.parsePrice(it.priceText);
         if (!price || price <= 0) return;
 
+        // 🆕 EXTRAER DATOS ESPECÍFICOS CON PATRONES MEJORADOS
+        const fullText = `${it.title} ${it.location}`.toLowerCase();
+
+        // Extraer habitaciones
+        let rooms = 0;
+        const roomsPatterns = [
+          /(\d+)\s*(?:hab|habitacion|habitaciones|alcoba|alcobas|dormitorio|dormitorios)/i,
+          /(?:hab|habitacion|habitaciones|alcoba|alcobas)[:\s]*(\d+)/i
+        ];
+        for (const pattern of roomsPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            rooms = parseInt(match[1]) || 0;
+            break;
+          }
+        }
+
+        // Extraer área
+        let area = 0;
+        const areaPatterns = [
+          /(\d+(?:\.\d+)?)\s*(?:m2|m²|metros|mts|mt)/i,
+          /(?:area|área|superficie)[:\s]*(\d+(?:\.\d+)?)/i
+        ];
+        for (const pattern of areaPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            area = parseFloat(match[1]) || 0;
+            break;
+          }
+        }
+
+        // Extraer baños
+        let bathrooms = 0;
+        const bathroomPatterns = [
+          /(\d+)\s*(?:baño|baños|bathroom|bathrooms)/i,
+          /(?:baño|baños|bathroom|bathrooms)[:\s]*(\d+)/i
+        ];
+        for (const pattern of bathroomPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            bathrooms = parseInt(match[1]) || 0;
+            break;
+          }
+        }
+
+        // Extraer parqueaderos
+        let parking = 0;
+        const parkingPatterns = [
+          /(\d+)\s*(?:parq|parqueadero|parqueaderos|garage|garaje|parking)/i,
+          /(?:parq|parqueadero|parqueaderos|garage|garaje|parking)[:\s]*(\d+)/i
+        ];
+        for (const pattern of parkingPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            parking = parseInt(match[1]) || 0;
+            break;
+          }
+        }
+
+        // Extraer estrato
+        let stratum = 0;
+        const stratumPatterns = [
+          /(?:estrato|est)[:\s]*(\d+)/i,
+          /(\d+)\s*(?:estrato|est)/i
+        ];
+        for (const pattern of stratumPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            stratum = parseInt(match[1]) || 0;
+            break;
+          }
+        }
+
         const property: Property = {
           id: `mercadolibre_headless_${Date.now()}_${index}`,
           title: it.title || 'Apartamento en arriendo',
           price,
           adminFee: 0,
           totalPrice: price,
-          area: 0,
-          rooms: 0,
-          bathrooms: 0,
+          area,
+          rooms,
+          bathrooms,
+          parking,
+          stratum,
           location: {
             address: it.location,
             neighborhood: this.extractNeighborhood(it.location),

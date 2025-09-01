@@ -372,6 +372,34 @@ export class CiencuadrasScraper {
           propertyUrl = `https://www.ciencuadras.com/inmueble/${uniqueId}`;
         }
 
+        // 🆕 EXTRAER PARQUEADEROS CON PATRONES MEJORADOS
+        let parkingNumber = 0;
+        const parkingPatterns = [
+          /(\d+)\s*(?:parq|parqueadero|parqueaderos|garage|garaje|parking)/i,
+          /(?:parq|parqueadero|parqueaderos|garage|garaje|parking)[:\s]*(\d+)/i
+        ];
+        for (const pattern of parkingPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            parkingNumber = parseInt(match[1]) || 0;
+            break;
+          }
+        }
+
+        // 🆕 EXTRAER ESTRATO CON PATRONES MEJORADOS
+        let stratumNumber = 0;
+        const stratumPatterns = [
+          /(?:estrato|est)[:\s]*(\d+)/i,
+          /(\d+)\s*(?:estrato|est)/i
+        ];
+        for (const pattern of stratumPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            stratumNumber = parseInt(match[1]) || 0;
+            break;
+          }
+        }
+
         // Only process if we have essential data (relaxed conditions for Ciencuadras)
         if ((title || priceText) && (priceNumber > 0 || priceText) && (areaNumber > 0 || roomsNumber > 0)) {
           const rawProperty = {
@@ -384,6 +412,8 @@ export class CiencuadrasScraper {
             roomsText: roomsText || '',
             bathrooms: bathroomsNumber > 0 ? bathroomsNumber : bathroomsText,
             bathroomsText: bathroomsText || '',
+            parking: parkingNumber, // 🆕 AGREGAR PARQUEADEROS
+            stratum: stratumNumber, // 🆕 AGREGAR ESTRATO
             location: typeof location === 'string' ? location : 'Dynamic',
             imageUrl: imageUrl || '',
             images: imageUrl ? [imageUrl] : [],

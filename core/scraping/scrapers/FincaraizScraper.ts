@@ -844,24 +844,34 @@ export class FincaraizScraper {
       }
     }
 
-    // Parqueaderos
-    const parkingMatches = [
-      text.match(/(\d+)\s*parqueadero/i),
-      text.match(/(\d+)\s*garaje/i),
-      text.match(/(\d+)\s*parking/i)
+    // 🆕 PARQUEADEROS CON PATRONES MEJORADOS
+    const parkingPatterns = [
+      /(\d+)\s*(?:parq|parqueadero|parqueaderos|garage|garaje|parking)/i,
+      /(?:parq|parqueadero|parqueaderos|garage|garaje|parking)[:\s]*(\d+)/i,
+      /(\d+)\s*(?:car|cars|vehiculo|vehiculos)/i
     ];
 
-    for (const match of parkingMatches) {
+    for (const pattern of parkingPatterns) {
+      const match = text.match(pattern);
       if (match) {
         result.parking = parseInt(match[1]);
         break;
       }
     }
 
-    // Estrato
-    const stratumMatch = text.match(/estrato\s*(\d+)/i);
-    if (stratumMatch) {
-      result.stratum = parseInt(stratumMatch[1]);
+    // 🆕 ESTRATO CON PATRONES MEJORADOS
+    const stratumPatterns = [
+      /(?:estrato|est)[:\s]*(\d+)/i,
+      /(\d+)\s*(?:estrato|est)/i,
+      /(?:stratum|str)[:\s]*(\d+)/i
+    ];
+
+    for (const pattern of stratumPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        result.stratum = parseInt(match[1]);
+        break;
+      }
     }
 
     return result;
