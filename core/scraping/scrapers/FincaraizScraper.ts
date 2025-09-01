@@ -129,8 +129,10 @@ export class FincaraizScraper {
     logger.info(`🎯 Fincaraiz - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     // 🔧 NUEVA ESTRUCTURA DE URL PARA FINCARAIZ
-    // Fincaraiz ahora usa URLs del tipo: /arriendo/apartamentos/ciudad/barrio
-    let baseUrl = 'https://www.fincaraiz.com.co/arriendo/apartamentos';
+    // 🚀 DINÁMICO: Determinar tipo de transacción
+    const transactionType = this.getTransactionType(criteria);
+    // Fincaraiz usa URLs del tipo: /arriendo/apartamentos/ciudad/barrio o /venta/apartamentos/ciudad/barrio
+    let baseUrl = `https://www.fincaraiz.com.co/${transactionType}/apartamentos`;
 
     // Agregar ciudad
     const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'fincaraiz');
@@ -152,6 +154,25 @@ export class FincaraizScraper {
     const finalUrl = `${baseUrl}?${params}`;
     logger.info(`🔗 Fincaraiz URL final: ${finalUrl}`);
     return finalUrl;
+  }
+
+  /**
+   * Determinar tipo de transacción dinámicamente
+   */
+  private getTransactionType(criteria: SearchCriteria): string {
+    // 🚀 IMPLEMENTADO: Usar el campo operation de SearchCriteria
+    const operation = criteria.hardRequirements.operation || 'arriendo';
+
+    // Mapear a los valores que usa Fincaraiz
+    switch (operation.toLowerCase()) {
+      case 'venta':
+      case 'compra':
+        return 'venta';
+      case 'arriendo':
+      case 'alquiler':
+      default:
+        return 'arriendo';
+    }
   }
 
 

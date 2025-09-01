@@ -4,24 +4,24 @@ import { Box, LinearProgress, Typography, useTheme } from '@mui/material';
 interface ProgressBarProps {
   progress: number;
   currentPhase: string;
-  timeElapsed: number;
-  estimatedTimeRemaining: number;
+  // timeElapsed: number; // SIN TIEMPO
+  // estimatedTimeRemaining: number; // SIN TIEMPO
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   progress,
-  currentPhase,
-  timeElapsed,
-  estimatedTimeRemaining
+  currentPhase
+  // timeElapsed, // SIN TIEMPO
+  // estimatedTimeRemaining // SIN TIEMPO
 }) => {
   const theme = useTheme();
 
-  const formatTime = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds}s`;
-  };
+  // const formatTime = (seconds: number) => { // SIN TIEMPO
+  //   if (seconds < 60) return `${seconds}s`;
+  //   const minutes = Math.floor(seconds / 60);
+  //   const remainingSeconds = seconds % 60;
+  //   return `${minutes}m ${remainingSeconds}s`;
+  // };
 
   return (
     <Box sx={{ width: '100%', mb: 3 }}>
@@ -71,15 +71,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         {currentPhase}
       </Typography>
 
-      {/* Información de tiempo */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-        <Typography variant="caption" color="text.secondary">
-          Tiempo transcurrido: {formatTime(timeElapsed)}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Tiempo estimado restante: {formatTime(estimatedTimeRemaining)}
-        </Typography>
-      </Box>
+      {/* SIN INFORMACIÓN DE TIEMPO */}
     </Box>
   );
 };

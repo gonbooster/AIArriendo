@@ -413,6 +413,246 @@
       }
     },
     {
+      "name": "chicó norte",
+      "aliases": ["chico norte"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "chico-norte",
+        "pads": "chapinero/chico-norte"
+      }
+    },
+    {
+      "name": "la cabrera",
+      "aliases": ["cabrera"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-cabrera",
+        "pads": "chapinero/la-cabrera"
+      }
+    },
+    {
+      "name": "san josé de bavaria",
+      "aliases": ["bavaria", "san jose de bavaria"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "san-jose-de-bavaria"
+      }
+    },
+    {
+      "name": "el refugio",
+      "aliases": ["refugio"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "el-refugio"
+      }
+    },
+    {
+      "name": "el retiro",
+      "aliases": ["retiro"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "el-retiro"
+      }
+    },
+    {
+      "name": "chicó alto",
+      "aliases": ["chico alto"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "chico-alto"
+      }
+    },
+    {
+      "name": "la macarena",
+      "aliases": ["macarena"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-macarena"
+      }
+    },
+    {
+      "name": "teusaquillo",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "teusaquillo",
+        "rentola": "bogota-localidad-teusaquillo"
+      }
+    },
+    {
+      "name": "la soledad",
+      "aliases": ["soledad"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-soledad"
+      }
+    },
+    {
+      "name": "zona g",
+      "aliases": ["zona gastronomica"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "zona-g"
+      }
+    },
+    {
+      "name": "park way",
+      "aliases": ["parkway"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "park-way"
+      }
+    },
+    {
+      "name": "la calera",
+      "aliases": ["calera"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-calera"
+      }
+    },
+    {
+      "name": "virrey",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "virrey"
+      }
+    },
+    {
+      "name": "colina campestre",
+      "aliases": ["colina", "la colina campestre"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "colina-campestre",
+        "fincaraiz": "colina-campestre",
+        "metrocuadrado": "bogota/colina-campestre"
+      }
+    },
+    {
+      "name": "santa ana",
+      "aliases": ["santa ana occidental"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "santa-ana",
+        "fincaraiz": "santa-ana"
+      }
+    },
+    {
+      "name": "country club",
+      "aliases": ["country"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "country-club",
+        "fincaraiz": "country-club"
+      }
+    },
+    {
+      "name": "los rosales",
+      "aliases": ["rosales"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "los-rosales",
+        "fincaraiz": "los-rosales"
+      }
+    },
+    {
+      "name": "la porciúncula",
+      "aliases": ["la porciuncula", "porciuncula"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "la-porciuncula"
+      }
+    },
+    {
+      "name": "cataluña",
+      "aliases": ["cataluna"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "cataluna"
+      }
+    },
+    {
+      "name": "el cerezo",
+      "aliases": ["cerezo"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "el-cerezo"
+      }
+    },
+    {
+      "name": "santa bárbara alta",
+      "aliases": ["santa barbara alta"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "santa-barbara-alta"
+      }
+    },
+    {
+      "name": "santa bárbara oriental",
+      "aliases": ["santa barbara oriental"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "santa-barbara-oriental"
+      }
+    },
+    {
+      "name": "unicerros",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "unicerros"
+      }
+    },
+    {
+      "name": "las acacias",
+      "aliases": ["acacias"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "las-acacias"
+      }
+    },
+    {
+      "name": "armenia",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "armenia-bogota"
+      }
+    },
+    {
+      "name": "las granjas del norte",
+      "aliases": ["granjas del norte"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "las-granjas-del-norte"
+      }
+    },
+    {
+      "name": "covadonga",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "covadonga"
+      }
+    },
+    {
+      "name": "córdoba",
+      "aliases": ["cordoba"],
+      "city": "bogotá",
+      "urls": {
+        "standard": "cordoba"
+      }
+    },
+    {
+      "name": "danubio",
+      "aliases": [],
+      "city": "bogotá",
+      "urls": {
+        "standard": "danubio"
+      }
+    },
+    {
       "name": "el poblado",
       "aliases": ["poblado"],
       "city": "medellín",
@@ -445,6 +685,74 @@
       }
     },
     {
+      "name": "envigado",
+      "aliases": [],
+      "city": "medellín",
+      "urls": {
+        "standard": "envigado",
+        "mercadolibre": "antioquia/envigado"
+      }
+    },
+    {
+      "name": "sabaneta",
+      "aliases": [],
+      "city": "medellín",
+      "urls": {
+        "standard": "sabaneta",
+        "mercadolibre": "antioquia/sabaneta"
+      }
+    },
+    {
+      "name": "itagüí",
+      "aliases": ["itagui"],
+      "city": "medellín",
+      "urls": {
+        "standard": "itagui",
+        "mercadolibre": "antioquia/itagui"
+      }
+    },
+    {
+      "name": "bello",
+      "aliases": [],
+      "city": "medellín",
+      "urls": {
+        "standard": "bello",
+        "mercadolibre": "antioquia/bello"
+      }
+    },
+    {
+      "name": "la macarena",
+      "aliases": ["macarena"],
+      "city": "medellín",
+      "urls": {
+        "standard": "la-macarena-medellin"
+      }
+    },
+    {
+      "name": "zona rosa medellín",
+      "aliases": ["zona rosa medellin"],
+      "city": "medellín",
+      "urls": {
+        "standard": "zona-rosa-medellin"
+      }
+    },
+    {
+      "name": "belén",
+      "aliases": ["belen"],
+      "city": "medellín",
+      "urls": {
+        "standard": "belen"
+      }
+    },
+    {
+      "name": "la américa",
+      "aliases": ["la america", "america"],
+      "city": "medellín",
+      "urls": {
+        "standard": "la-america"
+      }
+    },
+    {
       "name": "granada",
       "aliases": [],
       "city": "cali",
@@ -466,6 +774,120 @@
       "city": "cali",
       "urls": {
         "standard": "ciudad-jardin"
+      }
+    },
+    {
+      "name": "versalles",
+      "aliases": [],
+      "city": "cali",
+      "urls": {
+        "standard": "versalles",
+        "metrocuadrado": "cali/versalles"
+      }
+    },
+    {
+      "name": "normandía",
+      "aliases": ["normandia"],
+      "city": "cali",
+      "urls": {
+        "standard": "normandia",
+        "metrocuadrado": "cali/normandia"
+      }
+    },
+    {
+      "name": "el peñón",
+      "aliases": ["el penon", "penon"],
+      "city": "cali",
+      "urls": {
+        "standard": "el-penon"
+      }
+    },
+    {
+      "name": "tequendama",
+      "aliases": [],
+      "city": "cali",
+      "urls": {
+        "standard": "tequendama"
+      }
+    },
+    {
+      "name": "la flora",
+      "aliases": ["flora"],
+      "city": "cali",
+      "urls": {
+        "standard": "la-flora"
+      }
+    },
+    {
+      "name": "juanambú",
+      "aliases": ["juanambu"],
+      "city": "cali",
+      "urls": {
+        "standard": "juanambu"
+      }
+    },
+    {
+      "name": "el prado",
+      "aliases": ["prado"],
+      "city": "barranquilla",
+      "urls": {
+        "standard": "el-prado"
+      }
+    },
+    {
+      "name": "alto prado",
+      "aliases": [],
+      "city": "barranquilla",
+      "urls": {
+        "standard": "alto-prado"
+      }
+    },
+    {
+      "name": "el golf",
+      "aliases": ["golf"],
+      "city": "barranquilla",
+      "urls": {
+        "standard": "el-golf"
+      }
+    },
+    {
+      "name": "bocagrande",
+      "aliases": ["boca grande"],
+      "city": "cartagena",
+      "urls": {
+        "standard": "bocagrande"
+      }
+    },
+    {
+      "name": "castillogrande",
+      "aliases": ["castillo grande"],
+      "city": "cartagena",
+      "urls": {
+        "standard": "castillogrande"
+      }
+    },
+    {
+      "name": "centro histórico",
+      "aliases": ["centro historico", "ciudad amurallada"],
+      "city": "cartagena",
+      "urls": {
+        "standard": "centro-historico"
+      }
+    },
+    {
+      "name": "cabecera",
+      "aliases": [],
+      "city": "bucaramanga",
+      "urls": {
+        "standard": "cabecera"
+      }
+    },
+    {
+      "name": "altos del prado",
+      "aliases": [],
+      "city": "bucaramanga",
+      "urls": {
+        "standard": "altos-del-prado"
       }
     }
   ]

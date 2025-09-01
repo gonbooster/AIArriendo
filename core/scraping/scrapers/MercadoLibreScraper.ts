@@ -130,12 +130,33 @@ export class MercadoLibreScraper {
     const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
     const locationInfo = LocationDetector.detectLocation(locationText);
 
-    const baseUrl = 'https://inmuebles.mercadolibre.com.co/apartamentos/arriendo';
+    // 🚀 DINÁMICO: Determinar tipo de transacción
+    const transactionType = this.getTransactionType(criteria);
+    const baseUrl = `https://inmuebles.mercadolibre.com.co/apartamentos/${transactionType}`;
     const url = LocationDetector.buildScraperUrl(baseUrl, locationInfo.city, locationInfo.neighborhood, 'mercadolibre');
 
     logger.info(`🎯 MercadoLibre - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
     return url;
+  }
+
+  /**
+   * Determinar tipo de transacción dinámicamente
+   */
+  private getTransactionType(criteria: SearchCriteria): string {
+    // 🚀 IMPLEMENTADO: Usar el campo operation de SearchCriteria
+    const operation = criteria.hardRequirements.operation || 'arriendo';
+
+    // Mapear a los valores que usa MercadoLibre
+    switch (operation.toLowerCase()) {
+      case 'venta':
+      case 'compra':
+        return 'venta';
+      case 'arriendo':
+      case 'alquiler':
+      default:
+        return 'arriendo';
+    }
   }
 
   /**

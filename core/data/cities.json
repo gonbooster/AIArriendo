@@ -141,6 +141,113 @@
       "urls": {
         "standard": "popayan"
       }
+    },
+    {
+      "name": "manizales",
+      "code": "17001",
+      "aliases": ["ciudad de las puertas abiertas"],
+      "urls": {
+        "standard": "manizales",
+        "mercadolibre": "caldas/manizales",
+        "properati": "manizales-caldas-colombia"
+      }
+    },
+    {
+      "name": "villavicencio",
+      "code": "50001",
+      "aliases": ["puerta de los llanos", "villavo"],
+      "urls": {
+        "standard": "villavicencio",
+        "mercadolibre": "meta/villavicencio",
+        "properati": "villavicencio-meta-colombia"
+      }
+    },
+    {
+      "name": "neiva",
+      "code": "41001",
+      "aliases": ["capital del huila"],
+      "urls": {
+        "standard": "neiva",
+        "mercadolibre": "huila/neiva",
+        "properati": "neiva-huila-colombia"
+      }
+    },
+    {
+      "name": "montería",
+      "code": "23001",
+      "aliases": ["monteria", "perla del sinú"],
+      "urls": {
+        "standard": "monteria",
+        "mercadolibre": "cordoba/monteria"
+      }
+    },
+    {
+      "name": "valledupar",
+      "code": "20001",
+      "aliases": ["ciudad de los santos reyes", "cuna del vallenato"],
+      "urls": {
+        "standard": "valledupar",
+        "mercadolibre": "cesar/valledupar"
+      }
+    },
+    {
+      "name": "sincelejo",
+      "code": "70001",
+      "aliases": ["capital de sucre"],
+      "urls": {
+        "standard": "sincelejo",
+        "mercadolibre": "sucre/sincelejo"
+      }
+    },
+    {
+      "name": "riohacha",
+      "code": "44001",
+      "aliases": ["capital de la guajira"],
+      "urls": {
+        "standard": "riohacha",
+        "mercadolibre": "la-guajira/riohacha"
+      }
+    },
+    {
+      "name": "quibdó",
+      "code": "27001",
+      "aliases": ["capital del chocó"],
+      "urls": {
+        "standard": "quibdo"
+      }
+    },
+    {
+      "name": "san andrés",
+      "code": "88001",
+      "aliases": ["san andres", "isla de san andrés"],
+      "urls": {
+        "standard": "san-andres"
+      }
+    },
+    {
+      "name": "leticia",
+      "code": "91001",
+      "aliases": ["capital del amazonas"],
+      "urls": {
+        "standard": "leticia"
+      }
+    },
+    {
+      "name": "tunja",
+      "code": "15001",
+      "aliases": ["ciudad de los muiscas"],
+      "urls": {
+        "standard": "tunja",
+        "mercadolibre": "boyaca/tunja"
+      }
+    },
+    {
+      "name": "florencia",
+      "code": "18001",
+      "aliases": ["capital del caquetá"],
+      "urls": {
+        "standard": "florencia"
+      }
     }
   ]
 }

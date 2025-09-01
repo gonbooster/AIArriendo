@@ -11,7 +11,6 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { useSearchProgress } from '../hooks/useSearchProgress';
 import { ProgressBar } from './search/ProgressBar';
 import { SourcesProgress } from './search/SourcesProgress';
-import { SearchStats } from './search/SearchStats';
 
 const SearchProgress: React.FC = () => {
   const theme = useTheme();
@@ -22,9 +21,9 @@ const SearchProgress: React.FC = () => {
     currentSource,
     sourcesCompleted,
     totalSources,
-    propertiesFound,
-    timeElapsed,
-    estimatedTimeRemaining,
+    // propertiesFound, // SIN NÚMEROS
+    // timeElapsed, // SIN TIEMPO
+    // estimatedTimeRemaining, // SIN TIEMPO
     startSearch,
     completeSearch,
     SOURCES
@@ -123,16 +122,8 @@ const SearchProgress: React.FC = () => {
             <ProgressBar
               progress={progress}
               currentPhase={currentPhase}
-              timeElapsed={timeElapsed}
-              estimatedTimeRemaining={estimatedTimeRemaining}
-            />
-
-            {/* Estadísticas en tiempo real */}
-            <SearchStats
-              propertiesFound={propertiesFound}
-              sourcesCompleted={sourcesCompleted}
-              totalSources={totalSources}
-              timeElapsed={timeElapsed}
+              // timeElapsed={timeElapsed} // SIN TIEMPO
+              // estimatedTimeRemaining={estimatedTimeRemaining} // SIN TIEMPO
             />
 
             {/* Progreso de fuentes */}

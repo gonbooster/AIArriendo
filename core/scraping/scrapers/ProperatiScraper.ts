@@ -310,9 +310,19 @@ export class ProperatiScraper {
    * Determinar tipo de transacción dinámicamente
    */
   private getTransactionType(criteria: SearchCriteria): string {
-    // TODO: Implementar cuando tengamos el campo en SearchCriteria
-    // Por ahora defaultear a arriendo
-    return 'arriendo';
+    // 🚀 IMPLEMENTADO: Usar el campo operation de SearchCriteria
+    const operation = criteria.hardRequirements.operation || 'arriendo';
+
+    // Mapear a los valores que usa Properati
+    switch (operation.toLowerCase()) {
+      case 'venta':
+      case 'compra':
+        return 'venta';
+      case 'arriendo':
+      case 'alquiler':
+      default:
+        return 'arriendo';
+    }
   }
 
   /**

@@ -48,7 +48,7 @@ export const SourcesProgress: React.FC<SourcesProgressProps> = ({
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'medium' }}>
-        Fuentes de Datos ({sourcesCompleted}/{totalSources} completadas)
+        Fuentes de Datos
       </Typography>
       
       <Grid container spacing={1}>
