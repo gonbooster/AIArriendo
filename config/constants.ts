@@ -67,15 +67,80 @@ export const SCRAPING = {
   MAX_PAGES_PER_SOURCE: 5, // Aumentado para pruebas
   TIMEOUT_PER_SOURCE_MS: 120000, // 2 minutos - aumentado para más páginas
   MAX_CONCURRENT_SOURCES: 8,
-  
+
   // Rate limiting defaults
   DEFAULT_REQUESTS_PER_MINUTE: 20,
   DEFAULT_DELAY_BETWEEN_REQUESTS: 3000, // 3 seconds
   DEFAULT_MAX_CONCURRENT_REQUESTS: 1,
-  
+
   // Browser settings
   BROWSER_TIMEOUT_MS: 60000, // 60 seconds
   BROWSER_USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+
+  // ============================================================================
+  // RATE LIMITS POR SCRAPER - CONFIGURACIÓN CENTRALIZADA
+  // ============================================================================
+  RATE_LIMITS: {
+    fincaraiz: {
+      requestsPerMinute: 30,
+      delayBetweenRequests: 2000,
+      maxConcurrentRequests: 2
+    },
+    metrocuadrado: {
+      requestsPerMinute: 25,
+      delayBetweenRequests: 2500,
+      maxConcurrentRequests: 2
+    },
+    trovit: {
+      requestsPerMinute: 20,
+      delayBetweenRequests: 3000,
+      maxConcurrentRequests: 1
+    },
+    arriendo: {
+      requestsPerMinute: 25,
+      delayBetweenRequests: 2500,
+      maxConcurrentRequests: 2
+    },
+    ciencuadras: {
+      requestsPerMinute: 20,
+      delayBetweenRequests: 3000,
+      maxConcurrentRequests: 1
+    },
+    mercadolibre: {
+      requestsPerMinute: 20,
+      delayBetweenRequests: 3000,
+      maxConcurrentRequests: 1
+    },
+    properati: {
+      requestsPerMinute: 30,
+      delayBetweenRequests: 2000,
+      maxConcurrentRequests: 2
+    },
+    pads: {
+      requestsPerMinute: 20,
+      delayBetweenRequests: 3000,
+      maxConcurrentRequests: 1
+    },
+    rentola: {
+      requestsPerMinute: 15,
+      delayBetweenRequests: 4000,
+      maxConcurrentRequests: 1
+    }
+  },
+
+  // ============================================================================
+  // HEADERS CENTRALIZADOS
+  // ============================================================================
+  DEFAULT_HEADERS: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+  },
+  CUSTOM_HEADERS: {
+    trovit: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'es-CO,es;q=0.9,en;q=0.8'
+    }
+  }
 } as const;
 
 // ============================================================================

@@ -1,4 +1,5 @@
 import { ScrapingSource } from '../core/types';
+import { SCRAPING } from './constants';
 
 export const SCRAPING_SOURCES: ScrapingSource[] = [
   {
@@ -7,11 +8,7 @@ export const SCRAPING_SOURCES: ScrapingSource[] = [
     baseUrl: 'https://www.fincaraiz.com.co',
     isActive: true,
     priority: 1,
-    rateLimit: {
-      requestsPerMinute: 30,
-      delayBetweenRequests: 2000,
-      maxConcurrentRequests: 2
-    },
+    rateLimit: SCRAPING.RATE_LIMITS.fincaraiz,
     selectors: {
       propertyCard: '[class*="property"], .property-item, [data-testid="property-card"], .listing-card',
       title: 'h3, h4, .property-title, [data-testid="property-title"], .listing-title',
