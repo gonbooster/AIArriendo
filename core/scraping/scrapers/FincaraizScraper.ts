@@ -140,7 +140,17 @@ export class FincaraizScraper {
       'sort': 'relevance'
     });
 
-    return `${baseUrl}?${params}`;
+    // 🎯 INCLUIR BARRIO ESPECÍFICO SI EXISTE
+    if (locationInfo.neighborhood) {
+      // Fincaraiz usa el parámetro 'zone' para barrios
+      const neighborhoodUrl = LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'fincaraiz');
+      params.set('zone', neighborhoodUrl);
+      logger.info(`🎯 Fincaraiz - Agregando barrio específico: ${locationInfo.neighborhood} -> ${neighborhoodUrl}`);
+    }
+
+    const finalUrl = `${baseUrl}?${params}`;
+    logger.info(`🔗 Fincaraiz URL final: ${finalUrl}`);
+    return finalUrl;
   }
 
 

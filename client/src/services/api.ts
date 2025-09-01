@@ -3,6 +3,9 @@ import { SearchCriteria, SearchResult } from '../types';
 import { SERVER, FRONTEND, SEARCH } from '../config/constants';
 import CacheService from './cacheService';
 
+// 🚀 Exponer función global para limpiar cache
+CacheService.exposeGlobalClearCache();
+
 // Create axios instance for backend API - Dynamic detection
 const isLocalhost = SERVER.LOCALHOST_HOSTNAMES.includes(window.location.hostname as any);
 const isRailway = SERVER.RAILWAY_DOMAINS.some(domain => window.location.hostname.includes(domain));
@@ -70,9 +73,25 @@ export const searchAPI = {
       let cachedProperties: any[] = [];
 
       if (cacheResult) {
-        console.log(`📦 Cache encontrado: ${cacheResult.cached.length} propiedades (${cacheResult.cacheAge}s)`);
-        cachedProperties = cacheResult.cached;
-        useCache = true;
+        // 🔍 Verificar si el cache tiene resultados sospechosamente altos para búsquedas específicas
+        const getLocationText = (loc: any): string => {
+          if (typeof loc === 'string') return loc;
+          if (loc?.neighborhoods?.[0]) return loc.neighborhoods[0];
+          if (loc?.zones?.[0]) return loc.zones[0];
+          return '';
+        };
+        const locationText = getLocationText(criteria.location);
+        const isSpecificLocation = locationText.length > 0;
+        const hasTooManyResults = cacheResult.cached.length > 500;
+
+        if (isSpecificLocation && hasTooManyResults) {
+          console.warn(`🚨 Cache sospechoso: ${cacheResult.cached.length} propiedades para "${locationText}" - Limpiando cache`);
+          CacheService.clearCacheForCriteria(criteria);
+        } else {
+          console.log(`📦 Cache encontrado: ${cacheResult.cached.length} propiedades (${cacheResult.cacheAge}s)`);
+          cachedProperties = cacheResult.cached;
+          useCache = true;
+        }
       }
 
       // 🚀 NORMALIZAR CRITERIOS ANTES DE ENVIAR

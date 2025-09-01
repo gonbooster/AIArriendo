@@ -218,6 +218,29 @@ class CacheService {
   }
 
   /**
+   * Limpiar cache específico por criterios
+   */
+  static clearCacheForCriteria(criteria: any): void {
+    try {
+      const searchHash = this.generateSearchHash(criteria);
+      this.removeCacheEntry(searchHash);
+      console.log(`🗑️ Cache cleared for search: ${searchHash}`);
+    } catch (error) {
+      console.warn('Error clearing specific cache:', error);
+    }
+  }
+
+  /**
+   * Función global para limpiar cache desde consola
+   */
+  static exposeGlobalClearCache(): void {
+    (window as any).clearAIArriendoCache = () => {
+      this.clearAllCache();
+      console.log('🗑️ Cache de AI Arriendo limpiado completamente');
+    };
+  }
+
+  /**
    * Limpiar todo el cache
    */
   static clearAllCache(): void {

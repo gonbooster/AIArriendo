@@ -20,6 +20,7 @@ interface CityConfig {
   aliases: string[];
   urls: {
     standard?: string;
+    fincaraiz?: string;
     mercadolibre?: string;
     properati?: string;
   };
@@ -31,6 +32,7 @@ interface NeighborhoodConfig {
   city: string;
   urls: {
     standard?: string;
+    fincaraiz?: string;
     pads?: string;
     mercadolibre?: string;
     rentola?: string;
@@ -98,12 +100,14 @@ export class LocationDetector {
   } {
     const cityMappings: { [scraper: string]: Map<string, string> } = {
       standard: new Map(),
+      fincaraiz: new Map(),
       mercadolibre: new Map(),
       properati: new Map()
     };
 
     const neighborhoodMappings: { [scraper: string]: Map<string, string> } = {
       standard: new Map(),
+      fincaraiz: new Map(),
       pads: new Map(),
       mercadolibre: new Map(),
       rentola: new Map()
@@ -113,6 +117,7 @@ export class LocationDetector {
     this.CITIES_CONFIG.forEach(city => {
       const addCityMapping = (name: string) => {
         cityMappings.standard.set(name, city.urls.standard || city.name);
+        cityMappings.fincaraiz.set(name, city.urls.fincaraiz || city.urls.standard || city.name);
         cityMappings.mercadolibre.set(name, city.urls.mercadolibre || city.urls.standard || city.name);
         cityMappings.properati.set(name, city.urls.properati || city.urls.standard || city.name);
       };
@@ -125,6 +130,7 @@ export class LocationDetector {
     this.NEIGHBORHOODS_CONFIG.forEach(neighborhood => {
       const addNeighborhoodMapping = (name: string) => {
         neighborhoodMappings.standard.set(name, neighborhood.urls.standard || neighborhood.name);
+        neighborhoodMappings.fincaraiz.set(name, neighborhood.urls.fincaraiz || neighborhood.urls.standard || neighborhood.name);
         neighborhoodMappings.pads.set(name, neighborhood.urls.pads || neighborhood.urls.standard || neighborhood.name);
         neighborhoodMappings.mercadolibre.set(name, neighborhood.urls.mercadolibre || neighborhood.urls.standard || neighborhood.name);
         neighborhoodMappings.rentola.set(name, neighborhood.urls.rentola || neighborhood.urls.standard || neighborhood.name);

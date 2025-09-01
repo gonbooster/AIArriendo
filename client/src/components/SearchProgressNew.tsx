@@ -142,30 +142,6 @@ const SearchProgress: React.FC = () => {
               sourcesCompleted={sourcesCompleted}
               totalSources={totalSources}
             />
-
-            {/* Mensaje motivacional divertido */}
-            <Box
-              sx={{
-                textAlign: 'center',
-                mt: 3,
-                p: 2,
-                backgroundColor: theme.palette.action.hover,
-                borderRadius: 2,
-                border: `1px solid ${theme.palette.divider}`
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                {timeElapsed < 15 ? (
-                  <>🚀 <strong>¡Despegamos!</strong> Nuestros robots están corriendo por todas partes buscando tu hogar perfecto.</>
-                ) : timeElapsed < 30 ? (
-                  <>🕵️ <strong>Misión en progreso:</strong> Infiltrándonos en las mejores páginas inmobiliarias... ¡Shh!</>
-                ) : timeElapsed < 45 ? (
-                  <>🏠 <strong>¡Eureka!</strong> Encontrando propiedades más rápido que un delivery de pizza.</>
-                ) : (
-                  <>🎯 <strong>¡Casi listo!</strong> Puliendo los resultados como diamantes... ¡Brillarán para ti!</>
-                )}
-              </Typography>
-            </Box>
           </Box>
 
           {/* Animaciones CSS */}

@@ -169,10 +169,7 @@ if (fs.existsSync(staticPath)) {
   logger.error(`❌ Static build directory NOT found: ${staticPath}`);
 }
 
-app.use(express.static(staticPath));
-
-// 🚀 DATOS ESTÁTICOS ELIMINADOS - SOLO SCRAPERS REALES
-
+// 🚀 API ENDPOINTS PRIMERO (antes de archivos estáticos)
 app.get('/api/search/sources', (req, res) => {
   res.json({
     success: true,
@@ -188,6 +185,8 @@ app.get('/api/search/sources', (req, res) => {
     ]
   });
 });
+
+app.use(express.static(staticPath));
 
 // Catch-all handler: send back React's index.html file for non-API routes
 app.get('*', (req, res) => {

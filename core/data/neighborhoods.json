@@ -264,7 +264,8 @@
       "aliases": ["mazuren"],
       "city": "bogotá",
       "urls": {
-        "standard": "mazuren"
+        "standard": "mazuren",
+        "fincaraiz": "mazuren"
       }
     },
     {

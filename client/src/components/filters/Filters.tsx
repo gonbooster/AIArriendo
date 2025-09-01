@@ -126,7 +126,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
     propertyTypes: [],
   });
 
-  // Verificar si hay filtros activos
+  // Verificar si hay filtros activos (excluyendo los que están por defecto)
   const hasActiveFilters = React.useMemo(() => {
     return (
       filters.rooms.length > 0 ||
@@ -137,9 +137,8 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
       filters.sources.length > 0 ||
       filters.amenities.length > 0 ||
       filters.propertyTypes.length > 0 ||
-      filters.removeDuplicates ||
       filters.hasParking !== null ||
-      filters.hideCorrupt ||
+      // ❌ Removidos: removeDuplicates y hideCorrupt ya que están por defecto
       filters.priceRange[0] !== priceStats.min ||
       filters.priceRange[1] !== priceStats.max ||
       filters.areaRange[0] !== areaStats.min ||
