@@ -2,7 +2,7 @@ import { Property as PropertyModel } from '../../models/Property';
 import { SearchCriteria, SearchResult, SearchSummary, Property } from '../types';
 import { PropertyScorer } from '../scoring/PropertyScorer';
 // import { ScrapingEngine } from '../scraping/ScrapingEngine';
-import { SCRAPING_SOURCES } from '../../config/scraping-sources';
+import { SCRAPING_SOURCES } from '../../config/scrapingSources';
 import { logger } from '../../utils/logger';
 // ELIMINADO: import { searchResultsExporter } from './SearchResultsExporter';
 // BaseScraper eliminado - usar scrapers específicos

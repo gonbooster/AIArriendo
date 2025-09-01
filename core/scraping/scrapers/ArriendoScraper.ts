@@ -122,37 +122,24 @@ export class ArriendoScraper {
   }
 
   /**
-   * Build Arriendo.com search URL - UNIFICADO
+   * Build Arriendo.com search URL - CORREGIDO PARA NUEVA ESTRUCTURA
    */
   private buildArriendoUrl(criteria: SearchCriteria): string {
     // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
     const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
     const locationInfo = LocationDetector.detectLocation(locationText);
 
+    logger.info(`🎯 Arriendo - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+
+    // 🔧 NUEVA ESTRUCTURA DE URL PARA ARRIENDO.COM
+    // Arriendo.com usa URLs del tipo: /ciudad (no parámetros query)
     const baseUrl = 'https://www.arriendo.com';
     const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'standard');
 
-    logger.info(`🎯 Arriendo - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
+    // Construir URL con ciudad en la ruta
+    const finalUrl = `${baseUrl}/${cityUrl}`;
 
-    // Arriendo.com usa parámetros específicos
-    const params = new URLSearchParams();
-    params.append('tipo', 'arriendo');
-
-    // Usar mapeo centralizado para ciudad
-    params.append('ciudad', cityUrl);
-
-    // Location
-    if (criteria.hardRequirements.location?.neighborhoods && criteria.hardRequirements.location.neighborhoods.length > 0) {
-      params.append('zona', criteria.hardRequirements.location.neighborhoods[0].toLowerCase());
-    }
-
-    // Price range
-    if (criteria.hardRequirements.maxTotalPrice) {
-      params.append('precio_max', criteria.hardRequirements.maxTotalPrice.toString());
-    }
-
-    const finalUrl = `${baseUrl}?${params.toString()}`;
-    logger.info(`Arriendo.com URL: ${finalUrl}`);
+    logger.info(`🔗 Arriendo.com URL final: ${finalUrl}`);
     return finalUrl;
   }
 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { SearchService } from '../core/services/SearchService';
 // import { ScrapingEngine } from '../core/scraping/ScrapingEngine';
-import { SCRAPING_SOURCES } from '../config/scraping-sources';
+import { SCRAPING_SOURCES } from '../config/scrapingSources';
 import { SearchCriteria, ApiResponse } from '../core/types';
 import { asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';

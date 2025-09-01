@@ -254,7 +254,7 @@ export const SCRAPING_SOURCES: ScrapingSource[] = [
     id: 'rentola',
     name: 'Rentola',
     baseUrl: 'https://rentola.com',
-    isActive: false, // DISABLED: Not finding properties
+    isActive: true,
     priority: 12,
     rateLimit: {
       requestsPerMinute: 15,

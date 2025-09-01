@@ -119,34 +119,35 @@ export class FincaraizScraper {
   }
 
   /**
-   * Build Fincaraiz search URL - UNIFICADO
+   * Build Fincaraiz search URL - CORREGIDO PARA NUEVA ESTRUCTURA
    */
   private buildFincaraizUrl(criteria: SearchCriteria): string {
     // USAR NUEVO LOCATIONDETECTOR OPTIMIZADO
     const locationText = criteria.hardRequirements.location?.neighborhoods?.join(' ') || 'bogotá';
     const locationInfo = LocationDetector.detectLocation(locationText);
 
-    const baseUrl = 'https://www.fincaraiz.com.co/apartamentos/arriendo';
-
     logger.info(`🎯 Fincaraiz - Ubicación detectada: ${locationInfo.city} ${locationInfo.neighborhood || ''} (confianza: ${locationInfo.confidence})`);
 
-    // Fincaraiz usa parámetros específicos
-    const cityCode = locationInfo.cityCode || '11001';
+    // 🔧 NUEVA ESTRUCTURA DE URL PARA FINCARAIZ
+    // Fincaraiz ahora usa URLs del tipo: /arriendo/apartamentos/ciudad/barrio
+    let baseUrl = 'https://www.fincaraiz.com.co/arriendo/apartamentos';
+
+    // Agregar ciudad
+    const cityUrl = LocationDetector.getCityUrl(locationInfo.city, 'fincaraiz');
+    baseUrl += `/${cityUrl}`;
+
+    // 🎯 INCLUIR BARRIO ESPECÍFICO EN LA URL SI EXISTE
+    if (locationInfo.neighborhood) {
+      const neighborhoodUrl = LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'fincaraiz');
+      baseUrl += `/${neighborhoodUrl}`;
+      logger.info(`🎯 Fincaraiz - Agregando barrio específico: ${locationInfo.neighborhood} -> ${neighborhoodUrl}`);
+    }
+
+    // Agregar parámetros de búsqueda
     const params = new URLSearchParams({
-      'ad_type': '2', // arriendo
-      'property_type': '1', // apartamento
-      'city': cityCode,
       'currency': 'COP',
       'sort': 'relevance'
     });
-
-    // 🎯 INCLUIR BARRIO ESPECÍFICO SI EXISTE
-    if (locationInfo.neighborhood) {
-      // Fincaraiz usa el parámetro 'zone' para barrios
-      const neighborhoodUrl = LocationDetector.getNeighborhoodUrl(locationInfo.neighborhood, 'fincaraiz');
-      params.set('zone', neighborhoodUrl);
-      logger.info(`🎯 Fincaraiz - Agregando barrio específico: ${locationInfo.neighborhood} -> ${neighborhoodUrl}`);
-    }
 
     const finalUrl = `${baseUrl}?${params}`;
     logger.info(`🔗 Fincaraiz URL final: ${finalUrl}`);
