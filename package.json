@@ -15,7 +15,7 @@
     "test:watch": "jest --watch",
     "clean": "rimraf dist",
     "setup": "npm install && cd client && npm install",
-    "test:scrapers": "ts-node scripts/test-scrapers.ts",
+    "test:scrapers": "ts-node core/tests/scraper-test.ts",
     "test:location": "ts-node scripts/test-location-accuracy.ts"
   },
   "keywords": [

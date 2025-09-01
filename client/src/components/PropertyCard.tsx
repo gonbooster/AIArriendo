@@ -282,7 +282,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'center',
             flexWrap: 'wrap',
             gap: 2,
             mb: 1,

@@ -171,10 +171,9 @@ export class MetrocuadradoScraper {
    * Extract properties from Metrocuadrado HTML
    */
   private extractMetrocuadradoProperties($: cheerio.CheerioAPI, criteria: SearchCriteria): Property[] {
-    // IMPORTANT: Disable simple text-based fallback to avoid non-real items.
-    // We only return real cards (static) or headless results.
-    logger.info('🔍 Metrocuadrado: Simple fallback disabled to enforce REAL results only');
-    return [];
+    // 🔧 HABILITAR EXTRACCIÓN ESTÁTICA COMO FALLBACK
+    logger.info('🔍 Metrocuadrado: Trying static extraction as fallback');
+    return this.extractMetrocuadradoPropertiesFromCards($, criteria);
   }
 
 
@@ -183,7 +182,7 @@ export class MetrocuadradoScraper {
     const properties: Property[] = [];
 
     const selectors = [
-      // Selectores actualizados 2024
+      // 🔧 SELECTORES MEJORADOS PARA METROCUADRADO 2024
       '[data-testid="property-card"]',
       '.property-card',
       '.listing-card',
@@ -199,7 +198,17 @@ export class MetrocuadradoScraper {
       'div[class*="card"]',
       'li[class*="item"]',
       '[data-testid*="card"]',
-      '[data-testid*="property"]'
+      '[data-testid*="property"]',
+      // 🆕 SELECTORES MÁS AGRESIVOS
+      'article',
+      'div[class*="MuiGrid"]',
+      '.MuiGrid-item',
+      '[class*="Grid"]',
+      'div[id*="property"]',
+      'div[id*="inmueble"]',
+      'li',
+      'div[class*="item"]',
+      'div[class*="result"]'
     ];
 
     let cards: cheerio.Cheerio<any> = $();
@@ -222,10 +231,12 @@ export class MetrocuadradoScraper {
       const loc = $c.find('.location, .barrio, .address').first().text().trim();
 
       const price = parseInt((priceText || '').replace(/[^\d]/g, '')) || 0;
-      if (!title || price <= 0) return;
 
       // Extract rooms and bathrooms from title/description
-      const fullText = `${title} ${loc}`.toLowerCase();
+      const fullText = `${title} ${loc} ${priceText}`.toLowerCase();
+
+      // 🔧 RELAJAR VALIDACIÓN PARA METROCUADRADO - Aceptar más propiedades
+      if (!title && !priceText && fullText.length < 20) return;
 
       // Extract rooms
       let rooms = 0;
@@ -283,7 +294,8 @@ export class MetrocuadradoScraper {
         isActive: true
       };
 
-      if (price <= criteria.hardRequirements.maxTotalPrice) {
+      // 🔧 RELAJAR VALIDACIÓN FINAL - Aceptar propiedades con datos básicos
+      if (title || price > 0 || area > 0 || rooms > 0) {
         properties.push(prop);
       }
     });

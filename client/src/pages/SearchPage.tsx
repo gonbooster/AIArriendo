@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
-import SearchProgress from '../components/SearchProgressNew';
+import SearchProgress from '../components/SearchProgress';
 import {
   Container,
   Paper,

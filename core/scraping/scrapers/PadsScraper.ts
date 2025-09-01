@@ -120,35 +120,74 @@ export class PadsScraper {
         const priceElement = $card.find('.text-lg.font-semibold');
         const priceText = priceElement.text().trim();
 
-        // Extract area and rooms info from .flex.text-xs div elements
-        const infoElements = $card.find('.flex.text-xs div');
+        // 🔧 MEJORAR EXTRACCIÓN DE DATOS - PADS específico
+        const infoElements = $card.find('.flex.text-xs div, .text-xs, .property-details div');
         let rooms = '';
         let area = '';
         let parking = '';
 
+        // Buscar en elementos de información
         infoElements.each((i, el) => {
           const text = $(el).text().trim();
-          if (text.includes('Alc.')) {
-            rooms = text.replace('Alc.', '').trim();
-          } else if (text.includes('m2')) {
-            area = text.replace('m2', '').trim();
-          } else if (text.includes('Parq.')) {
-            parking = text.replace('Parq.', '').trim();
+          if (text.includes('Alc.') || text.includes('hab') || text.includes('cuarto')) {
+            rooms = text.replace(/[^\d]/g, '').trim();
+          } else if (text.includes('m2') || text.includes('m²')) {
+            area = text.replace(/[^\d.]/g, '').trim();
+          } else if (text.includes('Parq.') || text.includes('garage') || text.includes('parking')) {
+            parking = text.replace(/[^\d]/g, '').trim();
           }
         });
+
+        // Si no se encontró parking, buscar en todo el texto de la card
+        if (!parking) {
+          const fullCardText = $card.text();
+          const parkingPatterns = [
+            /(\d+)\s*(?:parq|parqueadero|parqueaderos|garage|garaje|parking)/i,
+            /(?:parq|parqueadero|parqueaderos|garage|garaje|parking)[:\s]*(\d+)/i
+          ];
+          for (const pattern of parkingPatterns) {
+            const match = fullCardText.match(pattern);
+            if (match) {
+              parking = match[1];
+              break;
+            }
+          }
+        }
 
         // Extract location from .text-sm
         const locationElement = $card.find('.text-sm');
         const location = locationElement.text().trim();
 
-        // Extract image from .bg-image style attribute
-        const imageElement = $card.find('.bg-image');
+        // 🔧 MEJORAR EXTRACCIÓN DE IMÁGENES - PADS específico
         let imageUrl = '';
-        if (imageElement.length > 0) {
-          const style = imageElement.attr('style') || '';
-          const urlMatch = style.match(/background-image:url\(([^)]+)\)/);
-          if (urlMatch) {
-            imageUrl = urlMatch[1];
+
+        // Intentar múltiples selectores para imágenes
+        const imageSelectors = [
+          '.bg-image',
+          'img[src]',
+          '[style*="background-image"]',
+          '.property-image img',
+          '.image img',
+          'img'
+        ];
+
+        for (const selector of imageSelectors) {
+          const imageElement = $card.find(selector);
+          if (imageElement.length > 0) {
+            if (selector === '.bg-image' || selector.includes('style')) {
+              const style = imageElement.attr('style') || '';
+              const urlMatch = style.match(/background-image:url\(([^)]+)\)/);
+              if (urlMatch) {
+                imageUrl = urlMatch[1].replace(/['"]/g, '');
+                break;
+              }
+            } else {
+              const src = imageElement.attr('src') || imageElement.attr('data-src');
+              if (src && !src.includes('placeholder') && !src.includes('logo')) {
+                imageUrl = src.startsWith('http') ? src : `https://www.pads.com.co${src}`;
+                break;
+              }
+            }
           }
         }
 

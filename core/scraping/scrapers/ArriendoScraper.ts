@@ -191,9 +191,12 @@ export class ArriendoScraper {
 
         // Extract price - Arriendo.com usa .es-price
         const priceText = $card.find('.es-price, .price, .precio, [class*="price"], [class*="precio"]').first().text().trim();
-        const price = this.extractPriceFromText(priceText);
+        let price = this.extractPriceFromText(priceText);
 
-        if (!price || price <= 0) return;
+        // 🔧 RELAJAR VALIDACIÓN DE PRECIO - Si no hay precio, usar 0 pero continuar
+        if (!price || price <= 0) {
+          price = 0; // Permitir propiedades sin precio para debugging
+        }
 
         // Extract location - Arriendo.com usa estructura específica
         const location = $card.find('.es-listing__location, .es-listing__address, .location, .ubicacion, [class*="location"], [class*="ubicacion"]').first().text().trim() ||
@@ -269,8 +272,8 @@ export class ArriendoScraper {
           isActive: true
         };
 
-        // Basic validation
-        if (price > 0 && price <= criteria.hardRequirements.maxTotalPrice) {
+        // 🔧 RELAJAR VALIDACIÓN - Aceptar más propiedades para debugging
+        if (title && (price > 0 || area > 0 || rooms > 0)) {
           properties.push(property);
         }
 

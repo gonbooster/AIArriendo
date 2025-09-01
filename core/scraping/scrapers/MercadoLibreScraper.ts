@@ -529,13 +529,15 @@ export class MercadoLibreScraper {
         if (!price || price <= 0) return;
 
         // 🆕 EXTRAER DATOS ESPECÍFICOS CON PATRONES MEJORADOS
+        // Incluir más campos para buscar datos
         const fullText = `${it.title} ${it.location}`.toLowerCase();
 
-        // Extraer habitaciones
+        // Extraer habitaciones con patrones más específicos de MercadoLibre
         let rooms = 0;
         const roomsPatterns = [
-          /(\d+)\s*(?:hab|habitacion|habitaciones|alcoba|alcobas|dormitorio|dormitorios)/i,
-          /(?:hab|habitacion|habitaciones|alcoba|alcobas)[:\s]*(\d+)/i
+          /(\d+)\s*(?:habitación|habitaciones|hab|dormitorio|dormitorios|cuarto|cuartos)/i,
+          /(?:habitación|habitaciones|hab|dormitorio|dormitorios)[:\s]*(\d+)/i,
+          /(\d+)\s*(?:bedroom|bedrooms)/i
         ];
         for (const pattern of roomsPatterns) {
           const match = fullText.match(pattern);
@@ -545,11 +547,12 @@ export class MercadoLibreScraper {
           }
         }
 
-        // Extraer área
+        // Extraer área con patrones más específicos
         let area = 0;
         const areaPatterns = [
-          /(\d+(?:\.\d+)?)\s*(?:m2|m²|metros|mts|mt)/i,
-          /(?:area|área|superficie)[:\s]*(\d+(?:\.\d+)?)/i
+          /(\d+(?:\.\d+)?)\s*(?:m2|m²|metros|mts|mt|metro)/i,
+          /(?:area|área|superficie|tamaño)[:\s]*(\d+(?:\.\d+)?)/i,
+          /(\d+(?:\.\d+)?)\s*(?:square|sq)/i
         ];
         for (const pattern of areaPatterns) {
           const match = fullText.match(pattern);
@@ -573,11 +576,13 @@ export class MercadoLibreScraper {
           }
         }
 
-        // Extraer parqueaderos
+        // 🔧 MEJORAR EXTRACCIÓN DE PARQUEADEROS - MercadoLibre específico
         let parking = 0;
         const parkingPatterns = [
-          /(\d+)\s*(?:parq|parqueadero|parqueaderos|garage|garaje|parking)/i,
-          /(?:parq|parqueadero|parqueaderos|garage|garaje|parking)[:\s]*(\d+)/i
+          /(\d+)\s*(?:parqueadero|parqueaderos|garaje|garajes|garage|parking|cochera|cocheras)/i,
+          /(?:parqueadero|parqueaderos|garaje|garajes|garage|parking|cochera|cocheras)[:\s]*(\d+)/i,
+          /(\d+)\s*(?:parq|estacionamiento|estacionamientos)/i,
+          /(?:con|tiene|incluye)\s*(\d+)\s*(?:parqueadero|garaje|parking)/i
         ];
         for (const pattern of parkingPatterns) {
           const match = fullText.match(pattern);
@@ -587,11 +592,13 @@ export class MercadoLibreScraper {
           }
         }
 
-        // Extraer estrato
+        // 🔧 MEJORAR EXTRACCIÓN DE ESTRATO - MercadoLibre específico
         let stratum = 0;
         const stratumPatterns = [
-          /(?:estrato|est)[:\s]*(\d+)/i,
-          /(\d+)\s*(?:estrato|est)/i
+          /(?:estrato|est|stratum)[:\s]*(\d+)/i,
+          /(\d+)\s*(?:estrato|est|stratum)/i,
+          /(?:nivel|clase)\s*socioeconómic[ao]\s*(\d+)/i,
+          /(?:zona|sector)\s*(\d+)/i
         ];
         for (const pattern of stratumPatterns) {
           const match = fullText.match(pattern);

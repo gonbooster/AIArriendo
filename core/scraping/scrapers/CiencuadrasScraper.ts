@@ -205,18 +205,43 @@ export class CiencuadrasScraper {
       try {
         const $card = $(card);
         
-        // Extract basic information using text analysis (Ciencuadras has data in text)
+        // 🔧 MEJORAR EXTRACCIÓN DE TEXTO - Ciencuadras específico
         const fullText = $card.text().trim();
+        const cardHtml = $card.html() || '';
 
-        // 🔥 DINÁMICO: Extract title - buscar apartamento en cualquier transacción
+        // 🔍 DEBUG: Log para ver qué texto estamos obteniendo
+        if (index < 2) { // Solo log para las primeras 2 propiedades
+          logger.info(`🔍 Ciencuadras card ${index} text: ${fullText.substring(0, 200)}...`);
+        }
+
+        // 🔧 MEJORAR EXTRACCIÓN DE TÍTULO - Ciencuadras específico
         let title = '';
-        const titleMatch = fullText.match(/(Apartamento en (?:arriendo|venta)[^$]*)/i);
-        if (titleMatch) {
-          title = titleMatch[1].trim();
-        } else {
-          // Fallback to first meaningful line
+
+        // Intentar múltiples patrones para el título
+        const titlePatterns = [
+          /(Apartamento en (?:arriendo|venta)[^$]*)/i,
+          /(Casa en (?:arriendo|venta)[^$]*)/i,
+          /(Local en (?:arriendo|venta)[^$]*)/i,
+          /(Oficina en (?:arriendo|venta)[^$]*)/i
+        ];
+
+        for (const pattern of titlePatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            title = match[1].trim();
+            break;
+          }
+        }
+
+        // Si no hay título específico, usar selectores HTML
+        if (!title) {
+          title = $card.find('h1, h2, h3, h4, .title, [class*="title"]').first().text().trim();
+        }
+
+        // Fallback final: usar primeras palabras del texto
+        if (!title) {
           const lines = fullText.split('\n').map(l => l.trim()).filter(l => l.length > 10);
-          title = lines[0] || '';
+          title = lines[0] || fullText.substring(0, 50) || 'Propiedad en Ciencuadras';
         }
 
         // IMPROVED: Extract price using better regex - matches Ciencuadras format
@@ -400,8 +425,8 @@ export class CiencuadrasScraper {
           }
         }
 
-        // Only process if we have essential data (relaxed conditions for Ciencuadras)
-        if ((title || priceText) && (priceNumber > 0 || priceText) && (areaNumber > 0 || roomsNumber > 0)) {
+        // 🔧 RELAJAR CONDICIONES PARA CIENCUADRAS - Aceptar más propiedades
+        if (title || priceText || fullText.length > 20) {
           const rawProperty = {
             title: title.trim(),
             price: priceNumber > 0 ? priceNumber : priceText.trim(),
