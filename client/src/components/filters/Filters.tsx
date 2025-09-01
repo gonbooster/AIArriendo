@@ -36,12 +36,10 @@ interface FilterState {
   stratum: number[];
   neighborhoods: string[];
   sources: string[];
-  amenities: string[];
   pricePerM2Range: [number, number];
   removeDuplicates: boolean;
   hasParking: boolean | null; // null = all, true = with parking, false = without parking
   hideCorrupt: boolean; // true = hide properties with missing data
-  propertyTypes: string[]; // tipos de propiedad: apartamento, casa, etc.
 }
 
 const PropertyFilters: React.FC<PropertyFiltersProps> = ({
@@ -88,25 +86,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
     return Array.from(new Set(sources)).sort();
   }, [properties]);
 
-  const uniqueAmenities = React.useMemo(() => {
-    // Amenidades básicas que siempre deben aparecer
-    const basicAmenities = [
-      'Parqueadero', 'Piscina', 'Gimnasio', 'Lavandería', 'Squash',
-      'Portería 24h', 'Ascensor', 'Balcón', 'Terraza', 'Jardín',
-      'Aire Acondicionado', 'Calefacción', 'Chimenea', 'BBQ', 'Sauna'
-    ];
-    const allAmenities = properties.flatMap(p => p.amenities || []);
-    const combinedAmenities = Array.from(new Set([...basicAmenities, ...allAmenities]));
-    return combinedAmenities.filter(Boolean).sort();
-  }, [properties]);
 
-  const uniquePropertyTypes = React.useMemo(() => {
-    // Tipos básicos que siempre deben aparecer
-    const basicTypes = ['Apartamento', 'Casa', 'Townhouse', 'Local Comercial', 'Oficina'];
-    const types = properties.map(p => p.propertyType || 'Apartamento');
-    const allTypes = Array.from(new Set([...basicTypes, ...types]));
-    return allTypes.filter(Boolean).sort();
-  }, [properties]);
 
   // Estado de filtros
   const [filters, setFilters] = useState<FilterState>({
@@ -118,12 +98,10 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
     stratum: [],
     neighborhoods: [],
     sources: [],
-    amenities: [],
     pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
     removeDuplicates: true, // ✅ Activado por defecto para mejor experiencia
     hasParking: null,
     hideCorrupt: true, // ✅ Marcado por defecto
-    propertyTypes: [],
   });
 
   // Verificar si hay filtros activos (excluyendo los que están por defecto)
@@ -135,8 +113,6 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
       filters.stratum.length > 0 ||
       filters.neighborhoods.length > 0 ||
       filters.sources.length > 0 ||
-      filters.amenities.length > 0 ||
-      filters.propertyTypes.length > 0 ||
       filters.hasParking !== null ||
       // ❌ Removidos: removeDuplicates y hideCorrupt ya que están por defecto
       filters.priceRange[0] !== priceStats.min ||
@@ -191,17 +167,9 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
       filtered = filtered.filter(p => filters.stratum.includes(p.stratum || 0));
     }
 
-    // Filtro de tipos de propiedad
-    if (filters.propertyTypes.length > 0) {
-      filtered = filtered.filter(p => {
-        const propertyType = p.propertyType || 'Apartamento'; // fallback
-        return filters.propertyTypes.includes(propertyType);
-      });
-    }
-
     // Filtro de barrios
     if (filters.neighborhoods.length > 0) {
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         filters.neighborhoods.includes(p.location.neighborhood || '')
       );
     }
@@ -209,15 +177,6 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
     // Filtro de fuentes
     if (filters.sources.length > 0) {
       filtered = filtered.filter(p => filters.sources.includes(p.source));
-    }
-
-    // Filtro de amenities
-    if (filters.amenities.length > 0) {
-      filtered = filtered.filter(p => 
-        filters.amenities.some(amenity => 
-          (p.amenities || []).includes(amenity)
-        )
-      );
     }
 
     // Filtro de precio por m² (solo si no está en el rango completo)
@@ -276,12 +235,10 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
       stratum: [],
       neighborhoods: [],
       sources: [],
-      amenities: [],
       pricePerM2Range: [pricePerM2Stats.min, pricePerM2Stats.max],
       removeDuplicates: true,
       hasParking: null,
       hideCorrupt: true, // ✅ Mantener marcado por defecto
-      propertyTypes: [],
     });
   };
 
@@ -434,53 +391,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
           </Grid>
         </Grid>
 
-        {/* Tipos de Propiedad */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Tipo de Propiedad
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {uniquePropertyTypes.map(type => (
-              <Chip
-                key={type}
-                label={type}
-                onClick={() => setFilters(prev => ({
-                  ...prev,
-                  propertyTypes: prev.propertyTypes.includes(type)
-                    ? prev.propertyTypes.filter(t => t !== type)
-                    : [...prev.propertyTypes, type]
-                }))}
-                color={filters.propertyTypes.includes(type) ? 'primary' : 'default'}
-                variant={filters.propertyTypes.includes(type) ? 'filled' : 'outlined'}
-                size="small"
-              />
-            ))}
-          </Box>
-        </Box>
 
-        {/* Amenidades Mejoradas */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Amenidades y Servicios
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: '120px', overflowY: 'auto' }}>
-            {uniqueAmenities.map(amenity => (
-              <Chip
-                key={amenity}
-                label={amenity}
-                onClick={() => setFilters(prev => ({
-                  ...prev,
-                  amenities: prev.amenities.includes(amenity)
-                    ? prev.amenities.filter(a => a !== amenity)
-                    : [...prev.amenities, amenity]
-                }))}
-                color={filters.amenities.includes(amenity) ? 'secondary' : 'default'}
-                variant={filters.amenities.includes(amenity) ? 'filled' : 'outlined'}
-                size="small"
-              />
-            ))}
-          </Box>
-        </Box>
 
 
 

@@ -172,7 +172,8 @@ const PropertyDetailPage: React.FC = () => {
                   {property.title}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {property.score && (
+                  {/* Score - Solo mostrar si existe y es mayor a 0 */}
+                  {property.score && property.score > 0 && (
                     <Chip
                       icon={<StarIcon />}
                       label={`${property.score.toFixed(1)} puntos`}
@@ -199,16 +200,20 @@ const PropertyDetailPage: React.FC = () => {
 
               {/* Property Details */}
               <Grid container spacing={3} sx={{ mb: 3 }}>
-                <Grid xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <HomeIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                    <Typography variant="h6">{property.rooms}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Habitaciones
-                    </Typography>
-                  </Box>
-                </Grid>
-                {property.bathrooms && (
+                {/* Habitaciones - Solo mostrar si es mayor a 0 */}
+                {property.rooms && property.rooms > 0 && (
+                  <Grid xs={6} sm={3}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <HomeIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+                      <Typography variant="h6">{property.rooms}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Habitaciones
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
+                {/* Baños - Solo mostrar si es mayor a 0 */}
+                {property.bathrooms && property.bathrooms > 0 && (
                   <Grid xs={6} sm={3}>
                     <Box sx={{ textAlign: 'center' }}>
                       <BathtubIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
@@ -219,25 +224,31 @@ const PropertyDetailPage: React.FC = () => {
                     </Box>
                   </Grid>
                 )}
-                <Grid xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <SquareFootIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                    <Typography variant="h6">{property.area}m²</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Área
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h6" color="primary.main" sx={{ mb: 1 }}>
-                      {formatPrice(property.pricePerM2)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Precio/m²
-                    </Typography>
-                  </Box>
-                </Grid>
+                {/* Área - Solo mostrar si es mayor a 0 */}
+                {property.area && property.area > 0 && (
+                  <Grid xs={6} sm={3}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <SquareFootIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+                      <Typography variant="h6">{property.area}m²</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Área
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
+                {/* Precio por m² - Solo mostrar si es mayor a 0 */}
+                {property.pricePerM2 && property.pricePerM2 > 0 && (
+                  <Grid xs={6} sm={3}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h6" color="primary.main" sx={{ mb: 1 }}>
+                        {formatPrice(property.pricePerM2)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Precio/m²
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
               </Grid>
 
               <Divider sx={{ my: 3 }} />

@@ -165,20 +165,23 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             {/* 🆕 Badge de propiedad nueva */}
             <NewPropertyBadge isNew={property.isNew} />
 
-            <Chip
-              icon={<StarIcon />}
-              label={property.score?.toFixed(1) || '0.0'}
-              color={getScoreColor(property.score || 0)}
-              size="small"
-              sx={{
-                fontWeight: 'bold',
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                color: 'white',
-                '& .MuiChip-icon': {
-                  color: 'white'
-                }
-              }}
-            />
+            {/* Score - Solo mostrar si existe y es mayor a 0 */}
+            {property.score && property.score > 0 && (
+              <Chip
+                icon={<StarIcon />}
+                label={property.score.toFixed(1)}
+                color={getScoreColor(property.score)}
+                size="small"
+                sx={{
+                  fontWeight: 'bold',
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  color: 'white',
+                  '& .MuiChip-icon': {
+                    color: 'white'
+                  }
+                }}
+              />
+            )}
             <Chip
               label={property.source}
               size="small"
@@ -253,7 +256,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </Typography>
 
         {/* Price per m² */}
-        {property.pricePerM2 && (
+        {property.pricePerM2 && property.pricePerM2 > 0 && (
           <Typography
             variant="caption"
             color="text.secondary"
@@ -310,13 +313,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             minHeight: '24px' // ✅ Altura mínima para consistencia
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <HomeIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-            <Typography variant="caption" color="text.secondary">
-              {property.rooms} hab
-            </Typography>
-          </Box>
+          {/* Habitaciones - Solo mostrar si es mayor a 0 */}
+          {property.rooms && property.rooms > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <HomeIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+              <Typography variant="caption" color="text.secondary">
+                {property.rooms} hab
+              </Typography>
+            </Box>
+          )}
 
+          {/* Baños - Solo mostrar si es mayor a 0 */}
           {property.bathrooms && property.bathrooms > 0 && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <BathtubIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
@@ -326,6 +333,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             </Box>
           )}
 
+          {/* Parqueaderos - Solo mostrar si es mayor a 0 */}
           {property.parking && property.parking > 0 && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <ParkingIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
@@ -335,13 +343,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             </Box>
           )}
 
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <AreaIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-            <Typography variant="caption" color="text.secondary">
-              {formatArea(property.area)}
-            </Typography>
-          </Box>
+          {/* Área - Solo mostrar si es mayor a 0 */}
+          {property.area && property.area > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <AreaIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+              <Typography variant="caption" color="text.secondary">
+                {formatArea(property.area)}
+              </Typography>
+            </Box>
+          )}
 
+          {/* Estrato - Solo mostrar si es mayor a 0 */}
           {property.stratum && property.stratum > 0 && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <StratumIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
